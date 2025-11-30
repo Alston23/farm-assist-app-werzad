@@ -18,6 +18,15 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { storage } from '@/utils/storage';
 import { cropDatabase } from '@/data/cropDatabase';
 
+interface SeasonData {
+  season: string;
+  totalYield: number;
+  totalRevenue: number;
+  totalCosts: number;
+  totalProfit: number;
+  entryCount: number;
+}
+
 export default function RevenueScreen() {
   const [revenueEntries, setRevenueEntries] = useState<RevenueEntry[]>([]);
   const [plantings, setPlantings] = useState<Planting[]>([]);
@@ -74,6 +83,75 @@ export default function RevenueScreen() {
       },
     ]);
   };
+
+  // Calculate season from date (Spring: Mar-May, Summer: Jun-Aug, Fall: Sep-Nov, Winter: Dec-Feb)
+  const getSeason = (dateString: string): string => {
+    const date = new Date(dateString);
+    const month = date.getMonth();
+    const year = date.getFullYear();
+    
+    let season = '';
+    if (month >= 2 && month <= 4) season = 'Spring';
+    else if (month >= 5 && month <= 7) season = 'Summer';
+    else if (month >= 8 && month <= 10) season = 'Fall';
+    else season = 'Winter';
+    
+    return `${season} ${year}`;
+  };
+
+  // Group entries by season and calculate totals
+  const getSeasonData = (): SeasonData[] => {
+    const seasonMap = new Map<string, SeasonData>();
+    
+    revenueEntries.forEach((entry) => {
+      const season = getSeason(entry.date);
+      
+      if (!seasonMap.has(season)) {
+        seasonMap.set(season, {
+          season,
+          totalYield: 0,
+          totalRevenue: 0,
+          totalCosts: 0,
+          totalProfit: 0,
+          entryCount: 0,
+        });
+      }
+      
+      const data = seasonMap.get(season)!;
+      data.totalYield += entry.harvestAmount;
+      data.totalRevenue += entry.totalRevenue;
+      data.totalCosts += entry.costs;
+      data.totalProfit += entry.profit;
+      data.entryCount += 1;
+    });
+    
+    // Sort by date (most recent first)
+    return Array.from(seasonMap.values()).sort((a, b) => {
+      const dateA = new Date(a.season.split(' ')[1] + '-' + getMonthFromSeason(a.season.split(' ')[0]));
+      const dateB = new Date(b.season.split(' ')[1] + '-' + getMonthFromSeason(b.season.split(' ')[0]));
+      return dateB.getTime() - dateA.getTime();
+    });
+  };
+
+  const getMonthFromSeason = (season: string): string => {
+    const seasonMonths: { [key: string]: string } = {
+      'Spring': '04',
+      'Summer': '07',
+      'Fall': '10',
+      'Winter': '01',
+    };
+    return seasonMonths[season] || '01';
+  };
+
+  // Calculate percentage change
+  const calculatePercentageChange = (current: number, previous: number): number => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return ((current - previous) / previous) * 100;
+  };
+
+  const seasonData = getSeasonData();
+  const currentSeason = seasonData[0];
+  const previousSeason = seasonData[1];
 
   const totalRevenue = revenueEntries.reduce((sum, entry) => sum + entry.totalRevenue, 0);
   const totalCosts = revenueEntries.reduce((sum, entry) => sum + entry.costs, 0);
@@ -145,6 +223,99 @@ export default function RevenueScreen() {
             </Text>
           </View>
         </View>
+
+        {currentSeason && previousSeason && (
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>Season-over-Season Change</Text>
+            <Text style={styles.seasonComparisonSubtitle}>
+              {currentSeason.season} vs {previousSeason.season}
+            </Text>
+            
+            <View style={styles.changeContainer}>
+              <View style={styles.changeItem}>
+                <View style={styles.changeHeader}>
+                  <IconSymbol
+                    ios_icon_name="scalemass.fill"
+                    android_material_icon_name="scale"
+                    size={24}
+                    color={colors.primary}
+                  />
+                  <Text style={styles.changeLabel}>Total Yield</Text>
+                </View>
+                <View style={styles.changeValues}>
+                  <Text style={styles.changeCurrentValue}>
+                    {currentSeason.totalYield.toFixed(1)} lbs
+                  </Text>
+                  <Text style={styles.changePreviousValue}>
+                    was {previousSeason.totalYield.toFixed(1)} lbs
+                  </Text>
+                </View>
+                <PercentageChangeIndicator
+                  change={calculatePercentageChange(
+                    currentSeason.totalYield,
+                    previousSeason.totalYield
+                  )}
+                />
+              </View>
+
+              <View style={styles.changeDivider} />
+
+              <View style={styles.changeItem}>
+                <View style={styles.changeHeader}>
+                  <IconSymbol
+                    ios_icon_name="dollarsign.circle.fill"
+                    android_material_icon_name="attach-money"
+                    size={24}
+                    color={colors.primary}
+                  />
+                  <Text style={styles.changeLabel}>Total Revenue</Text>
+                </View>
+                <View style={styles.changeValues}>
+                  <Text style={styles.changeCurrentValue}>
+                    ${currentSeason.totalRevenue.toFixed(2)}
+                  </Text>
+                  <Text style={styles.changePreviousValue}>
+                    was ${previousSeason.totalRevenue.toFixed(2)}
+                  </Text>
+                </View>
+                <PercentageChangeIndicator
+                  change={calculatePercentageChange(
+                    currentSeason.totalRevenue,
+                    previousSeason.totalRevenue
+                  )}
+                />
+              </View>
+
+              <View style={styles.changeDivider} />
+
+              <View style={styles.changeItem}>
+                <View style={styles.changeHeader}>
+                  <IconSymbol
+                    ios_icon_name="chart.line.uptrend.xyaxis"
+                    android_material_icon_name="trending-up"
+                    size={24}
+                    color={colors.primary}
+                  />
+                  <Text style={styles.changeLabel}>Net Profit</Text>
+                </View>
+                <View style={styles.changeValues}>
+                  <Text style={styles.changeCurrentValue}>
+                    ${currentSeason.totalProfit.toFixed(2)}
+                  </Text>
+                  <Text style={styles.changePreviousValue}>
+                    was ${previousSeason.totalProfit.toFixed(2)}
+                  </Text>
+                </View>
+                <PercentageChangeIndicator
+                  change={calculatePercentageChange(
+                    currentSeason.totalProfit,
+                    previousSeason.totalProfit
+                  )}
+                />
+              </View>
+            </View>
+          </View>
+        )}
 
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Input Costs Breakdown</Text>
@@ -292,6 +463,45 @@ export default function RevenueScreen() {
         fields={fields}
       />
     </SafeAreaView>
+  );
+}
+
+function PercentageChangeIndicator({ change }: { change: number }) {
+  const isPositive = change >= 0;
+  const isNeutral = Math.abs(change) < 0.01;
+  
+  return (
+    <View
+      style={[
+        styles.percentageChangeContainer,
+        {
+          backgroundColor: isNeutral
+            ? colors.textSecondary + '20'
+            : isPositive
+            ? colors.success + '20'
+            : colors.error + '20',
+        },
+      ]}
+    >
+      <IconSymbol
+        ios_icon_name={isNeutral ? 'minus' : isPositive ? 'arrow.up' : 'arrow.down'}
+        android_material_icon_name={
+          isNeutral ? 'remove' : isPositive ? 'arrow-upward' : 'arrow-downward'
+        }
+        size={20}
+        color={isNeutral ? colors.textSecondary : isPositive ? colors.success : colors.error}
+      />
+      <Text
+        style={[
+          styles.percentageChangeText,
+          {
+            color: isNeutral ? colors.textSecondary : isPositive ? colors.success : colors.error,
+          },
+        ]}
+      >
+        {Math.abs(change).toFixed(1)}%
+      </Text>
+    </View>
   );
 }
 
@@ -833,6 +1043,58 @@ const styles = StyleSheet.create({
   },
   summaryValueTotal: {
     fontSize: 20,
+    fontWeight: '700',
+  },
+  seasonComparisonSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 16,
+  },
+  changeContainer: {
+    gap: 16,
+  },
+  changeItem: {
+    gap: 8,
+  },
+  changeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  changeLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  changeValues: {
+    marginLeft: 32,
+  },
+  changeCurrentValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 2,
+  },
+  changePreviousValue: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  changeDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  percentageChangeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+    marginLeft: 32,
+  },
+  percentageChangeText: {
+    fontSize: 16,
     fontWeight: '700',
   },
   costBreakdown: {
