@@ -36,6 +36,12 @@ export default function TabLayout() {
       icon: 'attach-money',
       label: 'Revenue',
     },
+    {
+      name: 'marketplace',
+      route: '/(tabs)/marketplace',
+      icon: 'shopping-cart',
+      label: 'Market',
+    },
   ];
 
   return (
@@ -51,6 +57,7 @@ export default function TabLayout() {
         <Stack.Screen key="plantings" name="plantings" />
         <Stack.Screen key="schedule" name="schedule" />
         <Stack.Screen key="revenue" name="revenue" />
+        <Stack.Screen key="marketplace" name="marketplace" />
         <Stack.Screen key="settings" name="settings" />
       </Stack>
       <FloatingTabBar tabs={tabs} containerWidth={400} />

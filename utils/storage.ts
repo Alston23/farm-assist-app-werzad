@@ -1,6 +1,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Crop } from '@/types/crop';
+import { EquipmentListing } from '@/types/equipment';
 
 const STORAGE_KEYS = {
   FIELDS: '@farm_fields',
@@ -9,6 +10,7 @@ const STORAGE_KEYS = {
   REVENUE: '@farm_revenue',
   SETTINGS: '@farm_settings',
   CUSTOM_CROPS: '@farm_custom_crops',
+  EQUIPMENT_LISTINGS: '@farm_equipment_listings',
 };
 
 export const storage = {
@@ -130,6 +132,26 @@ export const storage = {
       console.log('Custom crops saved successfully:', crops.length);
     } catch (error) {
       console.log('Error saving custom crops:', error);
+    }
+  },
+
+  // Equipment Listings
+  async getEquipmentListings(): Promise<EquipmentListing[]> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.EQUIPMENT_LISTINGS);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.log('Error loading equipment listings:', error);
+      return [];
+    }
+  },
+
+  async saveEquipmentListings(listings: EquipmentListing[]) {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.EQUIPMENT_LISTINGS, JSON.stringify(listings));
+      console.log('Equipment listings saved successfully:', listings.length);
+    } catch (error) {
+      console.log('Error saving equipment listings:', error);
     }
   },
 };
