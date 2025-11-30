@@ -17,6 +17,7 @@ import { colors, commonStyles } from '@/styles/commonStyles';
 import { EquipmentListing, EquipmentFilters } from '@/types/equipment';
 import { IconSymbol } from '@/components/IconSymbol';
 import { storage } from '@/utils/storage';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function MarketplaceScreen() {
   const [listings, setListings] = useState<EquipmentListing[]>([]);
@@ -385,6 +386,17 @@ export default function MarketplaceScreen() {
                     />
                   </View>
                 )}
+                {listing.images && listing.images.length > 1 && (
+                  <View style={styles.imageCountBadge}>
+                    <IconSymbol
+                      ios_icon_name="photo.stack"
+                      android_material_icon_name="collections"
+                      size={14}
+                      color={colors.card}
+                    />
+                    <Text style={styles.imageCountText}>{listing.images.length}</Text>
+                  </View>
+                )}
               </View>
 
               <View style={styles.listingContent}>
@@ -473,6 +485,7 @@ function ListingFormModal({
   const [category, setCategory] = useState<EquipmentListing['category']>('tools');
   const [location, setLocation] = useState('');
   const [contactInfo, setContactInfo] = useState('');
+  const [images, setImages] = useState<string[]>([]);
 
   useEffect(() => {
     if (listing) {
@@ -483,6 +496,7 @@ function ListingFormModal({
       setCategory(listing.category);
       setLocation(listing.location);
       setContactInfo(listing.contactInfo);
+      setImages(listing.images || []);
     } else {
       setName('');
       setDescription('');
@@ -491,8 +505,108 @@ function ListingFormModal({
       setCategory('tools');
       setLocation('');
       setContactInfo('');
+      setImages([]);
     }
   }, [listing, visible]);
+
+  const requestPermissions = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permission Required',
+        'Please grant permission to access your photo library to upload images.'
+      );
+      return false;
+    }
+    return true;
+  };
+
+  const pickImage = async () => {
+    console.log('pickImage called');
+    
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) {
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsMultipleSelection: true,
+        quality: 0.8,
+        selectionLimit: 5 - images.length,
+      });
+
+      console.log('Image picker result:', result);
+
+      if (!result.canceled && result.assets) {
+        const newImages = result.assets.map((asset) => asset.uri);
+        setImages([...images, ...newImages]);
+        console.log('Images added:', newImages);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
+
+  const takePhoto = async () => {
+    console.log('takePhoto called');
+    
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permission Required',
+        'Please grant permission to access your camera to take photos.'
+      );
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        quality: 0.8,
+      });
+
+      console.log('Camera result:', result);
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const newImage = result.assets[0].uri;
+        setImages([...images, newImage]);
+        console.log('Photo taken:', newImage);
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to take photo. Please try again.');
+    }
+  };
+
+  const removeImage = (index: number) => {
+    console.log('removeImage called for index:', index);
+    const newImages = images.filter((_, i) => i !== index);
+    setImages(newImages);
+  };
+
+  const showImageOptions = () => {
+    Alert.alert(
+      'Add Photo',
+      'Choose how you want to add a photo',
+      [
+        {
+          text: 'Take Photo',
+          onPress: takePhoto,
+        },
+        {
+          text: 'Choose from Library',
+          onPress: pickImage,
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   const handleSave = () => {
     if (!name || !description || !price || !location || !contactInfo) {
@@ -515,6 +629,7 @@ function ListingFormModal({
       category,
       location,
       contactInfo,
+      images,
     };
 
     onSave(listingData);
@@ -556,6 +671,47 @@ function ListingFormModal({
           style={styles.modalContent}
           contentContainerStyle={styles.modalContentContainer}
         >
+          <View style={styles.formGroup}>
+            <Text style={styles.formLabel}>Photos (Optional)</Text>
+            <Text style={styles.formHint}>Add up to 5 photos of your equipment</Text>
+            
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
+              <View style={styles.imageList}>
+                {images.map((imageUri, index) => (
+                  <View key={index} style={styles.imagePreviewContainer}>
+                    <Image source={{ uri: imageUri }} style={styles.imagePreview} />
+                    <TouchableOpacity
+                      style={styles.removeImageButton}
+                      onPress={() => removeImage(index)}
+                    >
+                      <IconSymbol
+                        ios_icon_name="xmark.circle.fill"
+                        android_material_icon_name="cancel"
+                        size={24}
+                        color={colors.error}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                
+                {images.length < 5 && (
+                  <TouchableOpacity
+                    style={styles.addImageButton}
+                    onPress={showImageOptions}
+                  >
+                    <IconSymbol
+                      ios_icon_name="camera.fill"
+                      android_material_icon_name="add-a-photo"
+                      size={32}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.addImageText}>Add Photo</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </ScrollView>
+          </View>
+
           <View style={styles.formGroup}>
             <Text style={styles.formLabel}>Equipment Name *</Text>
             <TextInput
@@ -860,6 +1016,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     backgroundColor: colors.background,
+    position: 'relative',
   },
   listingImage: {
     width: '100%',
@@ -872,6 +1029,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.highlight,
+  },
+  imageCountBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  imageCountText: {
+    color: colors.card,
+    fontSize: 12,
+    fontWeight: '600',
   },
   listingContent: {
     padding: 16,
@@ -1003,6 +1177,11 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 8,
   },
+  formHint: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 12,
+  },
   formInput: {
     backgroundColor: colors.card,
     borderWidth: 1,
@@ -1016,6 +1195,48 @@ const styles = StyleSheet.create({
   formTextArea: {
     height: 100,
     textAlignVertical: 'top',
+  },
+  imageScroll: {
+    marginTop: 8,
+  },
+  imageList: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  imagePreviewContainer: {
+    position: 'relative',
+    width: 120,
+    height: 120,
+  },
+  imagePreview: {
+    width: 120,
+    height: 120,
+    borderRadius: 8,
+    backgroundColor: colors.highlight,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: colors.card,
+    borderRadius: 12,
+  },
+  addImageButton: {
+    width: 120,
+    height: 120,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.highlight,
+  },
+  addImageText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary,
+    marginTop: 8,
   },
   typeSelector: {
     flexDirection: 'row',
