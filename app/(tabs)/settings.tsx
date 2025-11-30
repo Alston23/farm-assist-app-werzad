@@ -267,7 +267,7 @@ export default function SettingsScreen() {
             <Text style={styles.infoTitle}>Freemium Model</Text>
             <Text style={styles.infoText}>
               - Free: Basic crop database, up to 5 fields, task management{'\n'}
-              - Premium ($4.99/month): Unlimited fields, advanced analytics, export data,
+              - Premium ($10/month): Unlimited fields, advanced analytics, export data,
               weather integration
             </Text>
           </View>
