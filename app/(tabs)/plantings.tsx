@@ -60,18 +60,9 @@ export default function PlantingsScreen() {
   };
 
   const deletePlanting = (plantingId: string) => {
-    Alert.alert('Delete Planting', 'Are you sure you want to delete this planting?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          const newPlantings = plantings.filter((p) => p.id !== plantingId);
-          savePlantings(newPlantings);
-          setEditingPlanting(null);
-        },
-      },
-    ]);
+    const newPlantings = plantings.filter((p) => p.id !== plantingId);
+    savePlantings(newPlantings);
+    setEditingPlanting(null);
   };
 
   const filteredPlantings = plantings.filter((planting) => {
@@ -344,6 +335,33 @@ function PlantingFormModal({
     onSave(plantingData);
   };
 
+  const handleDelete = () => {
+    if (!planting || !onDelete) {
+      console.log('No planting or onDelete function');
+      return;
+    }
+
+    Alert.alert(
+      'Delete Planting',
+      'Are you sure you want to delete this planting? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            console.log('Deleting planting:', planting.id);
+            onDelete(planting.id);
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   const filteredCrops = cropDatabase.filter((crop) =>
     crop.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -538,7 +556,7 @@ function PlantingFormModal({
           {planting && onDelete && (
             <TouchableOpacity
               style={styles.deleteButton}
-              onPress={() => onDelete(planting.id)}
+              onPress={handleDelete}
             >
               <Text style={styles.deleteButtonText}>Delete Planting</Text>
             </TouchableOpacity>

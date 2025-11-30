@@ -53,22 +53,9 @@ export default function FieldsScreen() {
   };
 
   const deleteField = (fieldId: string) => {
-    Alert.alert(
-      'Delete Field',
-      'Are you sure you want to delete this field?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            const newFields = fields.filter((f) => f.id !== fieldId);
-            saveFields(newFields);
-            setEditingField(null);
-          },
-        },
-      ]
-    );
+    const newFields = fields.filter((f) => f.id !== fieldId);
+    saveFields(newFields);
+    setEditingField(null);
   };
 
   const totalArea = fields.reduce((sum, field) => sum + field.size, 0);
@@ -238,6 +225,33 @@ function FieldFormModal({
     onSave(fieldData);
   };
 
+  const handleDelete = () => {
+    if (!field || !onDelete) {
+      console.log('No field or onDelete function');
+      return;
+    }
+
+    Alert.alert(
+      'Delete Field',
+      'Are you sure you want to delete this field? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            console.log('Deleting field:', field.id);
+            onDelete(field.id);
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <Modal
       visible={visible}
@@ -347,7 +361,7 @@ function FieldFormModal({
           {field && onDelete && (
             <TouchableOpacity
               style={styles.deleteButton}
-              onPress={() => onDelete(field.id)}
+              onPress={handleDelete}
             >
               <Text style={styles.deleteButtonText}>Delete Field</Text>
             </TouchableOpacity>

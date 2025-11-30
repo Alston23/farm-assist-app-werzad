@@ -70,18 +70,9 @@ export default function ScheduleScreen() {
   };
 
   const deleteTask = (taskId: string) => {
-    Alert.alert('Delete Task', 'Are you sure you want to delete this task?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          const newTasks = tasks.filter((t) => t.id !== taskId);
-          saveTasks(newTasks);
-          setEditingTask(null);
-        },
-      },
-    ]);
+    const newTasks = tasks.filter((t) => t.id !== taskId);
+    saveTasks(newTasks);
+    setEditingTask(null);
   };
 
   const filteredTasks = tasks.filter((task) => {
@@ -322,6 +313,33 @@ function TaskFormModal({
     onSave(taskData);
   };
 
+  const handleDelete = () => {
+    if (!task || !onDelete) {
+      console.log('No task or onDelete function');
+      return;
+    }
+
+    Alert.alert(
+      'Delete Task',
+      'Are you sure you want to delete this task? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            console.log('Deleting task:', task.id);
+            onDelete(task.id);
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <Modal
       visible={visible}
@@ -434,7 +452,7 @@ function TaskFormModal({
           {task && onDelete && (
             <TouchableOpacity
               style={styles.deleteButton}
-              onPress={() => onDelete(task.id)}
+              onPress={handleDelete}
             >
               <Text style={styles.deleteButtonText}>Delete Task</Text>
             </TouchableOpacity>
