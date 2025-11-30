@@ -1,5 +1,6 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Crop } from '@/types/crop';
 
 const STORAGE_KEYS = {
   FIELDS: '@farm_fields',
@@ -7,6 +8,7 @@ const STORAGE_KEYS = {
   TASKS: '@farm_tasks',
   REVENUE: '@farm_revenue',
   SETTINGS: '@farm_settings',
+  CUSTOM_CROPS: '@farm_custom_crops',
 };
 
 export const storage = {
@@ -108,6 +110,26 @@ export const storage = {
       await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
     } catch (error) {
       console.log('Error saving settings:', error);
+    }
+  },
+
+  // Custom Crops
+  async getCustomCrops(): Promise<Crop[]> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.CUSTOM_CROPS);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.log('Error loading custom crops:', error);
+      return [];
+    }
+  },
+
+  async saveCustomCrops(crops: Crop[]) {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.CUSTOM_CROPS, JSON.stringify(crops));
+      console.log('Custom crops saved successfully:', crops.length);
+    } catch (error) {
+      console.log('Error saving custom crops:', error);
     }
   },
 };

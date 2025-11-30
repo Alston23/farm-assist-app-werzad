@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,12 +16,36 @@ import { colors, commonStyles } from '@/styles/commonStyles';
 import { cropDatabase } from '@/data/cropDatabase';
 import { Crop } from '@/types/crop';
 import { IconSymbol } from '@/components/IconSymbol';
+import { storage } from '@/utils/storage';
 
 export default function CropsScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedCrop, setSelectedCrop] = useState<Crop | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [customCrops, setCustomCrops] = useState<Crop[]>([]);
+  const [allCrops, setAllCrops] = useState<Crop[]>([]);
+
+  useEffect(() => {
+    loadCustomCrops();
+  }, []);
+
+  useEffect(() => {
+    setAllCrops([...cropDatabase, ...customCrops]);
+  }, [customCrops]);
+
+  const loadCustomCrops = async () => {
+    const crops = await storage.getCustomCrops();
+    setCustomCrops(crops);
+  };
+
+  const handleAddCrop = async (crop: Crop) => {
+    const updatedCrops = [...customCrops, crop];
+    setCustomCrops(updatedCrops);
+    await storage.saveCustomCrops(updatedCrops);
+    setShowAddModal(false);
+  };
 
   const categories = [
     { id: 'all', label: 'All' },
@@ -33,7 +57,7 @@ export default function CropsScreen() {
     { id: 'aromatic', label: 'Aromatics' },
   ];
 
-  const filteredCrops = cropDatabase.filter((crop) => {
+  const filteredCrops = allCrops.filter((crop) => {
     const matchesSearch = crop.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || crop.category === selectedCategory;
     return matchesSearch && matchesCategory;
@@ -44,19 +68,32 @@ export default function CropsScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.headerTitle}>Crop Database</Text>
-          <Text style={styles.headerSubtitle}>{cropDatabase.length} crops available</Text>
+          <Text style={styles.headerSubtitle}>{allCrops.length} crops available</Text>
         </View>
-        <TouchableOpacity
-          style={styles.settingsButton}
-          onPress={() => router.push('/(tabs)/settings')}
-        >
-          <IconSymbol
-            ios_icon_name="gearshape.fill"
-            android_material_icon_name="settings"
-            size={28}
-            color={colors.primary}
-          />
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => setShowAddModal(true)}
+          >
+            <IconSymbol
+              ios_icon_name="plus.circle.fill"
+              android_material_icon_name="add-circle"
+              size={28}
+              color={colors.primary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => router.push('/(tabs)/settings')}
+          >
+            <IconSymbol
+              ios_icon_name="gearshape.fill"
+              android_material_icon_name="settings"
+              size={28}
+              color={colors.primary}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.searchContainer}>
@@ -241,7 +278,459 @@ export default function CropsScreen() {
           </SafeAreaView>
         )}
       </Modal>
+
+      <AddCropModal
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onAdd={handleAddCrop}
+      />
     </SafeAreaView>
+  );
+}
+
+function AddCropModal({ visible, onClose, onAdd }: { visible: boolean; onClose: () => void; onAdd: (crop: Crop) => void }) {
+  const [formData, setFormData] = useState<Partial<Crop>>({
+    name: '',
+    category: 'vegetable',
+    description: '',
+    sunlight: 'full-sun',
+    sunlightHours: '6-8 hours',
+    waterNeeds: 'moderate',
+    waterFrequency: '1 inch per week',
+    soilType: ['loamy'],
+    phMin: 6.0,
+    phMax: 7.0,
+    temperatureMin: 60,
+    temperatureMax: 80,
+    plantSpacing: 12,
+    rowSpacing: 18,
+    depth: 0.5,
+    daysToGermination: '7-14',
+    daysToMaturity: '60-90',
+    harvestWindow: '2-3 weeks',
+    plantingSeasons: ['spring'],
+    frostTolerance: 'half-hardy',
+    yieldPerPlant: '1-2 lbs',
+    plantsPerSqFt: 1,
+    companionPlants: [],
+    avoidPlants: [],
+    recommendedCoverCrops: ['clover'],
+    fertilizer: 'Balanced NPK',
+    commonPests: [],
+    commonDiseases: [],
+    specialNotes: '',
+  });
+
+  const handleSubmit = () => {
+    if (!formData.name) {
+      console.log('Crop name is required');
+      return;
+    }
+
+    const newCrop: Crop = {
+      id: formData.name.toLowerCase().replace(/\s+/g, '-'),
+      name: formData.name,
+      category: formData.category as any,
+      description: formData.description || '',
+      sunlight: formData.sunlight as any,
+      sunlightHours: formData.sunlightHours || '6-8 hours',
+      waterNeeds: formData.waterNeeds as any,
+      waterFrequency: formData.waterFrequency || '1 inch per week',
+      soilType: formData.soilType || ['loamy'],
+      phMin: formData.phMin || 6.0,
+      phMax: formData.phMax || 7.0,
+      temperatureMin: formData.temperatureMin || 60,
+      temperatureMax: formData.temperatureMax || 80,
+      plantSpacing: formData.plantSpacing || 12,
+      rowSpacing: formData.rowSpacing || 18,
+      depth: formData.depth || 0.5,
+      daysToGermination: formData.daysToGermination || '7-14',
+      daysToMaturity: formData.daysToMaturity || '60-90',
+      harvestWindow: formData.harvestWindow || '2-3 weeks',
+      plantingSeasons: formData.plantingSeasons || ['spring'],
+      frostTolerance: formData.frostTolerance as any,
+      yieldPerPlant: formData.yieldPerPlant || '1-2 lbs',
+      plantsPerSqFt: formData.plantsPerSqFt || 1,
+      companionPlants: formData.companionPlants || [],
+      avoidPlants: formData.avoidPlants || [],
+      recommendedCoverCrops: formData.recommendedCoverCrops || ['clover'],
+      fertilizer: formData.fertilizer || 'Balanced NPK',
+      commonPests: formData.commonPests || [],
+      commonDiseases: formData.commonDiseases || [],
+      specialNotes: formData.specialNotes || '',
+    };
+
+    onAdd(newCrop);
+    setFormData({
+      name: '',
+      category: 'vegetable',
+      description: '',
+      sunlight: 'full-sun',
+      sunlightHours: '6-8 hours',
+      waterNeeds: 'moderate',
+      waterFrequency: '1 inch per week',
+      soilType: ['loamy'],
+      phMin: 6.0,
+      phMax: 7.0,
+      temperatureMin: 60,
+      temperatureMax: 80,
+      plantSpacing: 12,
+      rowSpacing: 18,
+      depth: 0.5,
+      daysToGermination: '7-14',
+      daysToMaturity: '60-90',
+      harvestWindow: '2-3 weeks',
+      plantingSeasons: ['spring'],
+      frostTolerance: 'half-hardy',
+      yieldPerPlant: '1-2 lbs',
+      plantsPerSqFt: 1,
+      companionPlants: [],
+      avoidPlants: [],
+      recommendedCoverCrops: ['clover'],
+      fertilizer: 'Balanced NPK',
+      commonPests: [],
+      commonDiseases: [],
+      specialNotes: '',
+    });
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <SafeAreaView style={styles.modalContainer} edges={['top']}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>Add New Crop</Text>
+          <TouchableOpacity onPress={onClose}>
+            <IconSymbol
+              ios_icon_name="xmark.circle.fill"
+              android_material_icon_name="close"
+              size={28}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView style={styles.modalContent} contentContainerStyle={styles.formContainer}>
+          <View style={styles.formSection}>
+            <Text style={styles.formSectionTitle}>Basic Information</Text>
+            
+            <Text style={styles.formLabel}>Crop Name *</Text>
+            <TextInput
+              style={styles.formInput}
+              placeholder="e.g., Cherry Tomato"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.name}
+              onChangeText={(text) => setFormData({ ...formData, name: text })}
+            />
+
+            <Text style={styles.formLabel}>Category</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryPickerScroll}>
+              {['vegetable', 'fruit', 'herb', 'flower', 'spice', 'aromatic'].map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  style={[
+                    styles.categoryPickerButton,
+                    formData.category === cat && styles.categoryPickerButtonActive,
+                  ]}
+                  onPress={() => setFormData({ ...formData, category: cat as any })}
+                >
+                  <Text
+                    style={[
+                      styles.categoryPickerText,
+                      formData.category === cat && styles.categoryPickerTextActive,
+                    ]}
+                  >
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <Text style={styles.formLabel}>Description</Text>
+            <TextInput
+              style={[styles.formInput, styles.formTextArea]}
+              placeholder="Brief description of the crop"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.description}
+              onChangeText={(text) => setFormData({ ...formData, description: text })}
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+
+          <View style={styles.formSection}>
+            <Text style={styles.formSectionTitle}>Growing Conditions</Text>
+            
+            <Text style={styles.formLabel}>Sunlight</Text>
+            <View style={styles.buttonGroup}>
+              {['full-sun', 'partial-shade', 'full-shade'].map((sun) => (
+                <TouchableOpacity
+                  key={sun}
+                  style={[
+                    styles.buttonGroupItem,
+                    formData.sunlight === sun && styles.buttonGroupItemActive,
+                  ]}
+                  onPress={() => setFormData({ ...formData, sunlight: sun as any })}
+                >
+                  <Text
+                    style={[
+                      styles.buttonGroupText,
+                      formData.sunlight === sun && styles.buttonGroupTextActive,
+                    ]}
+                  >
+                    {sun.replace('-', ' ')}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.formLabel}>Sunlight Hours</Text>
+            <TextInput
+              style={styles.formInput}
+              placeholder="e.g., 6-8 hours"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.sunlightHours}
+              onChangeText={(text) => setFormData({ ...formData, sunlightHours: text })}
+            />
+
+            <Text style={styles.formLabel}>Water Needs</Text>
+            <View style={styles.buttonGroup}>
+              {['low', 'moderate', 'high'].map((water) => (
+                <TouchableOpacity
+                  key={water}
+                  style={[
+                    styles.buttonGroupItem,
+                    formData.waterNeeds === water && styles.buttonGroupItemActive,
+                  ]}
+                  onPress={() => setFormData({ ...formData, waterNeeds: water as any })}
+                >
+                  <Text
+                    style={[
+                      styles.buttonGroupText,
+                      formData.waterNeeds === water && styles.buttonGroupTextActive,
+                    ]}
+                  >
+                    {water}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.formLabel}>Water Frequency</Text>
+            <TextInput
+              style={styles.formInput}
+              placeholder="e.g., 1-2 inches per week"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.waterFrequency}
+              onChangeText={(text) => setFormData({ ...formData, waterFrequency: text })}
+            />
+
+            <View style={styles.formRow}>
+              <View style={styles.formRowItem}>
+                <Text style={styles.formLabel}>pH Min</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="6.0"
+                  placeholderTextColor={colors.textSecondary}
+                  value={formData.phMin?.toString()}
+                  onChangeText={(text) => setFormData({ ...formData, phMin: parseFloat(text) || 6.0 })}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+              <View style={styles.formRowItem}>
+                <Text style={styles.formLabel}>pH Max</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="7.0"
+                  placeholderTextColor={colors.textSecondary}
+                  value={formData.phMax?.toString()}
+                  onChangeText={(text) => setFormData({ ...formData, phMax: parseFloat(text) || 7.0 })}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+            </View>
+
+            <View style={styles.formRow}>
+              <View style={styles.formRowItem}>
+                <Text style={styles.formLabel}>Temp Min (°F)</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="60"
+                  placeholderTextColor={colors.textSecondary}
+                  value={formData.temperatureMin?.toString()}
+                  onChangeText={(text) => setFormData({ ...formData, temperatureMin: parseInt(text) || 60 })}
+                  keyboardType="number-pad"
+                />
+              </View>
+              <View style={styles.formRowItem}>
+                <Text style={styles.formLabel}>Temp Max (°F)</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="80"
+                  placeholderTextColor={colors.textSecondary}
+                  value={formData.temperatureMax?.toString()}
+                  onChangeText={(text) => setFormData({ ...formData, temperatureMax: parseInt(text) || 80 })}
+                  keyboardType="number-pad"
+                />
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.formSection}>
+            <Text style={styles.formSectionTitle}>Spacing & Planting</Text>
+            
+            <View style={styles.formRow}>
+              <View style={styles.formRowItem}>
+                <Text style={styles.formLabel}>Plant Spacing (in)</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="12"
+                  placeholderTextColor={colors.textSecondary}
+                  value={formData.plantSpacing?.toString()}
+                  onChangeText={(text) => setFormData({ ...formData, plantSpacing: parseInt(text) || 12 })}
+                  keyboardType="number-pad"
+                />
+              </View>
+              <View style={styles.formRowItem}>
+                <Text style={styles.formLabel}>Row Spacing (in)</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="18"
+                  placeholderTextColor={colors.textSecondary}
+                  value={formData.rowSpacing?.toString()}
+                  onChangeText={(text) => setFormData({ ...formData, rowSpacing: parseInt(text) || 18 })}
+                  keyboardType="number-pad"
+                />
+              </View>
+            </View>
+
+            <View style={styles.formRow}>
+              <View style={styles.formRowItem}>
+                <Text style={styles.formLabel}>Depth (in)</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="0.5"
+                  placeholderTextColor={colors.textSecondary}
+                  value={formData.depth?.toString()}
+                  onChangeText={(text) => setFormData({ ...formData, depth: parseFloat(text) || 0.5 })}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+              <View style={styles.formRowItem}>
+                <Text style={styles.formLabel}>Plants/Sq Ft</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="1"
+                  placeholderTextColor={colors.textSecondary}
+                  value={formData.plantsPerSqFt?.toString()}
+                  onChangeText={(text) => setFormData({ ...formData, plantsPerSqFt: parseFloat(text) || 1 })}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.formSection}>
+            <Text style={styles.formSectionTitle}>Timeline</Text>
+            
+            <Text style={styles.formLabel}>Days to Germination</Text>
+            <TextInput
+              style={styles.formInput}
+              placeholder="e.g., 7-14"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.daysToGermination}
+              onChangeText={(text) => setFormData({ ...formData, daysToGermination: text })}
+            />
+
+            <Text style={styles.formLabel}>Days to Maturity</Text>
+            <TextInput
+              style={styles.formInput}
+              placeholder="e.g., 60-90"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.daysToMaturity}
+              onChangeText={(text) => setFormData({ ...formData, daysToMaturity: text })}
+            />
+
+            <Text style={styles.formLabel}>Harvest Window</Text>
+            <TextInput
+              style={styles.formInput}
+              placeholder="e.g., 2-3 weeks"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.harvestWindow}
+              onChangeText={(text) => setFormData({ ...formData, harvestWindow: text })}
+            />
+
+            <Text style={styles.formLabel}>Frost Tolerance</Text>
+            <View style={styles.buttonGroup}>
+              {['tender', 'half-hardy', 'hardy'].map((frost) => (
+                <TouchableOpacity
+                  key={frost}
+                  style={[
+                    styles.buttonGroupItem,
+                    formData.frostTolerance === frost && styles.buttonGroupItemActive,
+                  ]}
+                  onPress={() => setFormData({ ...formData, frostTolerance: frost as any })}
+                >
+                  <Text
+                    style={[
+                      styles.buttonGroupText,
+                      formData.frostTolerance === frost && styles.buttonGroupTextActive,
+                    ]}
+                  >
+                    {frost}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.formSection}>
+            <Text style={styles.formSectionTitle}>Yield</Text>
+            
+            <Text style={styles.formLabel}>Yield per Plant</Text>
+            <TextInput
+              style={styles.formInput}
+              placeholder="e.g., 1-2 lbs"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.yieldPerPlant}
+              onChangeText={(text) => setFormData({ ...formData, yieldPerPlant: text })}
+            />
+          </View>
+
+          <View style={styles.formSection}>
+            <Text style={styles.formSectionTitle}>Care & Maintenance</Text>
+            
+            <Text style={styles.formLabel}>Fertilizer</Text>
+            <TextInput
+              style={styles.formInput}
+              placeholder="e.g., Balanced NPK 10-10-10"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.fertilizer}
+              onChangeText={(text) => setFormData({ ...formData, fertilizer: text })}
+            />
+
+            <Text style={styles.formLabel}>Special Notes</Text>
+            <TextInput
+              style={[styles.formInput, styles.formTextArea]}
+              placeholder="Any special care instructions or notes"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.specialNotes}
+              onChangeText={(text) => setFormData({ ...formData, specialNotes: text })}
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+
+          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+            <Text style={styles.submitButtonText}>Add Crop</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
   );
 }
 
@@ -292,6 +781,13 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 16,
     color: colors.textSecondary,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  addButton: {
+    padding: 4,
   },
   settingsButton: {
     padding: 4,
@@ -458,5 +954,110 @@ const styles = StyleSheet.create({
     color: colors.text,
     lineHeight: 20,
     fontStyle: 'italic',
+  },
+  formContainer: {
+    paddingBottom: 40,
+  },
+  formSection: {
+    marginBottom: 24,
+  },
+  formSectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 16,
+  },
+  formLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  formInput: {
+    backgroundColor: colors.card,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: colors.text,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  formTextArea: {
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  formRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  formRowItem: {
+    flex: 1,
+  },
+  buttonGroup: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  buttonGroupItem: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+  },
+  buttonGroupItemActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  buttonGroupText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    textTransform: 'capitalize',
+  },
+  buttonGroupTextActive: {
+    color: colors.card,
+  },
+  categoryPickerScroll: {
+    marginBottom: 16,
+  },
+  categoryPickerButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  categoryPickerButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  categoryPickerText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    textTransform: 'capitalize',
+  },
+  categoryPickerTextActive: {
+    color: colors.card,
+  },
+  submitButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  submitButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.card,
   },
 });
