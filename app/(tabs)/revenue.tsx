@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/styles/commonStyles';
-import { RevenueEntry, Planting, Field } from '@/types/crop';
+import { RevenueEntry, Planting, Field, InputCosts } from '@/types/crop';
 import { IconSymbol } from '@/components/IconSymbol';
 import { storage } from '@/utils/storage';
 import { cropDatabase } from '@/data/cropDatabase';
@@ -79,6 +79,22 @@ export default function RevenueScreen() {
   const totalCosts = revenueEntries.reduce((sum, entry) => sum + entry.costs, 0);
   const totalProfit = totalRevenue - totalCosts;
 
+  // Calculate total input costs by category
+  const totalInputCosts = revenueEntries.reduce(
+    (acc, entry) => {
+      if (entry.inputCosts) {
+        acc.fertilizer += entry.inputCosts.fertilizer || 0;
+        acc.fuel += entry.inputCosts.fuel || 0;
+        acc.seed += entry.inputCosts.seed || 0;
+        acc.equipment += entry.inputCosts.equipment || 0;
+        acc.packaging += entry.inputCosts.packaging || 0;
+        acc.miscellaneous += entry.inputCosts.miscellaneous || 0;
+      }
+      return acc;
+    },
+    { fertilizer: 0, fuel: 0, seed: 0, equipment: 0, packaging: 0, miscellaneous: 0 }
+  );
+
   const harvestedPlantings = plantings.filter((p) => p.status === 'harvested');
 
   return (
@@ -127,6 +143,48 @@ export default function RevenueScreen() {
             >
               ${totalProfit.toFixed(2)}
             </Text>
+          </View>
+        </View>
+
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryTitle}>Input Costs Breakdown</Text>
+          <View style={styles.costBreakdown}>
+            <CostBreakdownItem
+              label="Fertilizer"
+              amount={totalInputCosts.fertilizer}
+              icon="leaf.fill"
+              androidIcon="eco"
+            />
+            <CostBreakdownItem
+              label="Fuel"
+              amount={totalInputCosts.fuel}
+              icon="fuelpump.fill"
+              androidIcon="local-gas-station"
+            />
+            <CostBreakdownItem
+              label="Seed"
+              amount={totalInputCosts.seed}
+              icon="circle.grid.3x3.fill"
+              androidIcon="grain"
+            />
+            <CostBreakdownItem
+              label="Equipment"
+              amount={totalInputCosts.equipment}
+              icon="wrench.and.screwdriver.fill"
+              androidIcon="build"
+            />
+            <CostBreakdownItem
+              label="Packaging"
+              amount={totalInputCosts.packaging}
+              icon="shippingbox.fill"
+              androidIcon="inventory"
+            />
+            <CostBreakdownItem
+              label="Miscellaneous"
+              amount={totalInputCosts.miscellaneous}
+              icon="ellipsis.circle.fill"
+              androidIcon="more-horiz"
+            />
           </View>
         </View>
 
@@ -237,6 +295,33 @@ export default function RevenueScreen() {
   );
 }
 
+function CostBreakdownItem({
+  label,
+  amount,
+  icon,
+  androidIcon,
+}: {
+  label: string;
+  amount: number;
+  icon: string;
+  androidIcon: string;
+}) {
+  return (
+    <View style={styles.costBreakdownItem}>
+      <View style={styles.costBreakdownLeft}>
+        <IconSymbol
+          ios_icon_name={icon}
+          android_material_icon_name={androidIcon}
+          size={20}
+          color={colors.primary}
+        />
+        <Text style={styles.costBreakdownLabel}>{label}:</Text>
+      </View>
+      <Text style={styles.costBreakdownValue}>${amount.toFixed(2)}</Text>
+    </View>
+  );
+}
+
 function RevenueFormModal({
   visible,
   entry,
@@ -257,17 +342,34 @@ function RevenueFormModal({
   const [selectedPlantingId, setSelectedPlantingId] = useState('');
   const [harvestAmount, setHarvestAmount] = useState('');
   const [marketPrice, setMarketPrice] = useState('');
-  const [costs, setCosts] = useState('');
+  const [inputCosts, setInputCosts] = useState<InputCosts>({
+    fertilizer: 0,
+    fuel: 0,
+    seed: 0,
+    equipment: 0,
+    packaging: 0,
+    miscellaneous: 0,
+  });
   const [salesChannel, setSalesChannel] = useState<RevenueEntry['salesChannel']>('farmers-market');
   const [date, setDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [showInputCosts, setShowInputCosts] = useState(false);
 
   useEffect(() => {
     if (entry) {
       setSelectedPlantingId(entry.plantingId);
       setHarvestAmount(entry.harvestAmount.toString());
       setMarketPrice(entry.marketPrice.toString());
-      setCosts(entry.costs.toString());
+      setInputCosts(
+        entry.inputCosts || {
+          fertilizer: 0,
+          fuel: 0,
+          seed: 0,
+          equipment: 0,
+          packaging: 0,
+          miscellaneous: 0,
+        }
+      );
       setSalesChannel(entry.salesChannel);
       setDate(entry.date);
       setNotes(entry.notes);
@@ -275,12 +377,32 @@ function RevenueFormModal({
       setSelectedPlantingId('');
       setHarvestAmount('');
       setMarketPrice('');
-      setCosts('');
+      setInputCosts({
+        fertilizer: 0,
+        fuel: 0,
+        seed: 0,
+        equipment: 0,
+        packaging: 0,
+        miscellaneous: 0,
+      });
       setSalesChannel('farmers-market');
       setDate(new Date().toISOString().split('T')[0]);
       setNotes('');
     }
   }, [entry, visible]);
+
+  const updateInputCost = (key: keyof InputCosts, value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setInputCosts((prev) => ({ ...prev, [key]: numValue }));
+  };
+
+  const totalInputCosts =
+    inputCosts.fertilizer +
+    inputCosts.fuel +
+    inputCosts.seed +
+    inputCosts.equipment +
+    inputCosts.packaging +
+    inputCosts.miscellaneous;
 
   const handleSave = () => {
     if (!selectedPlantingId || !harvestAmount || !marketPrice || !date) {
@@ -290,9 +412,8 @@ function RevenueFormModal({
 
     const amount = parseFloat(harvestAmount);
     const price = parseFloat(marketPrice);
-    const cost = parseFloat(costs) || 0;
     const revenue = amount * price;
-    const profit = revenue - cost;
+    const profit = revenue - totalInputCosts;
 
     const entryData = {
       ...(entry || {}),
@@ -300,7 +421,8 @@ function RevenueFormModal({
       harvestAmount: amount,
       marketPrice: price,
       totalRevenue: revenue,
-      costs: cost,
+      costs: totalInputCosts,
+      inputCosts,
       profit,
       salesChannel,
       date,
@@ -400,15 +522,147 @@ function RevenueFormModal({
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={styles.formLabel}>Costs ($)</Text>
-            <TextInput
-              style={styles.formInput}
-              value={costs}
-              onChangeText={setCosts}
-              placeholder="e.g., 25.00"
-              placeholderTextColor={colors.textSecondary}
-              keyboardType="numeric"
-            />
+            <TouchableOpacity
+              style={styles.inputCostsHeader}
+              onPress={() => setShowInputCosts(!showInputCosts)}
+            >
+              <View style={styles.inputCostsHeaderLeft}>
+                <Text style={styles.formLabel}>Input Costs</Text>
+                <Text style={styles.inputCostsTotalBadge}>
+                  Total: ${totalInputCosts.toFixed(2)}
+                </Text>
+              </View>
+              <IconSymbol
+                ios_icon_name={showInputCosts ? 'chevron.up' : 'chevron.down'}
+                android_material_icon_name={showInputCosts ? 'expand-less' : 'expand-more'}
+                size={24}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
+
+            {showInputCosts && (
+              <View style={styles.inputCostsContainer}>
+                <View style={styles.inputCostRow}>
+                  <View style={styles.inputCostLabelContainer}>
+                    <IconSymbol
+                      ios_icon_name="leaf.fill"
+                      android_material_icon_name="eco"
+                      size={20}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.inputCostLabel}>Fertilizer ($)</Text>
+                  </View>
+                  <TextInput
+                    style={styles.inputCostInput}
+                    value={inputCosts.fertilizer.toString()}
+                    onChangeText={(value) => updateInputCost('fertilizer', value)}
+                    placeholder="0.00"
+                    placeholderTextColor={colors.textSecondary}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.inputCostRow}>
+                  <View style={styles.inputCostLabelContainer}>
+                    <IconSymbol
+                      ios_icon_name="fuelpump.fill"
+                      android_material_icon_name="local-gas-station"
+                      size={20}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.inputCostLabel}>Fuel ($)</Text>
+                  </View>
+                  <TextInput
+                    style={styles.inputCostInput}
+                    value={inputCosts.fuel.toString()}
+                    onChangeText={(value) => updateInputCost('fuel', value)}
+                    placeholder="0.00"
+                    placeholderTextColor={colors.textSecondary}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.inputCostRow}>
+                  <View style={styles.inputCostLabelContainer}>
+                    <IconSymbol
+                      ios_icon_name="circle.grid.3x3.fill"
+                      android_material_icon_name="grain"
+                      size={20}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.inputCostLabel}>Seed ($)</Text>
+                  </View>
+                  <TextInput
+                    style={styles.inputCostInput}
+                    value={inputCosts.seed.toString()}
+                    onChangeText={(value) => updateInputCost('seed', value)}
+                    placeholder="0.00"
+                    placeholderTextColor={colors.textSecondary}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.inputCostRow}>
+                  <View style={styles.inputCostLabelContainer}>
+                    <IconSymbol
+                      ios_icon_name="wrench.and.screwdriver.fill"
+                      android_material_icon_name="build"
+                      size={20}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.inputCostLabel}>Equipment ($)</Text>
+                  </View>
+                  <TextInput
+                    style={styles.inputCostInput}
+                    value={inputCosts.equipment.toString()}
+                    onChangeText={(value) => updateInputCost('equipment', value)}
+                    placeholder="0.00"
+                    placeholderTextColor={colors.textSecondary}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.inputCostRow}>
+                  <View style={styles.inputCostLabelContainer}>
+                    <IconSymbol
+                      ios_icon_name="shippingbox.fill"
+                      android_material_icon_name="inventory"
+                      size={20}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.inputCostLabel}>Packaging ($)</Text>
+                  </View>
+                  <TextInput
+                    style={styles.inputCostInput}
+                    value={inputCosts.packaging.toString()}
+                    onChangeText={(value) => updateInputCost('packaging', value)}
+                    placeholder="0.00"
+                    placeholderTextColor={colors.textSecondary}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.inputCostRow}>
+                  <View style={styles.inputCostLabelContainer}>
+                    <IconSymbol
+                      ios_icon_name="ellipsis.circle.fill"
+                      android_material_icon_name="more-horiz"
+                      size={20}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.inputCostLabel}>Miscellaneous ($)</Text>
+                  </View>
+                  <TextInput
+                    style={styles.inputCostInput}
+                    value={inputCosts.miscellaneous.toString()}
+                    onChangeText={(value) => updateInputCost('miscellaneous', value)}
+                    placeholder="0.00"
+                    placeholderTextColor={colors.textSecondary}
+                    keyboardType="numeric"
+                  />
+                </View>
+              </View>
+            )}
           </View>
 
           <View style={styles.formGroup}>
@@ -580,6 +834,28 @@ const styles = StyleSheet.create({
   summaryValueTotal: {
     fontSize: 20,
     fontWeight: '700',
+  },
+  costBreakdown: {
+    gap: 12,
+  },
+  costBreakdownItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  costBreakdownLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  costBreakdownLabel: {
+    fontSize: 15,
+    color: colors.text,
+  },
+  costBreakdownValue: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text,
   },
   section: {
     marginBottom: 24,
@@ -765,6 +1041,67 @@ const styles = StyleSheet.create({
   },
   plantingOptionTextActive: {
     color: colors.card,
+  },
+  inputCostsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  inputCostsHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  inputCostsTotalBadge: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.primary,
+    backgroundColor: colors.highlight,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  inputCostsContainer: {
+    marginTop: 12,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: 16,
+    gap: 16,
+  },
+  inputCostRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  inputCostLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  inputCostLabel: {
+    fontSize: 15,
+    color: colors.text,
+  },
+  inputCostInput: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    fontSize: 15,
+    color: colors.text,
+    minWidth: 100,
+    textAlign: 'right',
   },
   typeSelector: {
     flexDirection: 'row',

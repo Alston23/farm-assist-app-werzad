@@ -82,13 +82,23 @@ export interface Task {
   type: 'planting' | 'watering' | 'fertilizing' | 'weeding' | 'harvesting' | 'other';
 }
 
+export interface InputCosts {
+  fertilizer: number;
+  fuel: number;
+  seed: number;
+  equipment: number;
+  packaging: number;
+  miscellaneous: number;
+}
+
 export interface RevenueEntry {
   id: string;
   plantingId: string;
   harvestAmount: number; // lbs or units
   marketPrice: number; // per lb or unit
   totalRevenue: number;
-  costs: number;
+  costs: number; // Total costs (sum of all input costs)
+  inputCosts: InputCosts; // Detailed breakdown of costs
   profit: number;
   salesChannel: 'self-sufficiency' | 'roadside-stand' | 'restaurant' | 'csa' | 'farmers-market';
   date: string; // ISO date
