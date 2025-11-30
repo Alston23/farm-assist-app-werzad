@@ -54,10 +54,14 @@ export default function FieldsScreen() {
 
   const deleteField = async (fieldId: string) => {
     console.log('deleteField called with id:', fieldId);
-    const newFields = fields.filter((f) => f.id !== fieldId);
-    await saveFields(newFields);
-    console.log('Field deleted, closing modal');
-    setEditingField(null);
+    try {
+      const newFields = fields.filter((f) => f.id !== fieldId);
+      await saveFields(newFields);
+      console.log('Field deleted successfully');
+    } catch (error) {
+      console.error('Error deleting field:', error);
+      Alert.alert('Error', 'Failed to delete field');
+    }
   };
 
   const totalArea = fields.reduce((sum, field) => sum + field.size, 0);
@@ -244,9 +248,9 @@ function FieldFormModal({
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: async () => {
+          onPress: () => {
             console.log('Delete confirmed for field:', field.id);
-            await onDelete(field.id);
+            onDelete(field.id);
             onClose();
           },
         },

@@ -24,6 +24,7 @@ export default function ScheduleScreen() {
   const [fields, setFields] = useState<Field[]>([]);
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editingPlanting, setEditingPlanting] = useState<Planting | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('pending');
 
   useEffect(() => {
@@ -46,6 +47,11 @@ export default function ScheduleScreen() {
     setTasks(newTasks);
   };
 
+  const savePlantings = async (newPlantings: Planting[]) => {
+    await storage.savePlantings(newPlantings);
+    setPlantings(newPlantings);
+  };
+
   const addTask = (task: Omit<Task, 'id'>) => {
     const newTask: Task = {
       ...task,
@@ -62,6 +68,12 @@ export default function ScheduleScreen() {
     setEditingTask(null);
   };
 
+  const updatePlanting = (planting: Planting) => {
+    const newPlantings = plantings.map((p) => (p.id === planting.id ? planting : p));
+    savePlantings(newPlantings);
+    setEditingPlanting(null);
+  };
+
   const toggleTaskComplete = (taskId: string) => {
     const newTasks = tasks.map((t) =>
       t.id === taskId ? { ...t, completed: !t.completed } : t
@@ -71,10 +83,26 @@ export default function ScheduleScreen() {
 
   const deleteTask = async (taskId: string) => {
     console.log('deleteTask called with id:', taskId);
-    const newTasks = tasks.filter((t) => t.id !== taskId);
-    await saveTasks(newTasks);
-    console.log('Task deleted, closing modal');
-    setEditingTask(null);
+    try {
+      const newTasks = tasks.filter((t) => t.id !== taskId);
+      await saveTasks(newTasks);
+      console.log('Task deleted successfully');
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      Alert.alert('Error', 'Failed to delete task');
+    }
+  };
+
+  const deletePlanting = async (plantingId: string) => {
+    console.log('deletePlanting called with id:', plantingId);
+    try {
+      const newPlantings = plantings.filter((p) => p.id !== plantingId);
+      await savePlantings(newPlantings);
+      console.log('Planting deleted successfully');
+    } catch (error) {
+      console.error('Error deleting planting:', error);
+      Alert.alert('Error', 'Failed to delete planting');
+    }
   };
 
   const filteredTasks = tasks.filter((task) => {
@@ -143,7 +171,11 @@ export default function ScheduleScreen() {
               const crop = cropDatabase.find((c) => c.id === planting.cropId);
               const field = fields.find((f) => f.id === planting.fieldId);
               return (
-                <View key={planting.id} style={styles.plantingCard}>
+                <TouchableOpacity
+                  key={planting.id}
+                  style={styles.plantingCard}
+                  onPress={() => setEditingPlanting(planting)}
+                >
                   <View style={styles.plantingHeader}>
                     <Text style={styles.plantingCrop}>{crop?.name || 'Unknown Crop'}</Text>
                     <View
@@ -164,7 +196,7 @@ export default function ScheduleScreen() {
                       Harvest: {formatDate(planting.expectedHarvestDate)}
                     </Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               );
             })}
           </View>
@@ -256,6 +288,15 @@ export default function ScheduleScreen() {
         onDelete={deleteTask}
         plantings={plantings}
       />
+
+      <PlantingFormModal
+        visible={editingPlanting !== null}
+        planting={editingPlanting || undefined}
+        onClose={() => setEditingPlanting(null)}
+        onSave={updatePlanting}
+        onDelete={deletePlanting}
+        fields={fields}
+      />
     </SafeAreaView>
   );
 }
@@ -332,9 +373,9 @@ function TaskFormModal({
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: async () => {
+          onPress: () => {
             console.log('Delete confirmed for task:', task.id);
-            await onDelete(task.id);
+            onDelete(task.id);
             onClose();
           },
         },
@@ -458,6 +499,314 @@ function TaskFormModal({
               onPress={handleDelete}
             >
               <Text style={styles.deleteButtonText}>Delete Task</Text>
+            </TouchableOpacity>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
+function PlantingFormModal({
+  visible,
+  planting,
+  onClose,
+  onSave,
+  onDelete,
+  fields,
+}: {
+  visible: boolean;
+  planting?: Planting;
+  onClose: () => void;
+  onSave: (planting: any) => void;
+  onDelete?: (id: string) => void;
+  fields: Field[];
+}) {
+  const [selectedCropId, setSelectedCropId] = useState('');
+  const [selectedFieldId, setSelectedFieldId] = useState('');
+  const [plantDate, setPlantDate] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [status, setStatus] = useState<Planting['status']>('planned');
+  const [notes, setNotes] = useState('');
+  const [actualHarvestDate, setActualHarvestDate] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (planting) {
+      setSelectedCropId(planting.cropId);
+      setSelectedFieldId(planting.fieldId);
+      setPlantDate(planting.plantDate);
+      setQuantity(planting.quantity.toString());
+      setStatus(planting.status);
+      setNotes(planting.notes);
+      setActualHarvestDate(planting.actualHarvestDate || '');
+    } else {
+      setSelectedCropId('');
+      setSelectedFieldId('');
+      setPlantDate(new Date().toISOString().split('T')[0]);
+      setQuantity('');
+      setStatus('planned');
+      setNotes('');
+      setActualHarvestDate('');
+    }
+  }, [planting, visible]);
+
+  const handleSave = () => {
+    if (!selectedCropId || !selectedFieldId || !plantDate || !quantity) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    const crop = cropDatabase.find((c) => c.id === selectedCropId);
+    if (!crop) {
+      Alert.alert('Error', 'Invalid crop selected');
+      return;
+    }
+
+    const daysToMaturity = parseInt(crop.daysToMaturity.split('-')[1] || crop.daysToMaturity);
+    const expectedHarvestDate = new Date(plantDate);
+    expectedHarvestDate.setDate(expectedHarvestDate.getDate() + daysToMaturity);
+
+    const plantingData = {
+      ...(planting || {}),
+      cropId: selectedCropId,
+      fieldId: selectedFieldId,
+      plantDate,
+      expectedHarvestDate: expectedHarvestDate.toISOString().split('T')[0],
+      quantity: parseInt(quantity),
+      status,
+      notes,
+      ...(actualHarvestDate && { actualHarvestDate }),
+    };
+
+    onSave(plantingData);
+  };
+
+  const handleDelete = () => {
+    if (!planting || !onDelete) {
+      console.log('No planting or onDelete function');
+      return;
+    }
+
+    Alert.alert(
+      'Delete Planting',
+      'Are you sure you want to delete this planting? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            console.log('Delete confirmed for planting:', planting.id);
+            onDelete(planting.id);
+            onClose();
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const filteredCrops = cropDatabase.filter((crop) =>
+    crop.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <SafeAreaView style={styles.modalContainer} edges={['top']}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>
+            {planting ? 'Edit Planting' : 'Add Planting'}
+          </Text>
+          <TouchableOpacity onPress={onClose}>
+            <IconSymbol
+              ios_icon_name="xmark.circle.fill"
+              android_material_icon_name="close"
+              size={28}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          style={styles.modalContent}
+          contentContainerStyle={styles.modalContentContainer}
+        >
+          <View style={styles.formGroup}>
+            <Text style={styles.formLabel}>Crop *</Text>
+            <TextInput
+              style={styles.searchInput}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search crops..."
+              placeholderTextColor={colors.textSecondary}
+            />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.cropScrollView}
+            >
+              <View style={styles.cropSelector}>
+                {filteredCrops.slice(0, 20).map((crop) => (
+                  <TouchableOpacity
+                    key={crop.id}
+                    style={[
+                      styles.cropOption,
+                      selectedCropId === crop.id && styles.cropOptionActive,
+                    ]}
+                    onPress={() => {
+                      setSelectedCropId(crop.id);
+                      setSearchQuery('');
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.cropOptionText,
+                        selectedCropId === crop.id && styles.cropOptionTextActive,
+                      ]}
+                    >
+                      {crop.name}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.cropOptionSubtext,
+                        selectedCropId === crop.id && styles.cropOptionTextActive,
+                      ]}
+                    >
+                      {crop.category}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.formLabel}>Field *</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.fieldSelector}>
+                {fields.map((field) => (
+                  <TouchableOpacity
+                    key={field.id}
+                    style={[
+                      styles.fieldOption,
+                      selectedFieldId === field.id && styles.fieldOptionActive,
+                    ]}
+                    onPress={() => setSelectedFieldId(field.id)}
+                  >
+                    <Text
+                      style={[
+                        styles.fieldOptionText,
+                        selectedFieldId === field.id && styles.fieldOptionTextActive,
+                      ]}
+                    >
+                      {field.name}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.fieldOptionSubtext,
+                        selectedFieldId === field.id && styles.fieldOptionTextActive,
+                      ]}
+                    >
+                      {field.size} sq ft
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.formLabel}>Plant Date *</Text>
+            <TextInput
+              style={styles.formInput}
+              value={plantDate}
+              onChangeText={setPlantDate}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={colors.textSecondary}
+            />
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.formLabel}>Quantity (number of plants) *</Text>
+            <TextInput
+              style={styles.formInput}
+              value={quantity}
+              onChangeText={setQuantity}
+              placeholder="e.g., 10"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="numeric"
+            />
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.formLabel}>Status</Text>
+            <View style={styles.typeSelector}>
+              {(['planned', 'planted', 'growing', 'harvested'] as const).map((s) => (
+                <TouchableOpacity
+                  key={s}
+                  style={[styles.typeOption, status === s && styles.typeOptionActive]}
+                  onPress={() => setStatus(s)}
+                >
+                  <Text
+                    style={[
+                      styles.typeOptionText,
+                      status === s && styles.typeOptionTextActive,
+                    ]}
+                  >
+                    {s}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {status === 'harvested' && (
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Actual Harvest Date</Text>
+              <TextInput
+                style={styles.formInput}
+                value={actualHarvestDate}
+                onChangeText={setActualHarvestDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={colors.textSecondary}
+              />
+            </View>
+          )}
+
+          <View style={styles.formGroup}>
+            <Text style={styles.formLabel}>Notes</Text>
+            <TextInput
+              style={[styles.formInput, styles.formTextArea]}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="Additional notes..."
+              placeholderTextColor={colors.textSecondary}
+              multiline
+              numberOfLines={4}
+            />
+          </View>
+
+          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+            <Text style={styles.saveButtonText}>
+              {planting ? 'Update Planting' : 'Add Planting'}
+            </Text>
+          </TouchableOpacity>
+
+          {planting && onDelete && (
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={handleDelete}
+            >
+              <Text style={styles.deleteButtonText}>Delete Planting</Text>
             </TouchableOpacity>
           )}
         </ScrollView>
@@ -712,9 +1061,84 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
   },
+  searchInput: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: colors.text,
+    marginBottom: 12,
+  },
   formTextArea: {
     height: 100,
     textAlignVertical: 'top',
+  },
+  cropScrollView: {
+    maxHeight: 200,
+  },
+  cropSelector: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  cropOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minWidth: 120,
+  },
+  cropOptionActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  cropOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  cropOptionSubtext: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+    textTransform: 'capitalize',
+  },
+  cropOptionTextActive: {
+    color: colors.card,
+  },
+  fieldSelector: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  fieldOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minWidth: 120,
+  },
+  fieldOptionActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  fieldOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  fieldOptionSubtext: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  fieldOptionTextActive: {
+    color: colors.card,
   },
   typeSelector: {
     flexDirection: 'row',

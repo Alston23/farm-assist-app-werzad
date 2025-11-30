@@ -61,10 +61,14 @@ export default function PlantingsScreen() {
 
   const deletePlanting = async (plantingId: string) => {
     console.log('deletePlanting called with id:', plantingId);
-    const newPlantings = plantings.filter((p) => p.id !== plantingId);
-    await savePlantings(newPlantings);
-    console.log('Planting deleted, closing modal');
-    setEditingPlanting(null);
+    try {
+      const newPlantings = plantings.filter((p) => p.id !== plantingId);
+      await savePlantings(newPlantings);
+      console.log('Planting deleted successfully');
+    } catch (error) {
+      console.error('Error deleting planting:', error);
+      Alert.alert('Error', 'Failed to delete planting');
+    }
   };
 
   const filteredPlantings = plantings.filter((planting) => {
@@ -354,9 +358,9 @@ function PlantingFormModal({
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: async () => {
+          onPress: () => {
             console.log('Delete confirmed for planting:', planting.id);
-            await onDelete(planting.id);
+            onDelete(planting.id);
             onClose();
           },
         },
