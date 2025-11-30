@@ -1,37 +1,59 @@
+
 import React from 'react';
 import { Stack } from 'expo-router';
 import FloatingTabBar, { TabBarItem } from '@/components/FloatingTabBar';
+import { colors } from '@/styles/commonStyles';
 
 export default function TabLayout() {
-  // Define the tabs configuration
   const tabs: TabBarItem[] = [
     {
-      name: '(home)',
-      route: '/(tabs)/(home)/',
-      icon: 'home',
-      label: 'Home',
+      name: 'crops',
+      route: '/(tabs)/crops',
+      icon: 'eco',
+      label: 'Crops',
     },
     {
-      name: 'profile',
-      route: '/(tabs)/profile',
-      icon: 'person',
-      label: 'Profile',
+      name: 'fields',
+      route: '/(tabs)/fields',
+      icon: 'grid-on',
+      label: 'Fields',
+    },
+    {
+      name: 'plantings',
+      route: '/(tabs)/plantings',
+      icon: 'spa',
+      label: 'Plantings',
+    },
+    {
+      name: 'schedule',
+      route: '/(tabs)/schedule',
+      icon: 'event',
+      label: 'Schedule',
+    },
+    {
+      name: 'revenue',
+      route: '/(tabs)/revenue',
+      icon: 'attach-money',
+      label: 'Revenue',
     },
   ];
 
-  // For Android and Web, use Stack navigation with custom floating tab bar
   return (
     <>
       <Stack
         screenOptions={{
           headerShown: false,
-          animation: 'none', // Remove fade animation to prevent black screen flash
+          animation: 'none',
         }}
       >
-        <Stack.Screen key="home" name="(home)" />
-        <Stack.Screen key="profile" name="profile" />
+        <Stack.Screen key="crops" name="crops" />
+        <Stack.Screen key="fields" name="fields" />
+        <Stack.Screen key="plantings" name="plantings" />
+        <Stack.Screen key="schedule" name="schedule" />
+        <Stack.Screen key="revenue" name="revenue" />
+        <Stack.Screen key="settings" name="settings" />
       </Stack>
-      <FloatingTabBar tabs={tabs} />
+      <FloatingTabBar tabs={tabs} containerWidth={400} />
     </>
   );
 }
