@@ -1,8 +1,8 @@
 
 {
   "expo": {
-    "name": "FarmLogic",
-    "slug": "FarmLogic",
+    "name": "SmallFarm Copilot",
+    "slug": "SmallFarm-Copilot",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/natively-dark.png",
@@ -45,5 +45,5 @@
       "router": {}
     }
   },
-  "scheme": "FarmLogic"
+  "scheme": "SmallFarm-Copilot"
 }
