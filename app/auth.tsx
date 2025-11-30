@@ -98,7 +98,7 @@ export default function AuthScreen() {
               size={60}
               color={colors.card}
             />
-            <Text style={styles.title}>Farm Manager</Text>
+            <Text style={styles.title}>FarmLogic</Text>
             <Text style={styles.subtitle}>
               {isLogin ? 'Welcome back!' : 'Start your farming journey'}
             </Text>
