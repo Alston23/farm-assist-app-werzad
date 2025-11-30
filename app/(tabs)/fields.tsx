@@ -64,6 +64,7 @@ export default function FieldsScreen() {
           onPress: () => {
             const newFields = fields.filter((f) => f.id !== fieldId);
             saveFields(newFields);
+            setEditingField(null);
           },
         },
       ]
@@ -346,10 +347,7 @@ function FieldFormModal({
           {field && onDelete && (
             <TouchableOpacity
               style={styles.deleteButton}
-              onPress={() => {
-                onDelete(field.id);
-                onClose();
-              }}
+              onPress={() => onDelete(field.id)}
             >
               <Text style={styles.deleteButtonText}>Delete Field</Text>
             </TouchableOpacity>

@@ -68,6 +68,7 @@ export default function PlantingsScreen() {
         onPress: () => {
           const newPlantings = plantings.filter((p) => p.id !== plantingId);
           savePlantings(newPlantings);
+          setEditingPlanting(null);
         },
       },
     ]);
@@ -537,10 +538,7 @@ function PlantingFormModal({
           {planting && onDelete && (
             <TouchableOpacity
               style={styles.deleteButton}
-              onPress={() => {
-                onDelete(planting.id);
-                onClose();
-              }}
+              onPress={() => onDelete(planting.id)}
             >
               <Text style={styles.deleteButtonText}>Delete Planting</Text>
             </TouchableOpacity>

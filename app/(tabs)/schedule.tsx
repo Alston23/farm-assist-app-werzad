@@ -78,6 +78,7 @@ export default function ScheduleScreen() {
         onPress: () => {
           const newTasks = tasks.filter((t) => t.id !== taskId);
           saveTasks(newTasks);
+          setEditingTask(null);
         },
       },
     ]);
@@ -433,10 +434,7 @@ function TaskFormModal({
           {task && onDelete && (
             <TouchableOpacity
               style={styles.deleteButton}
-              onPress={() => {
-                onDelete(task.id);
-                onClose();
-              }}
+              onPress={() => onDelete(task.id)}
             >
               <Text style={styles.deleteButtonText}>Delete Task</Text>
             </TouchableOpacity>
