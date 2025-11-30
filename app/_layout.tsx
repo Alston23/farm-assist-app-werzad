@@ -1,3 +1,4 @@
+
 import "react-native-reanimated";
 import React, { useEffect } from "react";
 import { useFonts } from "expo-font";
@@ -15,6 +16,8 @@ import {
 } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { WidgetProvider } from "@/contexts/WidgetContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { Redirect } from "expo-router";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -23,18 +26,19 @@ export const unstable_settings = {
   initialRouteName: "(tabs)", // Ensure any route can link back to `/`
 };
 
-export default function RootLayout() {
+function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const networkState = useNetworkState();
+  const { user, isLoading } = useAuth();
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
   useEffect(() => {
-    if (loaded) {
+    if (loaded && !isLoading) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [loaded, isLoading]);
 
   React.useEffect(() => {
     if (
@@ -48,7 +52,7 @@ export default function RootLayout() {
     }
   }, [networkState.isConnected, networkState.isInternetReachable]);
 
-  if (!loaded) {
+  if (!loaded || isLoading) {
     return null;
   }
 
@@ -76,48 +80,66 @@ export default function RootLayout() {
       notification: "rgb(255, 69, 58)", // System Red (Dark Mode)
     },
   };
+
   return (
     <>
       <StatusBar style="auto" animated />
-        <ThemeProvider
-          value={colorScheme === "dark" ? CustomDarkTheme : CustomDefaultTheme}
-        >
-          <WidgetProvider>
-            <GestureHandlerRootView>
-            <Stack>
-              {/* Main app with tabs */}
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <ThemeProvider
+        value={colorScheme === "dark" ? CustomDarkTheme : CustomDefaultTheme}
+      >
+        <GestureHandlerRootView>
+          <Stack>
+            {/* Auth Screen */}
+            <Stack.Screen 
+              name="auth" 
+              options={{ 
+                headerShown: false,
+                animation: 'fade',
+              }} 
+            />
 
-              {/* Modal Demo Screens */}
-              <Stack.Screen
-                name="modal"
-                options={{
-                  presentation: "modal",
-                  title: "Standard Modal",
-                }}
-              />
-              <Stack.Screen
-                name="formsheet"
-                options={{
-                  presentation: "formSheet",
-                  title: "Form Sheet Modal",
-                  sheetGrabberVisible: true,
-                  sheetAllowedDetents: [0.5, 0.8, 1.0],
-                  sheetCornerRadius: 20,
-                }}
-              />
-              <Stack.Screen
-                name="transparent-modal"
-                options={{
-                  presentation: "transparentModal",
-                  headerShown: false,
-                }}
-              />
-            </Stack>
-            <SystemBars style={"auto"} />
-            </GestureHandlerRootView>
-          </WidgetProvider>
-        </ThemeProvider>
+            {/* Main app with tabs */}
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+
+            {/* Modal Demo Screens */}
+            <Stack.Screen
+              name="modal"
+              options={{
+                presentation: "modal",
+                title: "Standard Modal",
+              }}
+            />
+            <Stack.Screen
+              name="formsheet"
+              options={{
+                presentation: "formSheet",
+                title: "Form Sheet Modal",
+                sheetGrabberVisible: true,
+                sheetAllowedDetents: [0.5, 0.8, 1.0],
+                sheetCornerRadius: 20,
+              }}
+            />
+            <Stack.Screen
+              name="transparent-modal"
+              options={{
+                presentation: "transparentModal",
+                headerShown: false,
+              }}
+            />
+          </Stack>
+          <SystemBars style={"auto"} />
+        </GestureHandlerRootView>
+      </ThemeProvider>
     </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <WidgetProvider>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </WidgetProvider>
   );
 }

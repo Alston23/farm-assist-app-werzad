@@ -11,6 +11,8 @@ const STORAGE_KEYS = {
   SETTINGS: '@farm_settings',
   CUSTOM_CROPS: '@farm_custom_crops',
   EQUIPMENT_LISTINGS: '@farm_equipment_listings',
+  USER: '@farm_user',
+  USERS_DB: '@farm_users_db',
 };
 
 export const storage = {
@@ -152,6 +154,33 @@ export const storage = {
       console.log('Equipment listings saved successfully:', listings.length);
     } catch (error) {
       console.log('Error saving equipment listings:', error);
+    }
+  },
+
+  // Authentication
+  async getUser() {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.USER);
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      console.log('Error loading user:', error);
+      return null;
+    }
+  },
+
+  async saveUser(user: any) {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    } catch (error) {
+      console.log('Error saving user:', error);
+    }
+  },
+
+  async removeUser() {
+    try {
+      await AsyncStorage.removeItem(STORAGE_KEYS.USER);
+    } catch (error) {
+      console.log('Error removing user:', error);
     }
   },
 };

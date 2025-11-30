@@ -1,478 +1,348 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Platform,
-  TextInput,
   Alert,
+  Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '@/styles/commonStyles';
-import { UserSettings } from '@/types/crop';
+import { colors, commonStyles } from '@/styles/commonStyles';
+import { useAuth } from '@/contexts/AuthContext';
 import { IconSymbol } from '@/components/IconSymbol';
-import { storage } from '@/utils/storage';
+import { router } from 'expo-router';
 
 export default function SettingsScreen() {
-  const [settings, setSettings] = useState<UserSettings>({
-    region: 'Zone 5a',
-    farmSize: 5,
-    farmType: 'small-farm',
-    primarySalesChannel: 'farmers-market',
-    measurementSystem: 'imperial',
-  });
+  const { user, signOut } = useAuth();
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
-    const loadedSettings = await storage.getSettings();
-    if (loadedSettings) {
-      setSettings(loadedSettings);
-    }
-  };
-
-  const saveSettings = async (newSettings: UserSettings) => {
-    await storage.saveSettings(newSettings);
-    setSettings(newSettings);
-    Alert.alert('Success', 'Settings saved successfully!');
-  };
-
-  const handleSave = () => {
-    saveSettings(settings);
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            await signOut();
+            router.replace('/auth');
+          },
+        },
+      ]
+    );
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Settings</Text>
-        <Text style={styles.headerSubtitle}>Configure your farm details</Text>
-      </View>
-
+    <View style={commonStyles.container}>
       <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.contentContainer}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.welcomeCard}>
-          <IconSymbol
-            ios_icon_name="leaf.fill"
-            android_material_icon_name="eco"
-            size={48}
-            color={colors.primary}
-          />
-          <Text style={styles.welcomeTitle}>Welcome to FarmPlanner</Text>
-          <Text style={styles.welcomeText}>
-            Your comprehensive tool for managing small farms and homesteads. Track crops, manage
-            fields, schedule tasks, and estimate revenue - all in one place.
-          </Text>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Settings</Text>
         </View>
 
+        {/* User Info Card */}
+        <View style={[commonStyles.card, styles.userCard]}>
+          <View style={styles.avatarContainer}>
+            <IconSymbol
+              ios_icon_name="person.circle.fill"
+              android_material_icon_name="account_circle"
+              size={60}
+              color={colors.primary}
+            />
+          </View>
+          <Text style={styles.userName}>{user?.name}</Text>
+          {user?.farmName && (
+            <Text style={styles.farmName}>{user.farmName}</Text>
+          )}
+          <Text style={styles.userEmail}>{user?.email}</Text>
+        </View>
+
+        {/* Account Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Farm Information</Text>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.formLabel}>Growing Region</Text>
-            <TextInput
-              style={styles.formInput}
-              value={settings.region}
-              onChangeText={(text) => setSettings({ ...settings, region: text })}
-              placeholder="e.g., Zone 5a"
-              placeholderTextColor={colors.textSecondary}
+          <Text style={styles.sectionTitle}>Account</Text>
+          
+          <TouchableOpacity style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <IconSymbol
+                ios_icon_name="person.fill"
+                android_material_icon_name="person"
+                size={24}
+                color={colors.text}
+              />
+              <Text style={styles.settingText}>Edit Profile</Text>
+            </View>
+            <IconSymbol
+              ios_icon_name="chevron.right"
+              android_material_icon_name="chevron_right"
+              size={20}
+              color={colors.textSecondary}
             />
-            <Text style={styles.formHint}>
-              Your USDA hardiness zone or growing region
-            </Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.formGroup}>
-            <Text style={styles.formLabel}>Farm Size (acres)</Text>
-            <TextInput
-              style={styles.formInput}
-              value={settings.farmSize.toString()}
-              onChangeText={(text) =>
-                setSettings({ ...settings, farmSize: parseFloat(text) || 0 })
-              }
-              placeholder="e.g., 5"
-              placeholderTextColor={colors.textSecondary}
-              keyboardType="numeric"
+          <TouchableOpacity style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <IconSymbol
+                ios_icon_name="lock.fill"
+                android_material_icon_name="lock"
+                size={24}
+                color={colors.text}
+              />
+              <Text style={styles.settingText}>Change Password</Text>
+            </View>
+            <IconSymbol
+              ios_icon_name="chevron.right"
+              android_material_icon_name="chevron_right"
+              size={20}
+              color={colors.textSecondary}
             />
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.formLabel}>Farm Type</Text>
-            <View style={styles.typeSelector}>
-              {(['homestead', 'small-farm'] as const).map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  style={[
-                    styles.typeOption,
-                    settings.farmType === type && styles.typeOptionActive,
-                  ]}
-                  onPress={() => setSettings({ ...settings, farmType: type })}
-                >
-                  <Text
-                    style={[
-                      styles.typeOptionText,
-                      settings.farmType === type && styles.typeOptionTextActive,
-                    ]}
-                  >
-                    {type === 'homestead' ? 'Homestead' : 'Small Farm'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.formLabel}>Primary Sales Channel</Text>
-            <View style={styles.typeSelector}>
-              {(
-                [
-                  'self-sufficiency',
-                  'roadside-stand',
-                  'restaurant',
-                  'csa',
-                  'farmers-market',
-                ] as const
-              ).map((channel) => (
-                <TouchableOpacity
-                  key={channel}
-                  style={[
-                    styles.typeOption,
-                    settings.primarySalesChannel === channel && styles.typeOptionActive,
-                  ]}
-                  onPress={() =>
-                    setSettings({ ...settings, primarySalesChannel: channel })
-                  }
-                >
-                  <Text
-                    style={[
-                      styles.typeOptionText,
-                      settings.primarySalesChannel === channel &&
-                        styles.typeOptionTextActive,
-                    ]}
-                  >
-                    {channel.replace('-', ' ')}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.formLabel}>Measurement System</Text>
-            <View style={styles.typeSelector}>
-              {(['imperial', 'metric'] as const).map((system) => (
-                <TouchableOpacity
-                  key={system}
-                  style={[
-                    styles.typeOption,
-                    settings.measurementSystem === system && styles.typeOptionActive,
-                  ]}
-                  onPress={() =>
-                    setSettings({ ...settings, measurementSystem: system })
-                  }
-                >
-                  <Text
-                    style={[
-                      styles.typeOptionText,
-                      settings.measurementSystem === system &&
-                        styles.typeOptionTextActive,
-                    ]}
-                  >
-                    {system === 'imperial' ? 'Imperial (ft, lbs)' : 'Metric (m, kg)'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>Save Settings</Text>
           </TouchableOpacity>
         </View>
 
+        {/* App Settings Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Features</Text>
-          <View style={styles.featureCard}>
-            <IconSymbol
-              ios_icon_name="leaf.fill"
-              android_material_icon_name="eco"
-              size={24}
-              color={colors.primary}
-            />
-            <View style={styles.featureContent}>
-              <Text style={styles.featureTitle}>Comprehensive Crop Database</Text>
-              <Text style={styles.featureText}>
-                Access detailed information on 40+ crops including vegetables, fruits, herbs,
-                flowers, and aromatics.
-              </Text>
+          <Text style={styles.sectionTitle}>App Settings</Text>
+          
+          <TouchableOpacity style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <IconSymbol
+                ios_icon_name="bell.fill"
+                android_material_icon_name="notifications"
+                size={24}
+                color={colors.text}
+              />
+              <Text style={styles.settingText}>Notifications</Text>
             </View>
-          </View>
+            <IconSymbol
+              ios_icon_name="chevron.right"
+              android_material_icon_name="chevron_right"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
 
-          <View style={styles.featureCard}>
-            <IconSymbol
-              ios_icon_name="square.grid.3x3"
-              android_material_icon_name="grid-on"
-              size={24}
-              color={colors.primary}
-            />
-            <View style={styles.featureContent}>
-              <Text style={styles.featureTitle}>Field Management</Text>
-              <Text style={styles.featureText}>
-                Organize your fields, beds, greenhouses, and containers with detailed tracking.
-              </Text>
+          <TouchableOpacity style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <IconSymbol
+                ios_icon_name="paintbrush.fill"
+                android_material_icon_name="palette"
+                size={24}
+                color={colors.text}
+              />
+              <Text style={styles.settingText}>Appearance</Text>
             </View>
-          </View>
+            <IconSymbol
+              ios_icon_name="chevron.right"
+              android_material_icon_name="chevron_right"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
 
-          <View style={styles.featureCard}>
-            <IconSymbol
-              ios_icon_name="calendar"
-              android_material_icon_name="event"
-              size={24}
-              color={colors.primary}
-            />
-            <View style={styles.featureContent}>
-              <Text style={styles.featureTitle}>Task Scheduling</Text>
-              <Text style={styles.featureText}>
-                Plan planting dates, track harvest windows, and organize farm tasks efficiently.
-              </Text>
+          <TouchableOpacity style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <IconSymbol
+                ios_icon_name="globe"
+                android_material_icon_name="language"
+                size={24}
+                color={colors.text}
+              />
+              <Text style={styles.settingText}>Language & Region</Text>
             </View>
-          </View>
-
-          <View style={styles.featureCard}>
             <IconSymbol
-              ios_icon_name="dollarsign.circle"
-              android_material_icon_name="attach-money"
-              size={24}
-              color={colors.primary}
+              ios_icon_name="chevron.right"
+              android_material_icon_name="chevron_right"
+              size={20}
+              color={colors.textSecondary}
             />
-            <View style={styles.featureContent}>
-              <Text style={styles.featureTitle}>Revenue Tracking</Text>
-              <Text style={styles.featureText}>
-                Estimate revenue, track costs, and calculate profit for each harvest.
-              </Text>
-            </View>
-          </View>
+          </TouchableOpacity>
         </View>
 
+        {/* Support Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Monetization Options</Text>
-          <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>Freemium Model</Text>
-            <Text style={styles.infoText}>
-              - Free: Basic crop database, up to 5 fields, task management{'\n'}
-              - Premium ($10/month): Unlimited fields, advanced analytics, export data,
-              weather integration
-            </Text>
-          </View>
-
-          <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>One-Time Purchase</Text>
-            <Text style={styles.infoText}>
-              - $19.99 for lifetime access to all features{'\n'}
-              - No recurring fees, perfect for small farms
-            </Text>
-          </View>
-
-          <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>In-App Purchases</Text>
-            <Text style={styles.infoText}>
-              - Regional crop packs ($2.99 each){'\n'}
-              - Advanced planning tools ($4.99){'\n'}
-              - Custom report templates ($1.99)
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Offline Support</Text>
-          <View style={styles.infoCard}>
+          <Text style={styles.sectionTitle}>Support</Text>
+          
+          <TouchableOpacity style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <IconSymbol
+                ios_icon_name="questionmark.circle.fill"
+                android_material_icon_name="help"
+                size={24}
+                color={colors.text}
+              />
+              <Text style={styles.settingText}>Help & FAQ</Text>
+            </View>
             <IconSymbol
-              ios_icon_name="wifi.slash"
-              android_material_icon_name="wifi-off"
-              size={24}
-              color={colors.primary}
+              ios_icon_name="chevron.right"
+              android_material_icon_name="chevron_right"
+              size={20}
+              color={colors.textSecondary}
             />
-            <Text style={styles.infoText}>
-              All data is stored locally on your device. The app works perfectly in low-service
-              areas, making it ideal for rural farms and homesteads.
-            </Text>
-          </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <IconSymbol
+                ios_icon_name="envelope.fill"
+                android_material_icon_name="email"
+                size={24}
+                color={colors.text}
+              />
+              <Text style={styles.settingText}>Contact Support</Text>
+            </View>
+            <IconSymbol
+              ios_icon_name="chevron.right"
+              android_material_icon_name="chevron_right"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <IconSymbol
+                ios_icon_name="doc.text.fill"
+                android_material_icon_name="description"
+                size={24}
+                color={colors.text}
+              />
+              <Text style={styles.settingText}>Privacy Policy</Text>
+            </View>
+            <IconSymbol
+              ios_icon_name="chevron.right"
+              android_material_icon_name="chevron_right"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
         </View>
+
+        {/* Sign Out Button */}
+        <TouchableOpacity
+          style={styles.signOutButton}
+          onPress={handleSignOut}
+        >
+          <IconSymbol
+            ios_icon_name="arrow.right.square.fill"
+            android_material_icon_name="logout"
+            size={24}
+            color={colors.error}
+          />
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
+
+        {/* Version Info */}
+        <Text style={styles.versionText}>Version 1.0.0</Text>
+
+        {/* Bottom Padding for Tab Bar */}
+        <View style={{ height: 100 }} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scrollView: {
     flex: 1,
-    backgroundColor: colors.background,
-    paddingTop: Platform.OS === 'android' ? 48 : 0,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingTop: Platform.OS === 'android' ? 60 : 60,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    marginBottom: 24,
   },
   headerTitle: {
     fontSize: 32,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: 4,
   },
-  headerSubtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 120,
-  },
-  welcomeCard: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 24,
-    marginBottom: 24,
+  userCard: {
     alignItems: 'center',
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
+    paddingVertical: 24,
+    marginBottom: 24,
   },
-  welcomeTitle: {
+  avatarContainer: {
+    marginBottom: 12,
+  },
+  userName: {
     fontSize: 24,
     fontWeight: '700',
     color: colors.text,
-    marginTop: 16,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  welcomeText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  section: {
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 16,
-  },
-  formGroup: {
-    marginBottom: 20,
-  },
-  formLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  formInput: {
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: colors.text,
-  },
-  formHint: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-  typeSelector: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  typeOption: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  typeOptionActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  typeOptionText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    textTransform: 'capitalize',
-  },
-  typeOptionTextActive: {
-    color: colors.card,
-  },
-  saveButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  saveButtonText: {
-    color: colors.card,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  featureCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
-  },
-  featureContent: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  featureTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
     marginBottom: 4,
   },
-  featureText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  infoCard: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
-  },
-  infoTitle: {
+  farmName: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
+    color: colors.primary,
+    marginBottom: 4,
   },
-  infoText: {
+  userEmail: {
     fontSize: 14,
     color: colors.textSecondary,
-    lineHeight: 22,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  settingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.card,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08)',
+    elevation: 1,
+  },
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  settingText: {
+    fontSize: 16,
+    color: colors.text,
+    marginLeft: 12,
+  },
+  signOutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.card,
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.error,
+  },
+  signOutText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.error,
+    marginLeft: 12,
+  },
+  versionText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 8,
   },
 });
