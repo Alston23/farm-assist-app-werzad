@@ -57,6 +57,7 @@ export default function FieldsScreen() {
     try {
       const newFields = fields.filter((f) => f.id !== fieldId);
       await saveFields(newFields);
+      setEditingField(null);
       console.log('Field deleted successfully');
     } catch (error) {
       console.error('Error deleting field:', error);
@@ -251,7 +252,6 @@ function FieldFormModal({
           onPress: () => {
             console.log('Delete confirmed for field:', field.id);
             onDelete(field.id);
-            onClose();
           },
         },
       ],

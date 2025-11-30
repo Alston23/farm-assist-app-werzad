@@ -86,6 +86,7 @@ export default function ScheduleScreen() {
     try {
       const newTasks = tasks.filter((t) => t.id !== taskId);
       await saveTasks(newTasks);
+      setEditingTask(null);
       console.log('Task deleted successfully');
     } catch (error) {
       console.error('Error deleting task:', error);
@@ -98,6 +99,7 @@ export default function ScheduleScreen() {
     try {
       const newPlantings = plantings.filter((p) => p.id !== plantingId);
       await savePlantings(newPlantings);
+      setEditingPlanting(null);
       console.log('Planting deleted successfully');
     } catch (error) {
       console.error('Error deleting planting:', error);
@@ -376,7 +378,6 @@ function TaskFormModal({
           onPress: () => {
             console.log('Delete confirmed for task:', task.id);
             onDelete(task.id);
-            onClose();
           },
         },
       ],
@@ -602,7 +603,6 @@ function PlantingFormModal({
           onPress: () => {
             console.log('Delete confirmed for planting:', planting.id);
             onDelete(planting.id);
-            onClose();
           },
         },
       ],

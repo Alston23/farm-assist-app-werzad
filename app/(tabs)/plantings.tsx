@@ -64,6 +64,7 @@ export default function PlantingsScreen() {
     try {
       const newPlantings = plantings.filter((p) => p.id !== plantingId);
       await savePlantings(newPlantings);
+      setEditingPlanting(null);
       console.log('Planting deleted successfully');
     } catch (error) {
       console.error('Error deleting planting:', error);
@@ -361,7 +362,6 @@ function PlantingFormModal({
           onPress: () => {
             console.log('Delete confirmed for planting:', planting.id);
             onDelete(planting.id);
-            onClose();
           },
         },
       ],
