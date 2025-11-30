@@ -52,9 +52,11 @@ export default function FieldsScreen() {
     setEditingField(null);
   };
 
-  const deleteField = (fieldId: string) => {
+  const deleteField = async (fieldId: string) => {
+    console.log('deleteField called with id:', fieldId);
     const newFields = fields.filter((f) => f.id !== fieldId);
-    saveFields(newFields);
+    await saveFields(newFields);
+    console.log('Field deleted, closing modal');
     setEditingField(null);
   };
 
@@ -242,9 +244,10 @@ function FieldFormModal({
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            console.log('Deleting field:', field.id);
-            onDelete(field.id);
+          onPress: async () => {
+            console.log('Delete confirmed for field:', field.id);
+            await onDelete(field.id);
+            onClose();
           },
         },
       ],

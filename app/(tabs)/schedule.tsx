@@ -69,9 +69,11 @@ export default function ScheduleScreen() {
     saveTasks(newTasks);
   };
 
-  const deleteTask = (taskId: string) => {
+  const deleteTask = async (taskId: string) => {
+    console.log('deleteTask called with id:', taskId);
     const newTasks = tasks.filter((t) => t.id !== taskId);
-    saveTasks(newTasks);
+    await saveTasks(newTasks);
+    console.log('Task deleted, closing modal');
     setEditingTask(null);
   };
 
@@ -330,9 +332,10 @@ function TaskFormModal({
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            console.log('Deleting task:', task.id);
-            onDelete(task.id);
+          onPress: async () => {
+            console.log('Delete confirmed for task:', task.id);
+            await onDelete(task.id);
+            onClose();
           },
         },
       ],
