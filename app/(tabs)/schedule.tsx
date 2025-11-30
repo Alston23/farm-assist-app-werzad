@@ -81,30 +81,68 @@ export default function ScheduleScreen() {
     saveTasks(newTasks);
   };
 
-  const deleteTask = async (taskId: string) => {
+  const deleteTask = (taskId: string) => {
     console.log('deleteTask called with id:', taskId);
-    try {
-      const newTasks = tasks.filter((t) => t.id !== taskId);
-      await saveTasks(newTasks);
-      setEditingTask(null);
-      console.log('Task deleted successfully');
-    } catch (error) {
-      console.error('Error deleting task:', error);
-      Alert.alert('Error', 'Failed to delete task');
-    }
+    
+    Alert.alert(
+      'Delete Task',
+      'Are you sure you want to delete this task? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              console.log('Delete confirmed for task:', taskId);
+              const newTasks = tasks.filter((t) => t.id !== taskId);
+              await saveTasks(newTasks);
+              setEditingTask(null);
+              console.log('Task deleted successfully');
+            } catch (error) {
+              console.error('Error deleting task:', error);
+              Alert.alert('Error', 'Failed to delete task');
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
-  const deletePlanting = async (plantingId: string) => {
+  const deletePlanting = (plantingId: string) => {
     console.log('deletePlanting called with id:', plantingId);
-    try {
-      const newPlantings = plantings.filter((p) => p.id !== plantingId);
-      await savePlantings(newPlantings);
-      setEditingPlanting(null);
-      console.log('Planting deleted successfully');
-    } catch (error) {
-      console.error('Error deleting planting:', error);
-      Alert.alert('Error', 'Failed to delete planting');
-    }
+    
+    Alert.alert(
+      'Delete Planting',
+      'Are you sure you want to delete this planting? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              console.log('Delete confirmed for planting:', plantingId);
+              const newPlantings = plantings.filter((p) => p.id !== plantingId);
+              await savePlantings(newPlantings);
+              setEditingPlanting(null);
+              console.log('Planting deleted successfully');
+            } catch (error) {
+              console.error('Error deleting planting:', error);
+              Alert.alert('Error', 'Failed to delete planting');
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const filteredTasks = tasks.filter((task) => {
@@ -364,25 +402,8 @@ function TaskFormModal({
       return;
     }
 
-    Alert.alert(
-      'Delete Task',
-      'Are you sure you want to delete this task? This action cannot be undone.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            console.log('Delete confirmed for task:', task.id);
-            onDelete(task.id);
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+    console.log('handleDelete called for task:', task.id);
+    onDelete(task.id);
   };
 
   return (
@@ -589,25 +610,8 @@ function PlantingFormModal({
       return;
     }
 
-    Alert.alert(
-      'Delete Planting',
-      'Are you sure you want to delete this planting? This action cannot be undone.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            console.log('Delete confirmed for planting:', planting.id);
-            onDelete(planting.id);
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+    console.log('handleDelete called for planting:', planting.id);
+    onDelete(planting.id);
   };
 
   const filteredCrops = cropDatabase.filter((crop) =>

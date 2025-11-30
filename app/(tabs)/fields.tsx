@@ -52,17 +52,36 @@ export default function FieldsScreen() {
     setEditingField(null);
   };
 
-  const deleteField = async (fieldId: string) => {
+  const deleteField = (fieldId: string) => {
     console.log('deleteField called with id:', fieldId);
-    try {
-      const newFields = fields.filter((f) => f.id !== fieldId);
-      await saveFields(newFields);
-      setEditingField(null);
-      console.log('Field deleted successfully');
-    } catch (error) {
-      console.error('Error deleting field:', error);
-      Alert.alert('Error', 'Failed to delete field');
-    }
+    
+    Alert.alert(
+      'Delete Field',
+      'Are you sure you want to delete this field? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              console.log('Delete confirmed for field:', fieldId);
+              const newFields = fields.filter((f) => f.id !== fieldId);
+              await saveFields(newFields);
+              setEditingField(null);
+              console.log('Field deleted successfully');
+            } catch (error) {
+              console.error('Error deleting field:', error);
+              Alert.alert('Error', 'Failed to delete field');
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const totalArea = fields.reduce((sum, field) => sum + field.size, 0);
@@ -238,25 +257,8 @@ function FieldFormModal({
       return;
     }
 
-    Alert.alert(
-      'Delete Field',
-      'Are you sure you want to delete this field? This action cannot be undone.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            console.log('Delete confirmed for field:', field.id);
-            onDelete(field.id);
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+    console.log('handleDelete called for field:', field.id);
+    onDelete(field.id);
   };
 
   return (
