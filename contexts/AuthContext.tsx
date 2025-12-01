@@ -275,22 +275,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('=== SIGN OUT STARTED ===');
       console.log('Current user before sign out:', user?.email);
       
-      // Sign out from Supabase first
+      // Sign out from Supabase - this will trigger the auth state change listener
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        console.error('❌ Sign out error:', error.message);
+        console.error('❌ Supabase sign out error:', error.message);
         throw error;
       }
       
       console.log('✅ Supabase sign out successful');
       
-      // Clear any cached session data
+      // Clear all possible session storage keys
       try {
+        // Clear the main Supabase session key
+        const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://tbobabbteplxwkltdlki.supabase.co';
+        const projectRef = supabaseUrl.split('//')[1]?.split('.')[0];
+        const storageKey = `sb-${projectRef}-auth-token`;
+        
+        await AsyncStorage.removeItem(storageKey);
+        console.log(`✅ Cleared AsyncStorage key: ${storageKey}`);
+        
+        // Also clear any legacy keys
         await AsyncStorage.removeItem('supabase.auth.token');
-        console.log('✅ AsyncStorage cleared');
+        await AsyncStorage.removeItem('@supabase_session');
+        console.log('✅ Cleared legacy AsyncStorage keys');
       } catch (storageError) {
         console.error('⚠️ Error clearing AsyncStorage:', storageError);
+        // Don't throw - continue with sign out even if storage clear fails
       }
       
       // Clear user state - this will trigger navigation in _layout.tsx
@@ -298,7 +309,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('✅ User state cleared');
       
       console.log('✅ SIGN OUT COMPLETE');
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Sign out error:', error);
       // Ensure user is set to null even if there's an error
       setUser(null);

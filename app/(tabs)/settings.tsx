@@ -10,6 +10,7 @@ import {
   Alert,
   Platform,
   Switch,
+  ActivityIndicator,
 } from 'react-native';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
@@ -37,6 +38,7 @@ export default function SettingsScreen() {
     temperature: 0.7,
   });
   const [loading, setLoading] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -119,14 +121,20 @@ export default function SettingsScreen() {
           text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
+            setSigningOut(true);
             try {
               console.log('🔓 User confirmed sign out');
+              
+              // Call the signOut function from AuthContext
               await signOut();
+              
               console.log('✅ Sign out completed successfully');
               // Navigation will happen automatically via _layout.tsx
-              // The auth state change will trigger the navigation logic
+              // The auth state change will trigger the navigation reset
             } catch (error: any) {
               console.error('❌ Sign out error:', error);
+              setSigningOut(false);
+              
               Alert.alert(
                 'Error', 
                 error?.message || 'Failed to sign out. Please try again.',
@@ -303,16 +311,31 @@ export default function SettingsScreen() {
         </View>
 
         <TouchableOpacity
-          style={[styles.button, styles.buttonDanger, styles.signOutButton]}
+          style={[
+            styles.button, 
+            styles.buttonDanger, 
+            styles.signOutButton,
+            signingOut && styles.buttonDisabled
+          ]}
           onPress={handleSignOut}
+          disabled={signingOut}
         >
-          <IconSymbol
-            ios_icon_name="rectangle.portrait.and.arrow.right"
-            android_material_icon_name="logout"
-            size={20}
-            color={colors.card}
-          />
-          <Text style={styles.buttonText}>Sign Out</Text>
+          {signingOut ? (
+            <React.Fragment>
+              <ActivityIndicator color={colors.card} size="small" />
+              <Text style={styles.buttonText}>Signing Out...</Text>
+            </React.Fragment>
+          ) : (
+            <React.Fragment>
+              <IconSymbol
+                ios_icon_name="rectangle.portrait.and.arrow.right"
+                android_material_icon_name="logout"
+                size={20}
+                color={colors.card}
+              />
+              <Text style={styles.buttonText}>Sign Out</Text>
+            </React.Fragment>
+          )}
         </TouchableOpacity>
 
         <View style={styles.footer}>
@@ -435,6 +458,9 @@ const styles = StyleSheet.create({
   },
   buttonDanger: {
     backgroundColor: colors.error,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   buttonText: {
     color: colors.card,

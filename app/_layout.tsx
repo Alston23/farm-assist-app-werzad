@@ -17,6 +17,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { WidgetProvider } from "@/contexts/WidgetContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { CommonActions, useNavigation } from "@react-navigation/native";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -30,6 +31,7 @@ function RootLayoutNav() {
   const { user, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const navigation = useNavigation();
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
@@ -64,32 +66,68 @@ function RootLayoutNav() {
       return;
     }
 
-    // If user is not logged in and not on auth screen, redirect to auth
+    // If user is not logged in and not on auth screen, redirect to auth with reset
     if (!user && !inAuthGroup) {
-      console.log('🔒 User not logged in, redirecting to auth');
-      router.replace('/auth');
-      console.log('✓ Navigation to /auth initiated');
+      console.log('🔒 User not logged in, redirecting to auth with navigation reset');
+      
+      // Use navigation reset to prevent going back
+      if (navigation) {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'auth' }],
+          })
+        );
+      } else {
+        router.replace('/auth');
+      }
+      
+      console.log('✓ Navigation reset to /auth initiated');
       return;
     }
 
-    // If user is logged in and on auth screen, redirect to main app
+    // If user is logged in and on auth screen, redirect to main app with reset
     if (user && inAuthGroup) {
-      console.log('🚀 User logged in, redirecting to main app');
-      router.replace('/(tabs)/crops');
-      console.log('✓ Navigation to /(tabs)/crops initiated');
+      console.log('🚀 User logged in, redirecting to main app with navigation reset');
+      
+      // Use navigation reset to prevent going back
+      if (navigation) {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: '(tabs)', params: { screen: 'crops' } }],
+          })
+        );
+      } else {
+        router.replace('/(tabs)/crops');
+      }
+      
+      console.log('✓ Navigation reset to /(tabs)/crops initiated');
       return;
     }
 
-    // If user is logged in and not in tabs, redirect to tabs
+    // If user is logged in and not in tabs, redirect to tabs with reset
     if (user && !inTabs && !inAuthGroup) {
-      console.log('🚀 User logged in but not in tabs, redirecting to main app');
-      router.replace('/(tabs)/crops');
-      console.log('✓ Navigation to /(tabs)/crops initiated');
+      console.log('🚀 User logged in but not in tabs, redirecting to main app with navigation reset');
+      
+      // Use navigation reset to prevent going back
+      if (navigation) {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: '(tabs)', params: { screen: 'crops' } }],
+          })
+        );
+      } else {
+        router.replace('/(tabs)/crops');
+      }
+      
+      console.log('✓ Navigation reset to /(tabs)/crops initiated');
       return;
     }
 
     console.log('✓ No navigation needed');
-  }, [user, segments, loaded, isLoading]);
+  }, [user, segments, loaded, isLoading, navigation]);
 
   React.useEffect(() => {
     if (
