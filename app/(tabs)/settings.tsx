@@ -15,7 +15,6 @@ import { colors, commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'expo-router';
 
 const OPENAI_API_KEY_STORAGE = '@openai_api_key';
 const AI_SETTINGS_STORAGE = '@ai_settings';
@@ -29,7 +28,6 @@ interface AISettings {
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuth();
-  const router = useRouter();
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [aiSettings, setAiSettings] = useState<AISettings>({
@@ -191,7 +189,7 @@ export default function SettingsScreen() {
               >
                 <IconSymbol
                   ios_icon_name={showApiKey ? 'eye.slash' : 'eye'}
-                  android_material_icon_name={showApiKey ? 'visibility-off' : 'visibility'}
+                  android_material_icon_name={showApiKey ? 'visibility_off' : 'visibility'}
                   size={24}
                   color={colors.textSecondary}
                 />
@@ -292,24 +290,6 @@ export default function SettingsScreen() {
             </View>
           </View>
         </View>
-
-        {__DEV__ && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Developer Tools</Text>
-            <TouchableOpacity
-              style={[styles.button, styles.buttonPrimary]}
-              onPress={() => router.push('/test-auth')}
-            >
-              <IconSymbol
-                ios_icon_name="wrench.and.screwdriver"
-                android_material_icon_name="build"
-                size={20}
-                color={colors.card}
-              />
-              <Text style={styles.buttonText}>Test Auth System</Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
         <TouchableOpacity
           style={[styles.button, styles.buttonDanger, styles.signOutButton]}

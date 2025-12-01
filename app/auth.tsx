@@ -9,7 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,11 +31,11 @@ export default function AuthScreen() {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [nameError, setNameError] = useState('');
+  const [authError, setAuthError] = useState('');
 
   // Debug: Log when user changes
   useEffect(() => {
     console.log('AuthScreen - user changed:', user ? user.email : 'null');
-    // If user is logged in, reset the submitting state
     if (user) {
       console.log('User is logged in, resetting form state');
       setIsSubmitting(false);
@@ -46,11 +45,13 @@ export default function AuthScreen() {
   // Reset submitting state when switching between login/signup
   useEffect(() => {
     setIsSubmitting(false);
+    setAuthError('');
   }, [isLogin]);
 
   const validateEmail = (text: string) => {
     setEmail(text);
     setEmailError('');
+    setAuthError('');
     
     if (text.length > 0) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -63,6 +64,7 @@ export default function AuthScreen() {
   const validatePassword = (text: string) => {
     setPassword(text);
     setPasswordError('');
+    setAuthError('');
     
     if (!isLogin && text.length > 0 && text.length < 6) {
       setPasswordError('Password must be at least 6 characters');
@@ -72,6 +74,7 @@ export default function AuthScreen() {
   const validateName = (text: string) => {
     setName(text);
     setNameError('');
+    setAuthError('');
     
     if (!isLogin && text.length > 0 && text.length < 2) {
       setNameError('Name must be at least 2 characters');
@@ -90,6 +93,9 @@ export default function AuthScreen() {
     const trimmedPassword = password.trim();
     const trimmedName = name.trim();
     const trimmedFarmName = farmName.trim();
+
+    // Clear previous auth error
+    setAuthError('');
 
     // Validate all fields
     let hasError = false;
@@ -142,15 +148,14 @@ export default function AuthScreen() {
       if (result && result.success) {
         console.log('✅ Authentication successful!');
         // Keep the loading state - navigation will happen automatically
-        // The form will stay disabled until navigation completes
       } else {
         console.log('❌ Authentication failed:', result?.error);
-        Alert.alert('Authentication Failed', result?.error || 'An error occurred');
+        setAuthError(result?.error || 'An error occurred');
         setIsSubmitting(false);
       }
     } catch (error) {
       console.error('Auth error:', error);
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      setAuthError('An unexpected error occurred. Please try again.');
       setIsSubmitting(false);
     }
   };
@@ -170,6 +175,7 @@ export default function AuthScreen() {
     setEmailError('');
     setPasswordError('');
     setNameError('');
+    setAuthError('');
   };
 
   if (isLoading) {
@@ -329,6 +335,18 @@ export default function AuthScreen() {
               {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
             </View>
 
+            {authError ? (
+              <View style={styles.authErrorContainer}>
+                <IconSymbol
+                  ios_icon_name="exclamationmark.triangle.fill"
+                  android_material_icon_name="error"
+                  size={20}
+                  color={colors.error}
+                />
+                <Text style={styles.authErrorText}>{authError}</Text>
+              </View>
+            ) : null}
+
             <TouchableOpacity
               style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
               onPress={handleSubmit}
@@ -370,7 +388,7 @@ export default function AuthScreen() {
               style={{ opacity: 0.8 }}
             />
             <Text style={styles.infoText}>
-              Your data is stored securely on your device
+              Your data is secured with Supabase authentication
             </Text>
           </View>
 
@@ -466,6 +484,21 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginLeft: 16,
     marginTop: -8,
+  },
+  authErrorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.error + '15',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    gap: 8,
+  },
+  authErrorText: {
+    flex: 1,
+    color: colors.error,
+    fontSize: 14,
+    fontWeight: '500',
   },
   submitButton: {
     backgroundColor: colors.primary,

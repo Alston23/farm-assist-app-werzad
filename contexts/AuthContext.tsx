@@ -1,13 +1,13 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '@/lib/supabase';
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
   id: string;
   email: string;
-  name: string;
+  name?: string;
   farmName?: string;
-  createdAt: string;
 }
 
 interface AuthContextType {
@@ -20,98 +20,83 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const STORAGE_KEYS = {
-  USER: '@farm_user',
-  USERS_DB: '@farm_users_db',
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadUser();
-  }, []);
+    console.log('=== AuthContext: Initializing ===');
+    
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session ? 'Session found' : 'No session');
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          name: session.user.user_metadata?.name,
+          farmName: session.user.user_metadata?.farmName,
+        });
+      }
+      setIsLoading(false);
+    });
 
-  const loadUser = async () => {
-    try {
-      console.log('=== AuthContext: Loading user from storage ===');
-      const userData = await AsyncStorage.getItem(STORAGE_KEYS.USER);
-      console.log('Raw user data from storage:', userData);
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed:', _event, session ? 'Session exists' : 'No session');
       
-      if (userData) {
-        const parsedUser = JSON.parse(userData);
-        console.log('Parsed user:', parsedUser);
-        setUser(parsedUser);
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          name: session.user.user_metadata?.name,
+          farmName: session.user.user_metadata?.farmName,
+        });
       } else {
-        console.log('No user found in storage');
         setUser(null);
       }
-    } catch (error) {
-      console.error('Error loading user:', error);
-      setUser(null);
-    } finally {
-      console.log('=== AuthContext: Finished loading user, isLoading = false ===');
-      setIsLoading(false);
-    }
-  };
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       console.log('=== SIGN IN STARTED ===');
       console.log('Email:', email);
       
-      // Validate inputs
       if (!email || !password) {
         console.log('Missing email or password');
         return { success: false, error: 'Please enter your email and password' };
       }
 
-      const usersData = await AsyncStorage.getItem(STORAGE_KEYS.USERS_DB);
-      console.log('Users DB raw data:', usersData);
-      
-      const users = usersData ? JSON.parse(usersData) : [];
-      console.log('Total users in DB:', users.length);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password,
+      });
 
-      const foundUser = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
-
-      if (!foundUser) {
-        console.log('USER NOT FOUND');
-        return { success: false, error: 'No account found with this email. Please sign up first.' };
+      if (error) {
+        console.log('Sign in error:', error.message);
+        return { success: false, error: error.message };
       }
 
-      console.log('User found:', foundUser.email);
-
-      if (foundUser.password !== password) {
-        console.log('PASSWORD INCORRECT');
-        return { success: false, error: 'Incorrect password. Please try again.' };
+      if (data.user) {
+        console.log('Sign in successful:', data.user.email);
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          name: data.user.user_metadata?.name,
+          farmName: data.user.user_metadata?.farmName,
+        });
+        return { success: true };
       }
 
-      console.log('PASSWORD CORRECT - Creating user session');
-
-      const userToStore: User = {
-        id: foundUser.id,
-        email: foundUser.email,
-        name: foundUser.name,
-        farmName: foundUser.farmName,
-        createdAt: foundUser.createdAt,
-      };
-
-      console.log('Storing user in AsyncStorage:', userToStore);
-      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userToStore));
-      
-      // Verify the data was stored
-      const verifyData = await AsyncStorage.getItem(STORAGE_KEYS.USER);
-      console.log('Verification - data stored:', verifyData);
-      
-      console.log('Setting user state...');
-      setUser(userToStore);
-      
-      console.log('=== SIGN IN SUCCESS ===');
-      return { success: true };
-    } catch (error) {
+      return { success: false, error: 'Sign in failed' };
+    } catch (error: any) {
       console.error('=== SIGN IN ERROR ===', error);
-      return { success: false, error: 'An error occurred during sign in. Please try again.' };
+      return { success: false, error: error.message || 'An error occurred during sign in' };
     }
   };
 
@@ -137,60 +122,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: 'Password must be at least 6 characters' };
       }
 
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        console.log('Invalid email format');
-        return { success: false, error: 'Please enter a valid email address' };
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password,
+        options: {
+          data: {
+            name: name.trim(),
+            farmName: farmName.trim(),
+          },
+        },
+      });
+
+      if (error) {
+        console.log('Sign up error:', error.message);
+        return { success: false, error: error.message };
       }
 
-      const usersData = await AsyncStorage.getItem(STORAGE_KEYS.USERS_DB);
-      const users = usersData ? JSON.parse(usersData) : [];
-      console.log('Current users count:', users.length);
-
-      const existingUser = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
-      if (existingUser) {
-        console.log('User already exists');
-        return { success: false, error: 'An account with this email already exists. Please sign in instead.' };
+      if (data.user) {
+        console.log('Sign up successful:', data.user.email);
+        
+        // Check if email confirmation is required
+        if (data.session) {
+          // User is automatically signed in
+          setUser({
+            id: data.user.id,
+            email: data.user.email || '',
+            name: data.user.user_metadata?.name,
+            farmName: data.user.user_metadata?.farmName,
+          });
+          return { success: true };
+        } else {
+          // Email confirmation required
+          return { 
+            success: false, 
+            error: 'Please check your email to confirm your account before signing in.' 
+          };
+        }
       }
 
-      const newUser = {
-        id: Date.now().toString(),
-        email: email.toLowerCase(),
-        password,
-        name,
-        farmName: farmName || '',
-        createdAt: new Date().toISOString(),
-      };
-
-      console.log('Creating new user:', { ...newUser, password: '***' });
-
-      users.push(newUser);
-      await AsyncStorage.setItem(STORAGE_KEYS.USERS_DB, JSON.stringify(users));
-      console.log('Saved to users database, total users:', users.length);
-
-      const userToStore: User = {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        farmName: newUser.farmName,
-        createdAt: newUser.createdAt,
-      };
-
-      console.log('Storing user in AsyncStorage:', userToStore);
-      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userToStore));
-      
-      // Verify the data was stored
-      const verifyData = await AsyncStorage.getItem(STORAGE_KEYS.USER);
-      console.log('Verification - data stored:', verifyData);
-      
-      console.log('Setting user state...');
-      setUser(userToStore);
-      
-      console.log('=== SIGN UP SUCCESS ===');
-      return { success: true };
-    } catch (error) {
+      return { success: false, error: 'Sign up failed' };
+    } catch (error: any) {
       console.error('=== SIGN UP ERROR ===', error);
-      return { success: false, error: 'An error occurred during sign up. Please try again.' };
+      return { success: false, error: error.message || 'An error occurred during sign up' };
     }
   };
 
@@ -199,18 +172,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('=== SIGN OUT STARTED ===');
       console.log('Current user before sign out:', user?.email);
       
-      // Remove from storage first
-      console.log('Removing user from AsyncStorage...');
-      await AsyncStorage.removeItem(STORAGE_KEYS.USER);
+      const { error } = await supabase.auth.signOut();
       
-      // Verify removal
-      const verifyRemoval = await AsyncStorage.getItem(STORAGE_KEYS.USER);
-      console.log('Verification - user in storage after removal:', verifyRemoval);
+      if (error) {
+        console.error('Sign out error:', error.message);
+        throw error;
+      }
       
-      // Then set user to null to trigger navigation
-      console.log('Setting user state to null...');
       setUser(null);
-      
       console.log('=== SIGN OUT SUCCESS ===');
     } catch (error) {
       console.error('Sign out error:', error);
