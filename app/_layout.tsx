@@ -40,21 +40,22 @@ function RootLayoutNav() {
     }
   }, [loaded]);
 
-  // Handle navigation based on auth state
+  // BYPASS AUTHENTICATION - Always redirect to main app
   useEffect(() => {
-    if (!loaded || isLoading) {
-      console.log('⏳ Still loading... fonts:', loaded, 'auth:', !isLoading);
+    if (!loaded) {
+      console.log('⏳ Still loading fonts...');
       return;
     }
 
     const inAuthGroup = segments[0] === 'auth';
     const inTestAuth = segments[0] === 'test-auth';
+    const inTabs = segments[0] === '(tabs)';
 
-    console.log('=== NAVIGATION CHECK ===');
-    console.log('User:', user ? user.email : 'null');
+    console.log('=== NAVIGATION CHECK (AUTH BYPASSED) ===');
     console.log('Current segments:', segments);
     console.log('In auth group:', inAuthGroup);
     console.log('In test-auth:', inTestAuth);
+    console.log('In tabs:', inTabs);
 
     // Don't redirect if we're in test-auth
     if (inTestAuth) {
@@ -62,26 +63,28 @@ function RootLayoutNav() {
       return;
     }
 
-    if (!user && !inAuthGroup) {
-      // User is not logged in and not on auth screen - redirect to auth
-      console.log('❌ No user found, redirecting to /auth');
-      // Use setTimeout to avoid navigation during render
-      setTimeout(() => {
-        router.replace('/auth');
-        console.log('✓ Navigation to /auth completed');
-      }, 0);
-    } else if (user && inAuthGroup) {
-      // User is logged in but still on auth screen - redirect to app
-      console.log('✅ User logged in, redirecting to /(tabs)/crops');
-      // Use setTimeout to avoid navigation during render
+    // If user is on auth screen, redirect them to the main app
+    if (inAuthGroup) {
+      console.log('🚀 BYPASSING AUTH - Redirecting to main app');
       setTimeout(() => {
         router.replace('/(tabs)/crops');
         console.log('✓ Navigation to /(tabs)/crops completed');
       }, 0);
-    } else {
-      console.log('✓ Navigation state is correct, no action needed');
+      return;
     }
-  }, [user, segments, isLoading, loaded, router]);
+
+    // If not in tabs and not in auth, redirect to tabs
+    if (!inTabs && !inAuthGroup) {
+      console.log('🚀 BYPASSING AUTH - Redirecting to main app from root');
+      setTimeout(() => {
+        router.replace('/(tabs)/crops');
+        console.log('✓ Navigation to /(tabs)/crops completed');
+      }, 0);
+      return;
+    }
+
+    console.log('✓ Already in main app, no action needed');
+  }, [segments, loaded, router]);
 
   React.useEffect(() => {
     if (
@@ -95,7 +98,7 @@ function RootLayoutNav() {
     }
   }, [networkState.isConnected, networkState.isInternetReachable]);
 
-  if (!loaded || isLoading) {
+  if (!loaded) {
     return null;
   }
 
