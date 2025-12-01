@@ -19,6 +19,16 @@ import { storage } from '@/utils/storage';
 import { PlantingRecommendationEngine } from '@/utils/plantingRecommendations';
 import { cropDatabase } from '@/data/cropDatabase';
 
+const SOIL_TYPES = [
+  { label: 'Loamy', value: 'loamy' },
+  { label: 'Sandy', value: 'sandy' },
+  { label: 'Clay', value: 'clay' },
+  { label: 'Silty', value: 'silty' },
+  { label: 'Peaty', value: 'peaty' },
+  { label: 'Chalky', value: 'chalky' },
+  { label: 'Mixed', value: 'mixed' },
+];
+
 export default function FieldsScreen() {
   const [fields, setFields] = useState<Field[]>([]);
   const [plantings, setPlantings] = useState<any[]>([]);
@@ -284,7 +294,7 @@ function FieldFormModal({
   const [areaValue, setAreaValue] = useState('');
   const [areaUnit, setAreaUnit] = useState<'sq ft' | 'acres'>('sq ft');
   const [type, setType] = useState<Field['type']>('bed');
-  const [soilType, setSoilType] = useState('');
+  const [soilType, setSoilType] = useState('loamy');
   const [irrigationType, setIrrigationType] = useState<Field['irrigationType']>('drip');
   const [notes, setNotes] = useState('');
   const [currentPH, setCurrentPH] = useState('7.0');
@@ -297,7 +307,7 @@ function FieldFormModal({
       setAreaValue(field.size.toString());
       setAreaUnit('sq ft');
       setType(field.type);
-      setSoilType(field.soilType);
+      setSoilType(field.soilType || 'loamy');
       setIrrigationType(field.irrigationType);
       setNotes(field.notes);
       setCurrentPH(field.currentPH?.toString() || '7.0');
@@ -306,7 +316,7 @@ function FieldFormModal({
       setAreaValue('');
       setAreaUnit('sq ft');
       setType('bed');
-      setSoilType('');
+      setSoilType('loamy');
       setIrrigationType('drip');
       setNotes('');
       setCurrentPH('7.0');
@@ -458,13 +468,29 @@ function FieldFormModal({
 
           <View style={styles.formGroup}>
             <Text style={styles.formLabel}>Soil Type</Text>
-            <TextInput
-              style={styles.formInput}
-              value={soilType}
-              onChangeText={setSoilType}
-              placeholder="e.g., loamy, sandy"
-              placeholderTextColor={colors.textSecondary}
-            />
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.soilTypeSelector}
+            >
+              {SOIL_TYPES.map((soil) => (
+                <TouchableOpacity
+                  key={soil.value}
+                  style={[
+                    styles.soilTypeOption,
+                    soilType === soil.value && styles.soilTypeOptionActive
+                  ]}
+                  onPress={() => setSoilType(soil.value)}
+                >
+                  <Text style={[
+                    styles.soilTypeOptionText,
+                    soilType === soil.value && styles.soilTypeOptionTextActive
+                  ]}>
+                    {soil.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
 
           <View style={styles.formGroup}>
@@ -1020,6 +1046,31 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   typeOptionTextActive: {
+    color: colors.card,
+  },
+  soilTypeSelector: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  soilTypeOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  soilTypeOptionActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  soilTypeOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  soilTypeOptionTextActive: {
     color: colors.card,
   },
   sectionButton: {
