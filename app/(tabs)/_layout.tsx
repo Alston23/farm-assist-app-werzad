@@ -24,6 +24,12 @@ export default function TabLayout() {
       label: 'Plantings',
     },
     {
+      name: 'ai-assistant',
+      route: '/(tabs)/ai-assistant',
+      icon: 'auto-awesome',
+      label: 'AI',
+    },
+    {
       name: 'schedule',
       route: '/(tabs)/schedule',
       icon: 'event',
@@ -34,12 +40,6 @@ export default function TabLayout() {
       route: '/(tabs)/equipment',
       icon: 'build',
       label: 'Equipment',
-    },
-    {
-      name: 'inventory',
-      route: '/(tabs)/inventory',
-      icon: 'inventory',
-      label: 'Inventory',
     },
   ];
 
@@ -54,6 +54,7 @@ export default function TabLayout() {
         <Stack.Screen key="crops" name="crops" />
         <Stack.Screen key="fields" name="fields" />
         <Stack.Screen key="plantings" name="plantings" />
+        <Stack.Screen key="ai-assistant" name="ai-assistant" />
         <Stack.Screen key="schedule" name="schedule" />
         <Stack.Screen key="equipment" name="equipment" />
         <Stack.Screen key="inventory" name="inventory" />

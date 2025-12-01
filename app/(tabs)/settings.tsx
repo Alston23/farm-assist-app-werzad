@@ -1,38 +1,124 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   Alert,
   Platform,
+  Switch,
 } from 'react-native';
 import { colors, commonStyles } from '@/styles/commonStyles';
-import { useAuth } from '@/contexts/AuthContext';
 import { IconSymbol } from '@/components/IconSymbol';
-import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '@/contexts/AuthContext';
+
+const OPENAI_API_KEY_STORAGE = '@openai_api_key';
+const AI_SETTINGS_STORAGE = '@ai_settings';
+
+interface AISettings {
+  enableImageAnalysis: boolean;
+  enableChatHistory: boolean;
+  defaultModel: string;
+  temperature: number;
+}
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuth();
+  const [apiKey, setApiKey] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [aiSettings, setAiSettings] = useState<AISettings>({
+    enableImageAnalysis: true,
+    enableChatHistory: true,
+    defaultModel: 'gpt-4o-mini',
+    temperature: 0.7,
+  });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const savedApiKey = await AsyncStorage.getItem(OPENAI_API_KEY_STORAGE);
+      const savedSettings = await AsyncStorage.getItem(AI_SETTINGS_STORAGE);
+      
+      if (savedApiKey) {
+        setApiKey(savedApiKey);
+      }
+      if (savedSettings) {
+        setAiSettings(JSON.parse(savedSettings));
+      }
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+    }
+  };
+
+  const saveApiKey = async () => {
+    if (!apiKey.trim()) {
+      Alert.alert('Error', 'Please enter a valid API key');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await AsyncStorage.setItem(OPENAI_API_KEY_STORAGE, apiKey.trim());
+      Alert.alert('Success', 'API key saved successfully');
+    } catch (error) {
+      console.error('Failed to save API key:', error);
+      Alert.alert('Error', 'Failed to save API key');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeApiKey = async () => {
+    Alert.alert(
+      'Remove API Key',
+      'Are you sure you want to remove your API key? AI features will be disabled.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await AsyncStorage.removeItem(OPENAI_API_KEY_STORAGE);
+              setApiKey('');
+              Alert.alert('Success', 'API key removed');
+            } catch (error) {
+              console.error('Failed to remove API key:', error);
+              Alert.alert('Error', 'Failed to remove API key');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const saveAISettings = async (newSettings: AISettings) => {
+    try {
+      await AsyncStorage.setItem(AI_SETTINGS_STORAGE, JSON.stringify(newSettings));
+      setAiSettings(newSettings);
+    } catch (error) {
+      console.error('Failed to save AI settings:', error);
+    }
+  };
 
   const handleSignOut = () => {
     Alert.alert(
       'Sign Out',
       'Are you sure you want to sign out?',
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Sign Out',
           style: 'destructive',
-          onPress: async () => {
-            await signOut();
-            router.replace('/auth');
-          },
+          onPress: signOut,
         },
       ]
     );
@@ -45,206 +131,180 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
         <View style={styles.header}>
+          <IconSymbol
+            ios_icon_name="gearshape.fill"
+            android_material_icon_name="settings"
+            size={48}
+            color={colors.primary}
+          />
           <Text style={styles.headerTitle}>Settings</Text>
         </View>
 
-        {/* User Info Card */}
-        <View style={[commonStyles.card, styles.userCard]}>
-          <View style={styles.avatarContainer}>
-            <IconSymbol
-              ios_icon_name="person.circle.fill"
-              android_material_icon_name="account_circle"
-              size={60}
-              color={colors.primary}
-            />
-          </View>
-          <Text style={styles.userName}>{user?.name}</Text>
-          {user?.farmName && (
-            <Text style={styles.farmName}>{user.farmName}</Text>
-          )}
-          <Text style={styles.userEmail}>{user?.email}</Text>
-        </View>
-
-        {/* Account Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
-          
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingLeft}>
-              <IconSymbol
-                ios_icon_name="person.fill"
-                android_material_icon_name="person"
-                size={24}
-                color={colors.text}
-              />
-              <Text style={styles.settingText}>Edit Profile</Text>
+          <View style={styles.card}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Name:</Text>
+              <Text style={styles.infoValue}>{user?.name || 'N/A'}</Text>
             </View>
-            <IconSymbol
-              ios_icon_name="chevron.right"
-              android_material_icon_name="chevron_right"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingLeft}>
-              <IconSymbol
-                ios_icon_name="lock.fill"
-                android_material_icon_name="lock"
-                size={24}
-                color={colors.text}
-              />
-              <Text style={styles.settingText}>Change Password</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Farm:</Text>
+              <Text style={styles.infoValue}>{user?.farmName || 'N/A'}</Text>
             </View>
-            <IconSymbol
-              ios_icon_name="chevron.right"
-              android_material_icon_name="chevron_right"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Email:</Text>
+              <Text style={styles.infoValue}>{user?.email || 'N/A'}</Text>
+            </View>
+          </View>
         </View>
 
-        {/* App Settings Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App Settings</Text>
-          
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingLeft}>
-              <IconSymbol
-                ios_icon_name="bell.fill"
-                android_material_icon_name="notifications"
-                size={24}
-                color={colors.text}
+          <Text style={styles.sectionTitle}>AI Configuration</Text>
+          <View style={styles.card}>
+            <Text style={styles.cardSubtitle}>OpenAI API Key</Text>
+            <Text style={styles.helpText}>
+              Enter your OpenAI API key to enable AI features. Get your key from{' '}
+              <Text style={styles.link}>platform.openai.com</Text>
+            </Text>
+            
+            <View style={styles.apiKeyContainer}>
+              <TextInput
+                style={[styles.input, styles.apiKeyInput]}
+                placeholder="sk-..."
+                placeholderTextColor={colors.textSecondary}
+                value={apiKey}
+                onChangeText={setApiKey}
+                secureTextEntry={!showApiKey}
+                autoCapitalize="none"
+                autoCorrect={false}
               />
-              <Text style={styles.settingText}>Notifications</Text>
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setShowApiKey(!showApiKey)}
+              >
+                <IconSymbol
+                  ios_icon_name={showApiKey ? 'eye.slash' : 'eye'}
+                  android_material_icon_name={showApiKey ? 'visibility-off' : 'visibility'}
+                  size={24}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
             </View>
-            <IconSymbol
-              ios_icon_name="chevron.right"
-              android_material_icon_name="chevron_right"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingLeft}>
-              <IconSymbol
-                ios_icon_name="paintbrush.fill"
-                android_material_icon_name="palette"
-                size={24}
-                color={colors.text}
-              />
-              <Text style={styles.settingText}>Appearance</Text>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonPrimary]}
+                onPress={saveApiKey}
+                disabled={loading}
+              >
+                <Text style={styles.buttonText}>Save Key</Text>
+              </TouchableOpacity>
+              {apiKey && (
+                <TouchableOpacity
+                  style={[styles.button, styles.buttonDanger]}
+                  onPress={removeApiKey}
+                >
+                  <Text style={styles.buttonText}>Remove</Text>
+                </TouchableOpacity>
+              )}
             </View>
-            <IconSymbol
-              ios_icon_name="chevron.right"
-              android_material_icon_name="chevron_right"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingLeft}>
+            <View style={styles.warningBox}>
               <IconSymbol
-                ios_icon_name="globe"
-                android_material_icon_name="language"
-                size={24}
-                color={colors.text}
+                ios_icon_name="exclamationmark.triangle"
+                android_material_icon_name="warning"
+                size={20}
+                color={colors.warning}
               />
-              <Text style={styles.settingText}>Language & Region</Text>
+              <Text style={styles.warningText}>
+                Your API key is stored locally on your device and never sent to our servers.
+                Keep it secure and never share it.
+              </Text>
             </View>
-            <IconSymbol
-              ios_icon_name="chevron.right"
-              android_material_icon_name="chevron_right"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Support Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support</Text>
-          
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingLeft}>
-              <IconSymbol
-                ios_icon_name="questionmark.circle.fill"
-                android_material_icon_name="help"
-                size={24}
-                color={colors.text}
+          <Text style={styles.sectionTitle}>AI Preferences</Text>
+          <View style={styles.card}>
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <Text style={styles.settingLabel}>Image Analysis</Text>
+                <Text style={styles.settingDescription}>
+                  Enable plant diagnosis from photos
+                </Text>
+              </View>
+              <Switch
+                value={aiSettings.enableImageAnalysis}
+                onValueChange={(value) =>
+                  saveAISettings({ ...aiSettings, enableImageAnalysis: value })
+                }
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor={colors.card}
               />
-              <Text style={styles.settingText}>Help & FAQ</Text>
             </View>
-            <IconSymbol
-              ios_icon_name="chevron.right"
-              android_material_icon_name="chevron_right"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingLeft}>
-              <IconSymbol
-                ios_icon_name="envelope.fill"
-                android_material_icon_name="email"
-                size={24}
-                color={colors.text}
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <Text style={styles.settingLabel}>Chat History</Text>
+                <Text style={styles.settingDescription}>
+                  Save conversation history
+                </Text>
+              </View>
+              <Switch
+                value={aiSettings.enableChatHistory}
+                onValueChange={(value) =>
+                  saveAISettings({ ...aiSettings, enableChatHistory: value })
+                }
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor={colors.card}
               />
-              <Text style={styles.settingText}>Contact Support</Text>
             </View>
-            <IconSymbol
-              ios_icon_name="chevron.right"
-              android_material_icon_name="chevron_right"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingLeft}>
-              <IconSymbol
-                ios_icon_name="doc.text.fill"
-                android_material_icon_name="description"
-                size={24}
-                color={colors.text}
-              />
-              <Text style={styles.settingText}>Privacy Policy</Text>
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <Text style={styles.settingLabel}>AI Model</Text>
+                <Text style={styles.settingDescription}>
+                  {aiSettings.defaultModel}
+                </Text>
+              </View>
             </View>
-            <IconSymbol
-              ios_icon_name="chevron.right"
-              android_material_icon_name="chevron_right"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Sign Out Button */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>About</Text>
+          <View style={styles.card}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Version:</Text>
+              <Text style={styles.infoValue}>1.0.0</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Platform:</Text>
+              <Text style={styles.infoValue}>{Platform.OS}</Text>
+            </View>
+          </View>
+        </View>
+
         <TouchableOpacity
-          style={styles.signOutButton}
+          style={[styles.button, styles.buttonDanger, styles.signOutButton]}
           onPress={handleSignOut}
         >
           <IconSymbol
-            ios_icon_name="arrow.right.square.fill"
+            ios_icon_name="rectangle.portrait.and.arrow.right"
             android_material_icon_name="logout"
-            size={24}
-            color={colors.error}
+            size={20}
+            color={colors.card}
           />
-          <Text style={styles.signOutText}>Sign Out</Text>
+          <Text style={styles.buttonText}>Sign Out</Text>
         </TouchableOpacity>
 
-        {/* Version Info */}
-        <Text style={styles.versionText}>Version 1.0.0</Text>
-
-        {/* Bottom Padding for Tab Bar */}
-        <View style={{ height: 100 }} />
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            SmallFarm Copilot - Supporting small farms and homesteads
+          </Text>
+        </View>
       </ScrollView>
     </View>
   );
@@ -256,39 +316,18 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingTop: Platform.OS === 'android' ? 60 : 60,
+    paddingTop: Platform.OS === 'android' ? 48 : 16,
+    paddingBottom: 100,
   },
   header: {
-    marginBottom: 24,
+    alignItems: 'center',
+    marginBottom: 32,
   },
   headerTitle: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
     color: colors.text,
-  },
-  userCard: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    marginBottom: 24,
-  },
-  avatarContainer: {
-    marginBottom: 12,
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  farmName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
-    marginBottom: 4,
-  },
-  userEmail: {
-    fontSize: 14,
-    color: colors.textSecondary,
+    marginTop: 12,
   },
   section: {
     marginBottom: 24,
@@ -298,51 +337,141 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
     marginBottom: 12,
-    marginLeft: 4,
   },
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  card: {
     backgroundColor: colors.card,
-    padding: 16,
     borderRadius: 12,
+    padding: 16,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+    elevation: 2,
+  },
+  cardSubtitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
     marginBottom: 8,
-    boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08)',
-    elevation: 1,
   },
-  settingLeft: {
+  helpText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  link: {
+    color: colors.primary,
+    textDecorationLine: 'underline',
+  },
+  infoRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  settingText: {
+  infoLabel: {
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
+  infoValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  apiKeyContainer: {
+    position: 'relative',
+    marginBottom: 16,
+  },
+  input: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     fontSize: 16,
     color: colors.text,
-    marginLeft: 12,
   },
-  signOutButton: {
+  apiKeyInput: {
+    paddingRight: 50,
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+    padding: 4,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  button: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.card,
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 8,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.error,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    gap: 8,
   },
-  signOutText: {
+  buttonPrimary: {
+    backgroundColor: colors.primary,
+  },
+  buttonDanger: {
+    backgroundColor: colors.error,
+  },
+  buttonText: {
+    color: colors.card,
     fontSize: 16,
     fontWeight: '600',
-    color: colors.error,
-    marginLeft: 12,
   },
-  versionText: {
+  warningBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: colors.warning + '15',
+    padding: 12,
+    borderRadius: 8,
+  },
+  warningText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.text,
+    lineHeight: 18,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  settingInfo: {
+    flex: 1,
+    marginRight: 16,
+  },
+  settingLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  settingDescription: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  signOutButton: {
+    marginTop: 24,
+  },
+  footer: {
+    marginTop: 32,
+    alignItems: 'center',
+  },
+  footerText: {
     fontSize: 12,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 8,
   },
 });
