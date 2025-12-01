@@ -63,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Validate inputs
       if (!email || !password) {
+        console.log('Missing email or password');
         return { success: false, error: 'Please enter your email and password' };
       }
 
@@ -98,6 +99,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       console.log('Storing user in AsyncStorage:', userToStore);
       await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userToStore));
+      
+      // Verify the data was stored
+      const verifyData = await AsyncStorage.getItem(STORAGE_KEYS.USER);
+      console.log('Verification - data stored:', verifyData);
       
       console.log('Setting user state...');
       setUser(userToStore);
@@ -174,6 +179,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Storing user in AsyncStorage:', userToStore);
       await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userToStore));
       
+      // Verify the data was stored
+      const verifyData = await AsyncStorage.getItem(STORAGE_KEYS.USER);
+      console.log('Verification - data stored:', verifyData);
+      
       console.log('Setting user state...');
       setUser(userToStore);
       
@@ -196,8 +205,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const value = {
+    user,
+    isLoading,
+    signIn,
+    signUp,
+    signOut,
+  };
+
+  console.log('AuthContext rendering with user:', user ? user.email : 'null', 'isLoading:', isLoading);
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

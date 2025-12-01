@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { IconSymbol } from '@/components/IconSymbol';
 
 export default function AuthScreen() {
-  const { signIn, signUp, isLoading } = useAuth();
+  const { signIn, signUp, isLoading, user } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -32,6 +32,11 @@ export default function AuthScreen() {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [nameError, setNameError] = useState('');
+
+  // Debug: Log when user changes
+  useEffect(() => {
+    console.log('AuthScreen - user changed:', user ? user.email : 'null');
+  }, [user]);
 
   const validateEmail = (text: string) => {
     setEmail(text);
@@ -64,7 +69,7 @@ export default function AuthScreen() {
   };
 
   const handleSubmit = async () => {
-    console.log('=== SUBMIT PRESSED ===');
+    console.log('=== AUTH SCREEN: SUBMIT PRESSED ===');
     
     if (isSubmitting) {
       console.log('Already submitting, ignoring');
@@ -109,6 +114,7 @@ export default function AuthScreen() {
     }
 
     setIsSubmitting(true);
+    console.log('Setting isSubmitting to true');
 
     try {
       let result;
@@ -124,10 +130,10 @@ export default function AuthScreen() {
       console.log('Auth result:', result);
 
       if (result && result.success) {
-        console.log('✅ Authentication successful! User state updated, navigation will happen automatically');
-        // Don't navigate here - let the _layout.tsx handle it based on user state
-        // The user state has been updated in the context, which will trigger navigation
-        // Keep isSubmitting true to prevent double-submission while navigation happens
+        console.log('✅ Authentication successful!');
+        // Don't set isSubmitting to false - keep the loading state
+        // Navigation will happen automatically via _layout.tsx
+        // The form will stay disabled until navigation completes
       } else {
         console.log('❌ Authentication failed:', result?.error);
         Alert.alert('Authentication Failed', result?.error || 'An error occurred');
@@ -141,6 +147,11 @@ export default function AuthScreen() {
   };
 
   const toggleMode = () => {
+    if (isSubmitting) {
+      console.log('Cannot toggle mode while submitting');
+      return;
+    }
+    
     setIsLogin(!isLogin);
     setEmail('');
     setPassword('');
@@ -334,7 +345,7 @@ export default function AuthScreen() {
                 {isLogin ? "Don't have an account?" : 'Already have an account?'}
               </Text>
               <TouchableOpacity onPress={toggleMode} disabled={isSubmitting}>
-                <Text style={styles.toggleButton}>
+                <Text style={[styles.toggleButton, isSubmitting && styles.toggleButtonDisabled]}>
                   {isLogin ? 'Sign Up' : 'Sign In'}
                 </Text>
               </TouchableOpacity>
@@ -358,6 +369,9 @@ export default function AuthScreen() {
             <View style={styles.devHint}>
               <Text style={styles.devHintText}>
                 💡 Dev Tip: Create an account to test, or sign in if you already have one
+              </Text>
+              <Text style={styles.devHintText}>
+                Current user: {user ? user.email : 'None'}
               </Text>
             </View>
           )}
@@ -488,6 +502,9 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
+  toggleButtonDisabled: {
+    opacity: 0.5,
+  },
   infoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -510,5 +527,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.card,
     textAlign: 'center',
+    marginVertical: 2,
   },
 });

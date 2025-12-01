@@ -1,6 +1,6 @@
 
 import "react-native-reanimated";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -33,6 +33,7 @@ function RootLayoutNav() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
+  const [navigationReady, setNavigationReady] = useState(false);
 
   useEffect(() => {
     if (loaded) {
@@ -55,6 +56,7 @@ function RootLayoutNav() {
     console.log('Current segments:', segments);
     console.log('In auth group:', inAuthGroup);
     console.log('In test-auth:', inTestAuth);
+    console.log('Navigation ready:', navigationReady);
 
     // Don't redirect if we're in test-auth
     if (inTestAuth) {
@@ -62,22 +64,32 @@ function RootLayoutNav() {
       return;
     }
 
+    // Prevent navigation loops by tracking if we've already navigated
+    if (!navigationReady) {
+      setNavigationReady(true);
+      return;
+    }
+
     if (!user && !inAuthGroup) {
       // User is not logged in and not on auth screen - redirect to auth
       console.log('❌ No user found, redirecting to /auth');
-      setTimeout(() => {
+      try {
         router.replace('/auth');
-      }, 100);
+      } catch (error) {
+        console.error('Navigation error to auth:', error);
+      }
     } else if (user && inAuthGroup) {
       // User is logged in but still on auth screen - redirect to app
       console.log('✅ User logged in, redirecting to /(tabs)/crops');
-      setTimeout(() => {
+      try {
         router.replace('/(tabs)/crops');
-      }, 100);
+      } catch (error) {
+        console.error('Navigation error to crops:', error);
+      }
     } else {
       console.log('✓ Navigation state is correct, no action needed');
     }
-  }, [user, segments, isLoading, loaded, router]);
+  }, [user, segments, isLoading, loaded, navigationReady]);
 
   React.useEffect(() => {
     if (
