@@ -48,6 +48,29 @@ export interface Crop {
   specialNotes: string;
 }
 
+export interface SoilHealthRecord {
+  id: string;
+  date: string; // ISO date
+  phLevel: number;
+  organicMatter: number; // percentage
+  nitrogen: 'low' | 'medium' | 'high';
+  phosphorus: 'low' | 'medium' | 'high';
+  potassium: 'low' | 'medium' | 'high';
+  notes: string;
+}
+
+export interface PestDiseaseRecord {
+  id: string;
+  date: string; // ISO date
+  type: 'pest' | 'disease';
+  name: string;
+  severity: 'low' | 'medium' | 'high';
+  affectedCrops: string[]; // crop ids
+  treatment: string;
+  resolved: boolean;
+  notes: string;
+}
+
 export interface Field {
   id: string;
   name: string;
@@ -57,6 +80,14 @@ export interface Field {
   soilType: string;
   irrigationType: 'drip' | 'sprinkler' | 'hand-water' | 'rain-fed';
   notes: string;
+  
+  // Soil health tracking
+  soilHealthRecords: SoilHealthRecord[];
+  currentPH: number;
+  lastSoilTest: string; // ISO date
+  
+  // Pest and disease history
+  pestDiseaseHistory: PestDiseaseRecord[];
 }
 
 export interface Planting {
@@ -69,6 +100,11 @@ export interface Planting {
   quantity: number; // number of plants
   status: 'planned' | 'planted' | 'growing' | 'harvested';
   notes: string;
+  
+  // Issues tracking
+  pestIssues: string[];
+  diseaseIssues: string[];
+  yieldQuality: 'poor' | 'fair' | 'good' | 'excellent';
 }
 
 export interface Task {
@@ -111,4 +147,20 @@ export interface UserSettings {
   farmType: 'homestead' | 'small-farm';
   primarySalesChannel: 'self-sufficiency' | 'roadside-stand' | 'restaurant' | 'csa' | 'farmers-market';
   measurementSystem: 'imperial' | 'metric';
+}
+
+export interface PlantingRecommendation {
+  cropId: string;
+  cropName: string;
+  score: number; // 0-100
+  reasons: string[];
+  warnings: string[];
+  benefits: string[];
+}
+
+export interface CropToAvoid {
+  cropId: string;
+  cropName: string;
+  reasons: string[];
+  riskLevel: 'low' | 'medium' | 'high';
 }
