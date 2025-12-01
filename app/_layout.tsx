@@ -1,6 +1,6 @@
 
 import "react-native-reanimated";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -33,17 +33,20 @@ function RootLayoutNav() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
+  const [navigationReady, setNavigationReady] = useState(false);
 
   useEffect(() => {
     if (loaded && !isLoading) {
       SplashScreen.hideAsync();
+      // Small delay to ensure everything is ready
+      setTimeout(() => setNavigationReady(true), 100);
     }
   }, [loaded, isLoading]);
 
   // Handle navigation based on auth state
   useEffect(() => {
-    if (isLoading || !loaded) {
-      console.log('Still loading, skipping navigation');
+    if (!navigationReady || isLoading || !loaded) {
+      console.log('Navigation not ready yet');
       return;
     }
 
@@ -54,18 +57,21 @@ function RootLayoutNav() {
     console.log('Segments:', segments);
     console.log('In auth group:', inAuthGroup);
 
-    if (!user && !inAuthGroup) {
-      // User is not logged in and not on auth screen - redirect to auth
-      console.log('❌ No user, redirecting to auth');
-      router.replace('/auth');
-    } else if (user && inAuthGroup) {
-      // User is logged in but on auth screen - redirect to app
-      console.log('✅ User logged in, redirecting to crops');
-      router.replace('/(tabs)/crops');
-    } else {
-      console.log('✓ Navigation state is correct');
-    }
-  }, [user, segments, isLoading, loaded]);
+    // Use setTimeout to avoid navigation conflicts
+    setTimeout(() => {
+      if (!user && !inAuthGroup) {
+        // User is not logged in and not on auth screen - redirect to auth
+        console.log('❌ No user, redirecting to auth');
+        router.replace('/auth');
+      } else if (user && inAuthGroup) {
+        // User is logged in but on auth screen - redirect to app
+        console.log('✅ User logged in, redirecting to crops');
+        router.replace('/(tabs)/crops');
+      } else {
+        console.log('✓ Navigation state is correct');
+      }
+    }, 50);
+  }, [user, segments, isLoading, loaded, navigationReady]);
 
   React.useEffect(() => {
     if (

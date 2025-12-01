@@ -16,9 +16,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { colors } from '@/styles/commonStyles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { IconSymbol } from '@/components/IconSymbol';
+import { useRouter } from 'expo-router';
 
 export default function AuthScreen() {
   const { signIn, signUp, isLoading } = useAuth();
+  const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -124,7 +126,11 @@ export default function AuthScreen() {
 
       if (result && result.success) {
         console.log('✅ Authentication successful!');
-        // Navigation will happen automatically via the _layout.tsx useEffect
+        // Add a small delay before navigation to ensure state is updated
+        setTimeout(() => {
+          console.log('Navigating to crops...');
+          router.replace('/(tabs)/crops');
+        }, 300);
       } else {
         console.log('❌ Authentication failed:', result?.error);
         Alert.alert('Authentication Failed', result?.error || 'An error occurred');

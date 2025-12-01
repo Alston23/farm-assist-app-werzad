@@ -102,8 +102,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Setting user state...');
       setUser(userToStore);
       
-      // Small delay to ensure state propagates
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Longer delay to ensure state propagates and navigation can happen
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       console.log('=== SIGN IN SUCCESS ===');
       return { success: true };
@@ -180,8 +180,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Setting user state...');
       setUser(userToStore);
       
-      // Small delay to ensure state propagates
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Longer delay to ensure state propagates and navigation can happen
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       console.log('=== SIGN UP SUCCESS ===');
       return { success: true };
