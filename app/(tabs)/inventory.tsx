@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   Platform,
   Alert,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
@@ -19,6 +21,8 @@ import {
   PackagingItem,
   YieldItem,
   StorageLocation,
+  UsageRecord,
+  SaleRecord,
 } from '@/types/inventory';
 
 export default function InventoryScreen() {
@@ -28,6 +32,24 @@ export default function InventoryScreen() {
   const [yields, setYields] = useState<YieldItem[]>([]);
   const [storageLocations, setStorageLocations] = useState<StorageLocation[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Modal states
+  const [showUsageModal, setShowUsageModal] = useState(false);
+  const [showSaleModal, setShowSaleModal] = useState(false);
+
+  // Usage form state
+  const [usageItemType, setUsageItemType] = useState<'fertilizer' | 'seed' | 'packaging'>('fertilizer');
+  const [usageItemId, setUsageItemId] = useState('');
+  const [usageQuantity, setUsageQuantity] = useState('');
+  const [usageUsedFor, setUsageUsedFor] = useState('');
+  const [usageNotes, setUsageNotes] = useState('');
+
+  // Sale form state
+  const [saleYieldId, setSaleYieldId] = useState('');
+  const [saleQuantity, setSaleQuantity] = useState('');
+  const [salePrice, setSalePrice] = useState('');
+  const [saleCustomer, setSaleCustomer] = useState('');
+  const [saleNotes, setSaleNotes] = useState('');
 
   useEffect(() => {
     loadInventoryData();
@@ -65,7 +87,7 @@ export default function InventoryScreen() {
   // Calculate low stock items
   const getLowStockCount = (items: any[], type: string) => {
     return items.filter(item => {
-      if (type === 'yield') return false; // Yields don't have low stock threshold
+      if (type === 'yield') return false;
       return item.quantity <= item.lowStockThreshold;
     }).length;
   };
@@ -91,6 +113,184 @@ export default function InventoryScreen() {
   };
 
   const storageUsage = calculateStorageUsage();
+
+  const handleRecordUsage = async () => {
+    if (!usageItemId || !usageQuantity) {
+      Alert.alert('Error', 'Please select an item and enter quantity');
+      return;
+    }
+
+    const quantity = parseFloat(usageQuantity);
+    if (isNaN(quantity) || quantity <= 0) {
+      Alert.alert('Error', 'Please enter a valid quantity');
+      return;
+    }
+
+    let itemName = '';
+    let unit = '';
+    let updatedItems: any[] = [];
+
+    // Get the item and update quantity
+    if (usageItemType === 'fertilizer') {
+      const item = fertilizers.find(f => f.id === usageItemId);
+      if (!item) {
+        Alert.alert('Error', 'Item not found');
+        return;
+      }
+      if (item.quantity < quantity) {
+        Alert.alert('Error', 'Not enough quantity available');
+        return;
+      }
+      itemName = item.name;
+      unit = item.unit;
+      updatedItems = fertilizers.map(f =>
+        f.id === usageItemId ? { ...f, quantity: f.quantity - quantity } : f
+      );
+      await inventoryStorage.saveFertilizers(updatedItems);
+      setFertilizers(updatedItems);
+    } else if (usageItemType === 'seed') {
+      const item = seeds.find(s => s.id === usageItemId);
+      if (!item) {
+        Alert.alert('Error', 'Item not found');
+        return;
+      }
+      if (item.quantity < quantity) {
+        Alert.alert('Error', 'Not enough quantity available');
+        return;
+      }
+      itemName = `${item.cropName} - ${item.variety}`;
+      unit = item.unit;
+      updatedItems = seeds.map(s =>
+        s.id === usageItemId ? { ...s, quantity: s.quantity - quantity } : s
+      );
+      await inventoryStorage.saveSeeds(updatedItems);
+      setSeeds(updatedItems);
+    } else if (usageItemType === 'packaging') {
+      const item = packaging.find(p => p.id === usageItemId);
+      if (!item) {
+        Alert.alert('Error', 'Item not found');
+        return;
+      }
+      if (item.quantity < quantity) {
+        Alert.alert('Error', 'Not enough quantity available');
+        return;
+      }
+      itemName = item.name;
+      unit = 'units';
+      updatedItems = packaging.map(p =>
+        p.id === usageItemId ? { ...p, quantity: p.quantity - quantity } : p
+      );
+      await inventoryStorage.savePackaging(updatedItems);
+      setPackaging(updatedItems);
+    }
+
+    // Save usage record
+    const usageRecord: UsageRecord = {
+      id: Date.now().toString(),
+      itemType: usageItemType,
+      itemId: usageItemId,
+      itemName,
+      quantity,
+      unit,
+      usageDate: new Date().toISOString(),
+      usedFor: usageUsedFor.trim(),
+      notes: usageNotes.trim(),
+    };
+
+    const usageRecords = await inventoryStorage.getUsageRecords();
+    await inventoryStorage.saveUsageRecords([...usageRecords, usageRecord]);
+
+    Alert.alert('Success', 'Usage recorded successfully');
+    resetUsageForm();
+    setShowUsageModal(false);
+  };
+
+  const handleRecordSale = async () => {
+    if (!saleYieldId || !saleQuantity) {
+      Alert.alert('Error', 'Please select a yield and enter quantity');
+      return;
+    }
+
+    const quantity = parseFloat(saleQuantity);
+    if (isNaN(quantity) || quantity <= 0) {
+      Alert.alert('Error', 'Please enter a valid quantity');
+      return;
+    }
+
+    const yieldItem = yields.find(y => y.id === saleYieldId);
+    if (!yieldItem) {
+      Alert.alert('Error', 'Yield not found');
+      return;
+    }
+
+    if (yieldItem.quantity < quantity) {
+      Alert.alert('Error', 'Not enough quantity available');
+      return;
+    }
+
+    // Update yield quantity
+    const updatedYields = yields.map(y =>
+      y.id === saleYieldId ? { ...y, quantity: y.quantity - quantity } : y
+    );
+    await inventoryStorage.saveYields(updatedYields);
+    setYields(updatedYields);
+
+    // Save sale record
+    const saleRecord: SaleRecord = {
+      id: Date.now().toString(),
+      yieldItemId: saleYieldId,
+      cropName: yieldItem.cropName,
+      quantity,
+      unit: yieldItem.unit,
+      saleDate: new Date().toISOString(),
+      price: salePrice ? parseFloat(salePrice) : undefined,
+      customer: saleCustomer.trim(),
+      notes: saleNotes.trim(),
+    };
+
+    const salesRecords = await inventoryStorage.getSales();
+    await inventoryStorage.saveSales([...salesRecords, saleRecord]);
+
+    Alert.alert('Success', 'Sale recorded successfully');
+    resetSaleForm();
+    setShowSaleModal(false);
+  };
+
+  const resetUsageForm = () => {
+    setUsageItemType('fertilizer');
+    setUsageItemId('');
+    setUsageQuantity('');
+    setUsageUsedFor('');
+    setUsageNotes('');
+  };
+
+  const resetSaleForm = () => {
+    setSaleYieldId('');
+    setSaleQuantity('');
+    setSalePrice('');
+    setSaleCustomer('');
+    setSaleNotes('');
+  };
+
+  const getAvailableItems = () => {
+    switch (usageItemType) {
+      case 'fertilizer':
+        return fertilizers;
+      case 'seed':
+        return seeds;
+      case 'packaging':
+        return packaging;
+      default:
+        return [];
+    }
+  };
+
+  const getItemDisplayName = (item: any) => {
+    if (usageItemType === 'seed') {
+      return `${item.cropName} - ${item.variety}`;
+    }
+    return item.name;
+  };
 
   const categories = [
     {
@@ -230,7 +430,7 @@ export default function InventoryScreen() {
 
           <TouchableOpacity
             style={styles.manageStorageButton}
-            onPress={() => Alert.alert('Coming Soon', 'Storage management feature will be available soon!')}
+            onPress={() => router.push('/storage-locations')}
           >
             <Text style={styles.manageStorageText}>Manage Storage Locations</Text>
             <IconSymbol
@@ -248,13 +448,7 @@ export default function InventoryScreen() {
             <React.Fragment key={index}>
               <TouchableOpacity
                 style={[commonStyles.card, styles.categoryCard]}
-                onPress={() => {
-                  if (category.id === 'yields') {
-                    router.push('/yields');
-                  } else {
-                    Alert.alert('Coming Soon', `${category.title} management will be available soon!`);
-                  }
-                }}
+                onPress={() => router.push(category.route as any)}
               >
                 <View style={[styles.categoryIcon, { backgroundColor: category.color + '20' }]}>
                   <IconSymbol
@@ -300,7 +494,10 @@ export default function InventoryScreen() {
           <View style={styles.actionsGrid}>
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => Alert.alert('Coming Soon', 'Record usage feature will be available soon!')}
+              onPress={() => {
+                resetUsageForm();
+                setShowUsageModal(true);
+              }}
             >
               <IconSymbol
                 ios_icon_name="minus.circle.fill"
@@ -313,7 +510,10 @@ export default function InventoryScreen() {
 
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => Alert.alert('Coming Soon', 'Record sale feature will be available soon!')}
+              onPress={() => {
+                resetSaleForm();
+                setShowSaleModal(true);
+              }}
             >
               <IconSymbol
                 ios_icon_name="dollarsign.circle.fill"
@@ -355,6 +555,214 @@ export default function InventoryScreen() {
         {/* Bottom Padding for Tab Bar */}
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* Record Usage Modal */}
+      <Modal
+        visible={showUsageModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowUsageModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Record Usage</Text>
+              <TouchableOpacity onPress={() => setShowUsageModal(false)}>
+                <IconSymbol
+                  ios_icon_name="xmark"
+                  android_material_icon_name="close"
+                  size={24}
+                  color={colors.text}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              <Text style={styles.label}>Item Type</Text>
+              <View style={styles.typeSelector}>
+                {(['fertilizer', 'seed', 'packaging'] as const).map((type, idx) => (
+                  <React.Fragment key={idx}>
+                    <TouchableOpacity
+                      style={[
+                        styles.typeButton,
+                        usageItemType === type && styles.typeButtonActive,
+                      ]}
+                      onPress={() => {
+                        setUsageItemType(type);
+                        setUsageItemId('');
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.typeButtonText,
+                          usageItemType === type && styles.typeButtonTextActive,
+                        ]}
+                      >
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
+
+              <Text style={styles.label}>Select Item *</Text>
+              <ScrollView style={styles.itemSelector} nestedScrollEnabled>
+                {getAvailableItems().map((item, idx) => (
+                  <React.Fragment key={idx}>
+                    <TouchableOpacity
+                      style={[
+                        styles.itemOption,
+                        usageItemId === item.id && styles.itemOptionSelected,
+                      ]}
+                      onPress={() => setUsageItemId(item.id)}
+                    >
+                      <Text style={styles.itemOptionName}>
+                        {getItemDisplayName(item)}
+                      </Text>
+                      <Text style={styles.itemOptionQuantity}>
+                        Available: {item.quantity} {item.unit || 'units'}
+                      </Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </ScrollView>
+
+              <Text style={styles.label}>Quantity Used *</Text>
+              <TextInput
+                style={commonStyles.input}
+                placeholder="Enter quantity"
+                placeholderTextColor={colors.textSecondary}
+                value={usageQuantity}
+                onChangeText={setUsageQuantity}
+                keyboardType="decimal-pad"
+              />
+
+              <Text style={styles.label}>Used For</Text>
+              <TextInput
+                style={commonStyles.input}
+                placeholder="e.g., Field A, Tomato Crop"
+                placeholderTextColor={colors.textSecondary}
+                value={usageUsedFor}
+                onChangeText={setUsageUsedFor}
+              />
+
+              <Text style={styles.label}>Notes</Text>
+              <TextInput
+                style={[commonStyles.input, styles.textArea]}
+                placeholder="Additional notes..."
+                placeholderTextColor={colors.textSecondary}
+                value={usageNotes}
+                onChangeText={setUsageNotes}
+                multiline
+                numberOfLines={3}
+              />
+
+              <TouchableOpacity
+                style={[commonStyles.button, styles.saveButton]}
+                onPress={handleRecordUsage}
+              >
+                <Text style={commonStyles.buttonText}>Record Usage</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Record Sale Modal */}
+      <Modal
+        visible={showSaleModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowSaleModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Record Sale</Text>
+              <TouchableOpacity onPress={() => setShowSaleModal(false)}>
+                <IconSymbol
+                  ios_icon_name="xmark"
+                  android_material_icon_name="close"
+                  size={24}
+                  color={colors.text}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              <Text style={styles.label}>Select Yield *</Text>
+              <ScrollView style={styles.itemSelector} nestedScrollEnabled>
+                {yields.map((yieldItem, idx) => (
+                  <React.Fragment key={idx}>
+                    <TouchableOpacity
+                      style={[
+                        styles.itemOption,
+                        saleYieldId === yieldItem.id && styles.itemOptionSelected,
+                      ]}
+                      onPress={() => setSaleYieldId(yieldItem.id)}
+                    >
+                      <Text style={styles.itemOptionName}>
+                        {yieldItem.cropName}
+                        {yieldItem.variety && ` - ${yieldItem.variety}`}
+                      </Text>
+                      <Text style={styles.itemOptionQuantity}>
+                        Available: {yieldItem.quantity} {yieldItem.unit}
+                      </Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </ScrollView>
+
+              <Text style={styles.label}>Quantity Sold *</Text>
+              <TextInput
+                style={commonStyles.input}
+                placeholder="Enter quantity"
+                placeholderTextColor={colors.textSecondary}
+                value={saleQuantity}
+                onChangeText={setSaleQuantity}
+                keyboardType="decimal-pad"
+              />
+
+              <Text style={styles.label}>Sale Price</Text>
+              <TextInput
+                style={commonStyles.input}
+                placeholder="Enter price (optional)"
+                placeholderTextColor={colors.textSecondary}
+                value={salePrice}
+                onChangeText={setSalePrice}
+                keyboardType="decimal-pad"
+              />
+
+              <Text style={styles.label}>Customer</Text>
+              <TextInput
+                style={commonStyles.input}
+                placeholder="Customer name (optional)"
+                placeholderTextColor={colors.textSecondary}
+                value={saleCustomer}
+                onChangeText={setSaleCustomer}
+              />
+
+              <Text style={styles.label}>Notes</Text>
+              <TextInput
+                style={[commonStyles.input, styles.textArea]}
+                placeholder="Additional notes..."
+                placeholderTextColor={colors.textSecondary}
+                value={saleNotes}
+                onChangeText={setSaleNotes}
+                multiline
+                numberOfLines={3}
+              />
+
+              <TouchableOpacity
+                style={[commonStyles.button, styles.saveButton]}
+                onPress={handleRecordSale}
+              >
+                <Text style={commonStyles.buttonText}>Record Sale</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -512,5 +920,101 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginTop: 8,
     textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '90%',
+    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  modalScroll: {
+    padding: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  typeSelector: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  typeButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.highlight,
+    alignItems: 'center',
+  },
+  typeButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  typeButtonText: {
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  typeButtonTextActive: {
+    color: '#FFFFFF',
+  },
+  itemSelector: {
+    maxHeight: 200,
+    borderWidth: 1,
+    borderColor: colors.highlight,
+    borderRadius: 12,
+    padding: 8,
+  },
+  itemOption: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: colors.card,
+  },
+  itemOptionSelected: {
+    backgroundColor: colors.primary + '20',
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  itemOptionName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  itemOptionQuantity: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  saveButton: {
+    marginTop: 24,
+    marginBottom: 16,
   },
 });
