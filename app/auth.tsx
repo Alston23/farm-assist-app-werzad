@@ -36,6 +36,11 @@ export default function AuthScreen() {
   // Debug: Log when user changes
   useEffect(() => {
     console.log('AuthScreen - user changed:', user ? user.email : 'null');
+    // If user is logged in, reset the submitting state
+    if (user) {
+      console.log('User is logged in, resetting form state');
+      setIsSubmitting(false);
+    }
   }, [user]);
 
   const validateEmail = (text: string) => {
@@ -131,8 +136,7 @@ export default function AuthScreen() {
 
       if (result && result.success) {
         console.log('✅ Authentication successful!');
-        // Don't set isSubmitting to false - keep the loading state
-        // Navigation will happen automatically via _layout.tsx
+        // Keep the loading state - navigation will happen automatically
         // The form will stay disabled until navigation completes
       } else {
         console.log('❌ Authentication failed:', result?.error);

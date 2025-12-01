@@ -2,7 +2,7 @@
 import "react-native-reanimated";
 import React, { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter, useSegments, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { SystemBars } from "react-native-edge-to-edge";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -29,24 +29,23 @@ function RootLayoutNav() {
   const networkState = useNetworkState();
   const { user, isLoading } = useAuth();
   const segments = useSegments();
+  const pathname = usePathname();
   const router = useRouter();
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
-  const [navigationReady, setNavigationReady] = useState(false);
+  const [hasNavigated, setHasNavigated] = useState(false);
 
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
-      // Small delay to ensure navigation is ready
-      setTimeout(() => setNavigationReady(true), 100);
     }
   }, [loaded]);
 
   // Handle navigation based on auth state
   useEffect(() => {
-    if (!loaded || isLoading || !navigationReady) {
-      console.log('⏳ Still loading... fonts:', loaded, 'auth:', !isLoading, 'nav:', navigationReady);
+    if (!loaded || isLoading) {
+      console.log('⏳ Still loading... fonts:', loaded, 'auth:', !isLoading);
       return;
     }
 
@@ -55,9 +54,11 @@ function RootLayoutNav() {
 
     console.log('=== NAVIGATION CHECK ===');
     console.log('User:', user ? user.email : 'null');
+    console.log('Current pathname:', pathname);
     console.log('Current segments:', segments);
     console.log('In auth group:', inAuthGroup);
     console.log('In test-auth:', inTestAuth);
+    console.log('Has navigated:', hasNavigated);
 
     // Don't redirect if we're in test-auth
     if (inTestAuth) {
@@ -68,29 +69,20 @@ function RootLayoutNav() {
     if (!user && !inAuthGroup) {
       // User is not logged in and not on auth screen - redirect to auth
       console.log('❌ No user found, redirecting to /auth');
-      setTimeout(() => {
-        try {
-          router.replace('/auth');
-          console.log('✓ Navigation to /auth completed');
-        } catch (error) {
-          console.error('Navigation error to auth:', error);
-        }
-      }, 50);
+      setHasNavigated(true);
+      router.replace('/auth');
+      console.log('✓ Navigation to /auth initiated');
     } else if (user && inAuthGroup) {
       // User is logged in but still on auth screen - redirect to app
       console.log('✅ User logged in, redirecting to /(tabs)/crops');
-      setTimeout(() => {
-        try {
-          router.replace('/(tabs)/crops');
-          console.log('✓ Navigation to /(tabs)/crops completed');
-        } catch (error) {
-          console.error('Navigation error to crops:', error);
-        }
-      }, 50);
+      setHasNavigated(true);
+      router.replace('/(tabs)/crops');
+      console.log('✓ Navigation to /(tabs)/crops initiated');
     } else {
       console.log('✓ Navigation state is correct, no action needed');
+      setHasNavigated(false);
     }
-  }, [user, segments, isLoading, loaded, navigationReady, router]);
+  }, [user, segments, pathname, isLoading, loaded]);
 
   React.useEffect(() => {
     if (
