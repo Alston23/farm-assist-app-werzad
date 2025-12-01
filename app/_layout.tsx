@@ -49,17 +49,20 @@ function RootLayoutNav() {
     console.log('Root layout - user:', user ? user.email : 'null', 'segments:', segments);
 
     const inAuthGroup = segments[0] === 'auth';
+    const inTabsGroup = segments[0] === '(tabs)';
 
-    if (!user && !inAuthGroup) {
-      console.log('Root layout - No user and not on auth, redirecting to auth');
-      setTimeout(() => {
-        router.replace('/auth');
-      }, 50);
+    if (!user && inTabsGroup) {
+      console.log('Root layout - No user but in tabs, redirecting to auth');
+      router.replace('/auth');
     } else if (user && inAuthGroup) {
       console.log('Root layout - User exists but on auth screen, redirecting to crops');
-      setTimeout(() => {
-        router.replace('/(tabs)/crops');
-      }, 50);
+      router.replace('/(tabs)/crops');
+    } else if (user && !inTabsGroup && !inAuthGroup) {
+      console.log('Root layout - User exists but not in tabs or auth, redirecting to crops');
+      router.replace('/(tabs)/crops');
+    } else if (!user && !inAuthGroup) {
+      console.log('Root layout - No user and not on auth, redirecting to auth');
+      router.replace('/auth');
     } else {
       console.log('Root layout - Navigation state is correct');
     }

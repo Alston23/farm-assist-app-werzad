@@ -34,7 +34,9 @@ export default function AuthScreen() {
     console.log('Auth screen - authLoading:', authLoading, 'user:', user ? user.email : 'null');
     if (!authLoading && user) {
       console.log('Auth screen - User is logged in, redirecting to crops...');
-      router.replace('/(tabs)/crops');
+      setTimeout(() => {
+        router.replace('/(tabs)/crops');
+      }, 100);
     }
   }, [user, authLoading]);
 
@@ -78,15 +80,9 @@ export default function AuthScreen() {
 
       if (result && result.success) {
         console.log('=== AUTHENTICATION SUCCESSFUL ===');
-        Alert.alert('Success', isLogin ? 'Welcome back!' : 'Account created successfully!', [
-          {
-            text: 'OK',
-            onPress: () => {
-              console.log('Navigating to crops...');
-              router.replace('/(tabs)/crops');
-            }
-          }
-        ]);
+        console.log('User state will update and trigger navigation via useEffect');
+        // Don't set isSubmitting to false - let the navigation happen
+        // The component will unmount when navigation occurs
       } else {
         console.log('=== AUTHENTICATION FAILED ===');
         console.log('Error:', result?.error);
@@ -256,7 +252,12 @@ export default function AuthScreen() {
               activeOpacity={0.7}
             >
               {isSubmitting ? (
-                <ActivityIndicator color={colors.card} />
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator color={colors.card} />
+                  <Text style={styles.loadingText}>
+                    {isLogin ? 'Signing in...' : 'Creating account...'}
+                  </Text>
+                </View>
               ) : (
                 <Text style={styles.submitButtonText}>
                   {isLogin ? 'Sign In' : 'Create Account'}
@@ -366,6 +367,16 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: colors.card,
     fontSize: 18,
+    fontWeight: '600',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    color: colors.card,
+    fontSize: 16,
     fontWeight: '600',
   },
   toggleContainer: {

@@ -94,6 +94,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userToStore);
       
       console.log('AuthContext: SignIn SUCCESS! User logged in:', userToStore.email);
+      
+      // Add a small delay to ensure state updates propagate
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       return { success: true };
     } catch (error) {
       console.error('AuthContext: Error signing in:', error);
@@ -171,6 +175,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userToStore));
       setUser(userToStore);
       console.log('AuthContext: SignUp SUCCESS! User logged in:', userToStore.email);
+
+      // Add a small delay to ensure state updates propagate
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       return { success: true };
     } catch (error) {
