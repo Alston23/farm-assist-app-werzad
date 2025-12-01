@@ -17,11 +17,15 @@ import { Task, Planting, Field } from '@/types/crop';
 import { IconSymbol } from '@/components/IconSymbol';
 import { storage } from '@/utils/storage';
 import { cropDatabase } from '@/data/cropDatabase';
+import { equipmentStorage } from '@/utils/equipmentStorage';
+import { MaintenanceSchedule, Equipment } from '@/types/equipment';
 
 export default function ScheduleScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [plantings, setPlantings] = useState<Planting[]>([]);
   const [fields, setFields] = useState<Field[]>([]);
+  const [maintenanceSchedules, setMaintenanceSchedules] = useState<MaintenanceSchedule[]>([]);
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editingPlanting, setEditingPlanting] = useState<Planting | null>(null);
@@ -32,14 +36,18 @@ export default function ScheduleScreen() {
   }, []);
 
   const loadData = async () => {
-    const [loadedTasks, loadedPlantings, loadedFields] = await Promise.all([
+    const [loadedTasks, loadedPlantings, loadedFields, loadedSchedules, loadedEquipment] = await Promise.all([
       storage.getTasks(),
       storage.getPlantings(),
       storage.getFields(),
+      equipmentStorage.getMaintenanceSchedules(),
+      equipmentStorage.getEquipment(),
     ]);
     setTasks(loadedTasks);
     setPlantings(loadedPlantings);
     setFields(loadedFields);
+    setMaintenanceSchedules(loadedSchedules);
+    setEquipment(loadedEquipment);
   };
 
   const saveTasks = async (newTasks: Task[]) => {
@@ -204,6 +212,57 @@ export default function ScheduleScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
+        {/* Equipment Maintenance */}
+        {maintenanceSchedules.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Equipment Maintenance</Text>
+            {maintenanceSchedules
+              .filter((schedule) => {
+                const dueDate = new Date(schedule.nextDue);
+                const today = new Date();
+                const sevenDaysFromNow = new Date();
+                sevenDaysFromNow.setDate(today.getDate() + 7);
+                return dueDate <= sevenDaysFromNow;
+              })
+              .sort((a, b) => new Date(a.nextDue).getTime() - new Date(b.nextDue).getTime())
+              .slice(0, 3)
+              .map((schedule) => {
+                const equipmentItem = equipment.find((e) => e.id === schedule.equipmentId);
+                const dueDate = new Date(schedule.nextDue);
+                const today = new Date();
+                const isOverdue = dueDate < today;
+
+                return (
+                  <View key={schedule.id} style={styles.maintenanceCard}>
+                    <View style={styles.maintenanceHeader}>
+                      <IconSymbol
+                        ios_icon_name="wrench.and.screwdriver"
+                        android_material_icon_name="build"
+                        size={20}
+                        color={isOverdue ? colors.error : colors.primary}
+                      />
+                      <View style={styles.maintenanceInfo}>
+                        <Text style={styles.maintenanceTask}>{schedule.taskName}</Text>
+                        <Text style={styles.maintenanceEquipment}>
+                          {equipmentItem?.name || 'Unknown Equipment'}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text
+                      style={[
+                        styles.maintenanceDue,
+                        isOverdue && { color: colors.error, fontWeight: '600' },
+                      ]}
+                    >
+                      {isOverdue ? 'Overdue: ' : 'Due: '}
+                      {formatDate(schedule.nextDue)}
+                    </Text>
+                  </View>
+                );
+              })}
+          </View>
+        )}
+
         {upcomingPlantings.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Upcoming Plantings</Text>
@@ -1193,5 +1252,39 @@ const styles = StyleSheet.create({
     color: colors.card,
     fontSize: 16,
     fontWeight: '600',
+  },
+  maintenanceCard: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+    elevation: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+  },
+  maintenanceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  maintenanceInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  maintenanceTask: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 2,
+  },
+  maintenanceEquipment: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  maintenanceDue: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginLeft: 32,
   },
 });
