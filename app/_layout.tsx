@@ -40,10 +40,10 @@ function RootLayoutNav() {
     }
   }, [loaded]);
 
-  // BYPASS AUTHENTICATION - Always redirect to main app
+  // Handle authentication-based navigation
   useEffect(() => {
-    if (!loaded) {
-      console.log('⏳ Still loading fonts...');
+    if (!loaded || isLoading) {
+      console.log('⏳ Still loading...', { loaded, isLoading });
       return;
     }
 
@@ -51,7 +51,8 @@ function RootLayoutNav() {
     const inTestAuth = segments[0] === 'test-auth';
     const inTabs = segments[0] === '(tabs)';
 
-    console.log('=== NAVIGATION CHECK (AUTH BYPASSED) ===');
+    console.log('=== NAVIGATION CHECK ===');
+    console.log('User:', user ? user.email : 'null');
     console.log('Current segments:', segments);
     console.log('In auth group:', inAuthGroup);
     console.log('In test-auth:', inTestAuth);
@@ -63,9 +64,19 @@ function RootLayoutNav() {
       return;
     }
 
-    // If user is on auth screen, redirect them to the main app
-    if (inAuthGroup) {
-      console.log('🚀 BYPASSING AUTH - Redirecting to main app');
+    // If user is not logged in and not on auth screen, redirect to auth
+    if (!user && !inAuthGroup) {
+      console.log('🔒 User not logged in, redirecting to auth');
+      setTimeout(() => {
+        router.replace('/auth');
+        console.log('✓ Navigation to /auth completed');
+      }, 0);
+      return;
+    }
+
+    // If user is logged in and on auth screen, redirect to main app
+    if (user && inAuthGroup) {
+      console.log('🚀 User logged in, redirecting to main app');
       setTimeout(() => {
         router.replace('/(tabs)/crops');
         console.log('✓ Navigation to /(tabs)/crops completed');
@@ -73,9 +84,9 @@ function RootLayoutNav() {
       return;
     }
 
-    // If not in tabs and not in auth, redirect to tabs
-    if (!inTabs && !inAuthGroup) {
-      console.log('🚀 BYPASSING AUTH - Redirecting to main app from root');
+    // If user is logged in and not in tabs, redirect to tabs
+    if (user && !inTabs && !inAuthGroup) {
+      console.log('🚀 User logged in but not in tabs, redirecting to main app');
       setTimeout(() => {
         router.replace('/(tabs)/crops');
         console.log('✓ Navigation to /(tabs)/crops completed');
@@ -83,8 +94,8 @@ function RootLayoutNav() {
       return;
     }
 
-    console.log('✓ Already in main app, no action needed');
-  }, [segments, loaded, router]);
+    console.log('✓ No navigation needed');
+  }, [user, segments, loaded, isLoading, router]);
 
   React.useEffect(() => {
     if (
@@ -98,7 +109,7 @@ function RootLayoutNav() {
     }
   }, [networkState.isConnected, networkState.isInternetReachable]);
 
-  if (!loaded) {
+  if (!loaded || isLoading) {
     return null;
   }
 
