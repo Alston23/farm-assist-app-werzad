@@ -34,7 +34,7 @@ export interface StorageLocation {
   id: string;
   user_id?: string;
   type: 'dry' | 'refrigerated' | 'freezer';
-  unit: 'sqft' | 'shelf';
+  unit: 'sqft' | 'lbs' | 'shelf';
   capacity: number;
   used: number;
   created_at?: string;
