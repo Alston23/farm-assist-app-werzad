@@ -43,6 +43,7 @@ export interface YieldItem {
   harvestDate: string;
   storageLocation: 'dry' | 'refrigerated';
   quality?: 'excellent' | 'good' | 'fair';
+  lotNumber?: string; // For food safety tracking, especially for restaurant sales
   notes?: string;
 }
 

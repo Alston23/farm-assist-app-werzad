@@ -248,7 +248,13 @@ export default function InventoryScreen() {
             <React.Fragment key={index}>
               <TouchableOpacity
                 style={[commonStyles.card, styles.categoryCard]}
-                onPress={() => Alert.alert('Coming Soon', `${category.title} management will be available soon!`)}
+                onPress={() => {
+                  if (category.id === 'yields') {
+                    router.push('/yields');
+                  } else {
+                    Alert.alert('Coming Soon', `${category.title} management will be available soon!`);
+                  }
+                }}
               >
                 <View style={[styles.categoryIcon, { backgroundColor: category.color + '20' }]}>
                   <IconSymbol
@@ -320,7 +326,7 @@ export default function InventoryScreen() {
 
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => Alert.alert('Coming Soon', 'Add harvest feature will be available soon!')}
+              onPress={() => router.push('/yields')}
             >
               <IconSymbol
                 ios_icon_name="plus.circle.fill"
