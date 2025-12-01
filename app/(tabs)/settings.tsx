@@ -11,6 +11,7 @@ import {
   Platform,
   Switch,
   ActivityIndicator,
+  Button,
 } from 'react-native';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
@@ -40,7 +41,6 @@ export default function SettingsScreen() {
     temperature: 0.7,
   });
   const [loading, setLoading] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -114,43 +114,8 @@ export default function SettingsScreen() {
   };
 
   const handleSignOut = async () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            setSigningOut(true);
-            try {
-              console.log('🔓 User confirmed sign out');
-              
-              // Call the logout function from AuthContext
-              await logout();
-              
-              console.log('✅ Logout completed successfully');
-              
-              // Navigate to auth screen using router.replace
-              // This replaces the current route so user can't go back
-              router.replace('/auth');
-              
-              console.log('✅ Navigation to /auth initiated');
-            } catch (error: any) {
-              console.error('❌ Sign out error:', error);
-              setSigningOut(false);
-              
-              Alert.alert(
-                'Error', 
-                error?.message || 'Failed to sign out. Please try again.',
-                [{ text: 'OK' }]
-              );
-            }
-          },
-        },
-      ]
-    );
+    await logout();
+    router.replace('/auth');
   };
 
   return (
@@ -316,33 +281,9 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        <TouchableOpacity
-          style={[
-            styles.button, 
-            styles.buttonDanger, 
-            styles.signOutButton,
-            signingOut && styles.buttonDisabled
-          ]}
-          onPress={handleSignOut}
-          disabled={signingOut}
-        >
-          {signingOut ? (
-            <React.Fragment>
-              <ActivityIndicator color={colors.card} size="small" />
-              <Text style={styles.buttonText}>Signing Out...</Text>
-            </React.Fragment>
-          ) : (
-            <React.Fragment>
-              <IconSymbol
-                ios_icon_name="rectangle.portrait.and.arrow.right"
-                android_material_icon_name="logout"
-                size={20}
-                color={colors.card}
-              />
-              <Text style={styles.buttonText}>Sign Out</Text>
-            </React.Fragment>
-          )}
-        </TouchableOpacity>
+        <View style={styles.signOutButtonContainer}>
+          <Button title="Sign Out" onPress={handleSignOut} />
+        </View>
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
@@ -509,8 +450,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
   },
-  signOutButton: {
+  signOutButtonContainer: {
     marginTop: 24,
+    marginBottom: 16,
   },
   footer: {
     marginTop: 32,

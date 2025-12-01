@@ -285,45 +285,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('=== LOGOUT STARTED ===');
       console.log('Current user before logout:', user?.email);
       
-      // Sign out from Supabase
+      // Call Supabase signOut
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        console.error('❌ Supabase sign out error:', error.message);
-        throw error;
+        console.error('Error signing out:', error);
+        // Still set state to null even if there's an error
+        setUser(null);
+        setSession(null);
+        return;
       }
       
       console.log('✅ Supabase sign out successful');
       
-      // Clear AsyncStorage session keys
-      try {
-        const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://tbobabbteplxwkltdlki.supabase.co';
-        const projectRef = supabaseUrl.split('//')[1]?.split('.')[0];
-        const storageKey = `sb-${projectRef}-auth-token`;
-        
-        await AsyncStorage.removeItem(storageKey);
-        console.log(`✅ Cleared AsyncStorage key: ${storageKey}`);
-        
-        // Also clear any legacy keys
-        await AsyncStorage.removeItem('supabase.auth.token');
-        await AsyncStorage.removeItem('@supabase_session');
-        console.log('✅ Cleared legacy AsyncStorage keys');
-      } catch (storageError) {
-        console.error('⚠️ Error clearing AsyncStorage:', storageError);
-      }
-      
-      // Clear user and session state
+      // Set auth user/session state to null
       setUser(null);
       setSession(null);
-      console.log('✅ User and session state cleared');
       
+      console.log('✅ User and session state cleared');
       console.log('✅ LOGOUT COMPLETE');
     } catch (error: any) {
-      console.error('❌ Logout error:', error);
+      console.error('Unexpected error during sign out:', error);
       // Ensure user is set to null even if there's an error
       setUser(null);
       setSession(null);
-      throw error;
     }
   };
 
