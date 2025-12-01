@@ -11,16 +11,19 @@ export default function TabLayout() {
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoading) return;
+    console.log('TabLayout - isLoading:', isLoading, 'user:', user ? 'exists' : 'null', 'segments:', segments);
+    
+    if (isLoading) {
+      console.log('Still loading auth state...');
+      return;
+    }
 
     const inAuthGroup = segments[0] === '(tabs)';
+    console.log('inAuthGroup:', inAuthGroup);
 
     if (!user && inAuthGroup) {
-      // Redirect to auth if not logged in
+      console.log('No user and in tabs, redirecting to auth...');
       router.replace('/auth');
-    } else if (user && !inAuthGroup) {
-      // Redirect to tabs if logged in
-      router.replace('/(tabs)/crops');
     }
   }, [user, segments, isLoading]);
 
@@ -65,9 +68,17 @@ export default function TabLayout() {
 
   // Show nothing while checking auth
   if (isLoading) {
+    console.log('Rendering null while loading...');
     return null;
   }
 
+  // Show nothing if not authenticated (will redirect)
+  if (!user) {
+    console.log('Rendering null - no user');
+    return null;
+  }
+
+  console.log('Rendering tab layout for authenticated user');
   return (
     <>
       <Stack

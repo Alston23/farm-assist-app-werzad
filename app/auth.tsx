@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { useRouter } from 'expo-router';
 
 export default function AuthScreen() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user } = useAuth();
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,51 +33,77 @@ export default function AuthScreen() {
   // Password visibility
   const [showPassword, setShowPassword] = useState(false);
 
+  // Redirect if already logged in
+  useEffect(() => {
+    console.log('Auth screen - user state:', user ? 'logged in' : 'not logged in');
+    if (user) {
+      console.log('User already logged in, redirecting to crops...');
+      router.replace('/(tabs)/crops');
+    }
+  }, [user]);
+
   const handleSubmit = async () => {
-    if (isLoading) return;
+    console.log('=== SUBMIT BUTTON PRESSED ===');
+    console.log('isLoading:', isLoading);
+    console.log('isLogin:', isLogin);
+    console.log('Form data:', { email: email.trim(), name: name.trim(), farmName: farmName.trim() });
+
+    if (isLoading) {
+      console.log('Already loading, ignoring submit');
+      return;
+    }
 
     // Basic validation
     if (!email.trim() || !password.trim()) {
+      console.log('Validation failed: email or password empty');
       Alert.alert('Error', 'Please enter your email and password');
       return;
     }
 
     if (!isLogin && !name.trim()) {
+      console.log('Validation failed: name empty for signup');
       Alert.alert('Error', 'Please enter your name');
       return;
     }
 
+    console.log('Validation passed, setting loading to true');
     setIsLoading(true);
 
     try {
       let result;
       if (isLogin) {
-        console.log('Attempting sign in with email:', email.trim());
+        console.log('=== ATTEMPTING SIGN IN ===');
+        console.log('Email:', email.trim());
         result = await signIn(email.trim(), password);
+        console.log('Sign in result:', result);
       } else {
-        console.log('Attempting sign up with:', { name: name.trim(), farmName: farmName.trim(), email: email.trim() });
+        console.log('=== ATTEMPTING SIGN UP ===');
+        console.log('Name:', name.trim());
+        console.log('Farm Name:', farmName.trim());
+        console.log('Email:', email.trim());
         result = await signUp(name.trim(), farmName.trim(), email.trim(), password);
+        console.log('Sign up result:', result);
       }
 
-      console.log('Auth result:', result);
-
       if (result && result.success) {
-        console.log('Authentication successful, navigating to crops...');
-        // Navigate to the main app
-        router.replace('/(tabs)/crops');
+        console.log('=== AUTHENTICATION SUCCESSFUL ===');
+        // The useEffect will handle navigation when user state updates
       } else {
-        console.log('Authentication failed:', result?.error);
+        console.log('=== AUTHENTICATION FAILED ===');
+        console.log('Error:', result?.error);
         Alert.alert('Error', result?.error || 'An error occurred');
       }
     } catch (error) {
-      console.error('Auth error:', error);
+      console.error('=== AUTH ERROR ===', error);
       Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     } finally {
+      console.log('Setting loading to false');
       setIsLoading(false);
     }
   };
 
   const toggleMode = () => {
+    console.log('Toggling mode from', isLogin ? 'login' : 'signup', 'to', isLogin ? 'signup' : 'login');
     setIsLogin(!isLogin);
     // Clear form when switching modes
     setEmail('');
@@ -228,6 +254,7 @@ export default function AuthScreen() {
               style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
               onPress={handleSubmit}
               disabled={isLoading}
+              activeOpacity={0.7}
             >
               {isLoading ? (
                 <ActivityIndicator color={colors.card} />
