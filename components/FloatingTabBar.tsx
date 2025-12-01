@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   View,
@@ -6,6 +7,7 @@ import {
   StyleSheet,
   Platform,
   Dimensions,
+  ScrollView,
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,7 +18,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  interpolate,
 } from 'react-native-reanimated';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Href } from 'expo-router';
@@ -40,7 +41,7 @@ interface FloatingTabBarProps {
 
 export default function FloatingTabBar({
   tabs,
-  containerWidth = screenWidth / 2.5,
+  containerWidth = screenWidth - 40,
   borderRadius = 35,
   bottomMargin
 }: FloatingTabBarProps) {
@@ -48,6 +49,7 @@ export default function FloatingTabBar({
   const pathname = usePathname();
   const theme = useTheme();
   const animatedValue = useSharedValue(0);
+  const scrollViewRef = React.useRef<ScrollView>(null);
 
   // Improved active tab detection with better path matching
   const activeTabIndex = React.useMemo(() => {
@@ -95,24 +97,30 @@ export default function FloatingTabBar({
     }
   }, [activeTabIndex, animatedValue]);
 
+  // Auto-scroll to active tab
+  React.useEffect(() => {
+    if (scrollViewRef.current && activeTabIndex >= 0) {
+      // Calculate the position to scroll to
+      const tabWidth = 80; // Fixed width per tab
+      const scrollPosition = Math.max(0, (activeTabIndex * tabWidth) - (containerWidth / 2) + (tabWidth / 2));
+      
+      scrollViewRef.current.scrollTo({
+        x: scrollPosition,
+        animated: true,
+      });
+    }
+  }, [activeTabIndex, containerWidth]);
+
   const handleTabPress = (route: Href) => {
     router.push(route);
   };
 
-  // Remove unnecessary tabBarStyle animation to prevent flickering
-
-  const tabWidthPercent = ((100 / tabs.length) - 1).toFixed(2);
-
   const indicatorStyle = useAnimatedStyle(() => {
-    const tabWidth = (containerWidth - 8) / tabs.length; // Account for container padding (4px on each side)
+    const tabWidth = 80; // Fixed width per tab
     return {
       transform: [
         {
-          translateX: interpolate(
-            animatedValue.value,
-            [0, tabs.length - 1],
-            [0, tabWidth * (tabs.length - 1)]
-          ),
+          translateX: animatedValue.value * tabWidth,
         },
       ],
     };
@@ -151,7 +159,6 @@ export default function FloatingTabBar({
       backgroundColor: theme.dark
         ? 'rgba(255, 255, 255, 0.08)' // Subtle white overlay in dark mode
         : 'rgba(0, 0, 0, 0.04)', // Subtle black overlay in light mode
-      width: `${tabWidthPercent}%` as `${number}%`, // Dynamic width based on number of tabs
     },
   };
 
@@ -169,40 +176,49 @@ export default function FloatingTabBar({
           style={[dynamicStyles.blurContainer, { borderRadius }]}
         >
           <View style={dynamicStyles.background} />
-          <Animated.View style={[dynamicStyles.indicator, indicatorStyle]} />
-          <View style={styles.tabsContainer}>
-            {tabs.map((tab, index) => {
-              const isActive = activeTabIndex === index;
+          <View style={styles.scrollContainer}>
+            <Animated.View style={[dynamicStyles.indicator, indicatorStyle]} />
+            <ScrollView
+              ref={scrollViewRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tabsContainer}
+              style={styles.scrollView}
+              bounces={false}
+              decelerationRate="fast"
+            >
+              {tabs.map((tab, index) => {
+                const isActive = activeTabIndex === index;
 
-              return (
-                <React.Fragment key={index}>
-                <TouchableOpacity
-                  key={index} // Use index as key
-                  style={styles.tab}
-                  onPress={() => handleTabPress(tab.route)}
-                  activeOpacity={0.7}
-                >
-                  <View key={index} style={styles.tabContent}>
-                    <IconSymbol
-                      android_material_icon_name={tab.icon}
-                      ios_icon_name={tab.icon}
-                      size={24}
-                      color={isActive ? colors.primary : colors.text}
-                    />
-                    <Text
-                      style={[
-                        styles.tabLabel,
-                        { color: colors.text },
-                        isActive && { color: colors.primary, fontWeight: '600' },
-                      ]}
+                return (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={styles.tab}
+                      onPress={() => handleTabPress(tab.route)}
+                      activeOpacity={0.7}
                     >
-                      {tab.label}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-                </React.Fragment>
-              );
-            })}
+                      <View style={styles.tabContent}>
+                        <IconSymbol
+                          android_material_icon_name={tab.icon}
+                          ios_icon_name={tab.icon}
+                          size={24}
+                          color={isActive ? colors.primary : colors.text}
+                        />
+                        <Text
+                          style={[
+                            styles.tabLabel,
+                            { color: colors.text },
+                            isActive && { color: colors.primary, fontWeight: '600' },
+                          ]}
+                        >
+                          {tab.label}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                );
+              })}
+            </ScrollView>
           </View>
         </BlurView>
       </View>
@@ -232,26 +248,35 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     // Dynamic styling applied in component
   },
+  scrollContainer: {
+    position: 'relative',
+    height: 60,
+  },
   indicator: {
     position: 'absolute',
     top: 4,
-    left: 2,
+    left: 4,
     bottom: 4,
     borderRadius: 27,
-    width: `${(100 / 2) - 1}%`, // Default for 2 tabs, will be overridden by dynamic styles
+    width: 72, // Fixed width for indicator
+    zIndex: 0,
     // Dynamic styling applied in component
+  },
+  scrollView: {
+    flex: 1,
   },
   tabsContainer: {
     flexDirection: 'row',
-    height: 60,
     alignItems: 'center',
     paddingHorizontal: 4,
+    minWidth: '100%',
   },
   tab: {
-    flex: 1,
+    width: 80, // Fixed width per tab
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
+    zIndex: 1,
   },
   tabContent: {
     alignItems: 'center',

@@ -24,12 +24,6 @@ export default function TabLayout() {
       label: 'Plantings',
     },
     {
-      name: 'ai-assistant',
-      route: '/(tabs)/ai-assistant',
-      icon: 'auto-awesome',
-      label: 'AI',
-    },
-    {
       name: 'schedule',
       route: '/(tabs)/schedule',
       icon: 'event',
@@ -40,6 +34,36 @@ export default function TabLayout() {
       route: '/(tabs)/equipment',
       icon: 'build',
       label: 'Equipment',
+    },
+    {
+      name: 'inventory',
+      route: '/(tabs)/inventory',
+      icon: 'inventory',
+      label: 'Inventory',
+    },
+    {
+      name: 'revenue',
+      route: '/(tabs)/revenue',
+      icon: 'attach-money',
+      label: 'Revenue',
+    },
+    {
+      name: 'marketplace',
+      route: '/(tabs)/marketplace',
+      icon: 'store',
+      label: 'Market',
+    },
+    {
+      name: 'ai-assistant',
+      route: '/(tabs)/ai-assistant',
+      icon: 'auto-awesome',
+      label: 'AI',
+    },
+    {
+      name: 'settings',
+      route: '/(tabs)/settings',
+      icon: 'settings',
+      label: 'Settings',
     },
   ];
 
@@ -62,7 +86,7 @@ export default function TabLayout() {
         <Stack.Screen key="marketplace" name="marketplace" />
         <Stack.Screen key="settings" name="settings" />
       </Stack>
-      <FloatingTabBar tabs={tabs} containerWidth={450} />
+      <FloatingTabBar tabs={tabs} />
     </>
   );
 }
