@@ -14,7 +14,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (email: string, password: string, name: string, farmName?: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (name: string, farmName: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
 }
 
@@ -48,18 +48,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      console.log('SignIn: Getting users database...');
       // Get users database
       const usersData = await AsyncStorage.getItem(STORAGE_KEYS.USERS_DB);
       const users = usersData ? JSON.parse(usersData) : [];
+      console.log('SignIn: Found users:', users.length);
 
       // Find user
       const foundUser = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
 
       if (!foundUser) {
+        console.log('SignIn: No user found with email:', email);
         return { success: false, error: 'No account found with this email' };
       }
 
       if (foundUser.password !== password) {
+        console.log('SignIn: Incorrect password');
         return { success: false, error: 'Incorrect password' };
       }
 
@@ -75,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Save current user
       await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userToStore));
       setUser(userToStore);
+      console.log('SignIn: Success!');
 
       return { success: true };
     } catch (error) {
@@ -84,34 +89,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (
-    email: string,
-    password: string,
     name: string,
-    farmName?: string
+    farmName: string,
+    email: string,
+    password: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
+      console.log('SignUp: Starting with:', { name, farmName, email });
+      
       // Validate inputs
       if (!email || !password || !name) {
+        console.log('SignUp: Missing required fields');
         return { success: false, error: 'Please fill in all required fields' };
       }
 
       if (password.length < 6) {
+        console.log('SignUp: Password too short');
         return { success: false, error: 'Password must be at least 6 characters' };
       }
 
       // Email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
+        console.log('SignUp: Invalid email format');
         return { success: false, error: 'Please enter a valid email address' };
       }
 
       // Get users database
+      console.log('SignUp: Getting users database...');
       const usersData = await AsyncStorage.getItem(STORAGE_KEYS.USERS_DB);
       const users = usersData ? JSON.parse(usersData) : [];
+      console.log('SignUp: Current users count:', users.length);
 
       // Check if user already exists
       const existingUser = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
       if (existingUser) {
+        console.log('SignUp: User already exists');
         return { success: false, error: 'An account with this email already exists' };
       }
 
@@ -121,13 +134,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: email.toLowerCase(),
         password, // In production, this should be hashed
         name,
-        farmName,
+        farmName: farmName || '',
         createdAt: new Date().toISOString(),
       };
+
+      console.log('SignUp: Creating new user:', { ...newUser, password: '***' });
 
       // Save to users database
       users.push(newUser);
       await AsyncStorage.setItem(STORAGE_KEYS.USERS_DB, JSON.stringify(users));
+      console.log('SignUp: Saved to users database');
 
       // Create user object without password
       const userToStore: User = {
@@ -141,6 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Save current user
       await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userToStore));
       setUser(userToStore);
+      console.log('SignUp: Success! User logged in');
 
       return { success: true };
     } catch (error) {
@@ -153,6 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await AsyncStorage.removeItem(STORAGE_KEYS.USER);
       setUser(null);
+      console.log('SignOut: Success');
     } catch (error) {
       console.log('Error signing out:', error);
     }

@@ -50,10 +50,14 @@ export default function AuthScreen() {
     try {
       let result;
       if (isLogin) {
+        console.log('Attempting sign in...');
         result = await signIn(email.trim(), password);
       } else {
-        result = await signUp(email.trim(), password, name.trim(), farmName.trim());
+        console.log('Attempting sign up...');
+        result = await signUp(name.trim(), farmName.trim(), email.trim(), password);
       }
+
+      console.log('Auth result:', result);
 
       if (!result.success) {
         Alert.alert('Error', result.error || 'An error occurred');
