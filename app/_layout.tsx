@@ -33,17 +33,20 @@ function RootLayoutNav() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
+  const [navigationReady, setNavigationReady] = useState(false);
 
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
+      // Small delay to ensure navigation is ready
+      setTimeout(() => setNavigationReady(true), 100);
     }
   }, [loaded]);
 
   // Handle navigation based on auth state
   useEffect(() => {
-    if (!loaded || isLoading) {
-      console.log('⏳ Still loading... fonts:', loaded, 'auth:', !isLoading);
+    if (!loaded || isLoading || !navigationReady) {
+      console.log('⏳ Still loading... fonts:', loaded, 'auth:', !isLoading, 'nav:', navigationReady);
       return;
     }
 
@@ -65,23 +68,29 @@ function RootLayoutNav() {
     if (!user && !inAuthGroup) {
       // User is not logged in and not on auth screen - redirect to auth
       console.log('❌ No user found, redirecting to /auth');
-      try {
-        router.replace('/auth');
-      } catch (error) {
-        console.error('Navigation error to auth:', error);
-      }
+      setTimeout(() => {
+        try {
+          router.replace('/auth');
+          console.log('✓ Navigation to /auth completed');
+        } catch (error) {
+          console.error('Navigation error to auth:', error);
+        }
+      }, 50);
     } else if (user && inAuthGroup) {
       // User is logged in but still on auth screen - redirect to app
       console.log('✅ User logged in, redirecting to /(tabs)/crops');
-      try {
-        router.replace('/(tabs)/crops');
-      } catch (error) {
-        console.error('Navigation error to crops:', error);
-      }
+      setTimeout(() => {
+        try {
+          router.replace('/(tabs)/crops');
+          console.log('✓ Navigation to /(tabs)/crops completed');
+        } catch (error) {
+          console.error('Navigation error to crops:', error);
+        }
+      }, 50);
     } else {
       console.log('✓ Navigation state is correct, no action needed');
     }
-  }, [user, segments, isLoading, loaded, router]);
+  }, [user, segments, isLoading, loaded, navigationReady, router]);
 
   React.useEffect(() => {
     if (
