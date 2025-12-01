@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { useRouter } from 'expo-router';
 
 export default function AuthScreen() {
-  const { signIn, signUp, user, isLoading: authLoading } = useAuth();
+  const { signIn, signUp } = useAuth();
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,15 +29,6 @@ export default function AuthScreen() {
   const [name, setName] = useState('');
   const [farmName, setFarmName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
-  useEffect(() => {
-    console.log('Auth screen - user:', user ? user.email : 'null', 'authLoading:', authLoading);
-    
-    if (!authLoading && user) {
-      console.log('User is logged in, navigating to crops...');
-      router.replace('/(tabs)/crops');
-    }
-  }, [user, authLoading]);
 
   const handleSubmit = async () => {
     console.log('=== SUBMIT PRESSED ===');
@@ -73,8 +64,9 @@ export default function AuthScreen() {
       console.log('Auth result:', result);
 
       if (result && result.success) {
-        console.log('Authentication successful!');
-        // Navigation will happen via useEffect when user state updates
+        console.log('Authentication successful! Navigating to crops...');
+        // Navigate immediately after successful auth
+        router.replace('/(tabs)/crops');
       } else {
         console.log('Authentication failed:', result?.error);
         Alert.alert('Error', result?.error || 'An error occurred');
@@ -95,15 +87,6 @@ export default function AuthScreen() {
     setFarmName('');
     setShowPassword(false);
   };
-
-  if (authLoading) {
-    return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={{ color: colors.text, marginTop: 16 }}>Loading...</Text>
-      </View>
-    );
-  }
 
   return (
     <KeyboardAvoidingView
