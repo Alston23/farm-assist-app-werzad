@@ -33,7 +33,6 @@ function RootLayoutNav() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
-  const [navigationReady, setNavigationReady] = useState(false);
 
   useEffect(() => {
     if (loaded) {
@@ -56,17 +55,10 @@ function RootLayoutNav() {
     console.log('Current segments:', segments);
     console.log('In auth group:', inAuthGroup);
     console.log('In test-auth:', inTestAuth);
-    console.log('Navigation ready:', navigationReady);
 
     // Don't redirect if we're in test-auth
     if (inTestAuth) {
       console.log('✓ In test-auth, allowing access');
-      return;
-    }
-
-    // Prevent navigation loops by tracking if we've already navigated
-    if (!navigationReady) {
-      setNavigationReady(true);
       return;
     }
 
@@ -89,7 +81,7 @@ function RootLayoutNav() {
     } else {
       console.log('✓ Navigation state is correct, no action needed');
     }
-  }, [user, segments, isLoading, loaded, navigationReady]);
+  }, [user, segments, isLoading, loaded, router]);
 
   React.useEffect(() => {
     if (

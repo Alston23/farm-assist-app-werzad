@@ -111,7 +111,7 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     Alert.alert(
       'Sign Out',
       'Are you sure you want to sign out?',
@@ -120,7 +120,11 @@ export default function SettingsScreen() {
         {
           text: 'Sign Out',
           style: 'destructive',
-          onPress: signOut,
+          onPress: async () => {
+            console.log('User confirmed sign out');
+            await signOut();
+            console.log('Sign out completed, navigation should happen automatically');
+          },
         },
       ]
     );
