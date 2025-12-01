@@ -53,12 +53,16 @@ function RootLayoutNav() {
     const inAuthGroup = segments[0] === 'auth';
     const inTabsGroup = segments[0] === '(tabs)';
 
-    if (user && inAuthGroup) {
-      console.log('User logged in but on auth screen, navigating to crops');
-      router.replace('/(tabs)/crops');
-    } else if (!user && inTabsGroup) {
-      console.log('No user but in tabs, navigating to auth');
-      router.replace('/auth');
+    if (user && !inTabsGroup) {
+      console.log('User logged in, navigating to crops');
+      setTimeout(() => {
+        router.replace('/(tabs)/crops');
+      }, 50);
+    } else if (!user && !inAuthGroup) {
+      console.log('No user, navigating to auth');
+      setTimeout(() => {
+        router.replace('/auth');
+      }, 50);
     } else {
       console.log('Navigation state is correct');
     }

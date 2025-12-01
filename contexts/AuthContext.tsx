@@ -99,9 +99,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Setting user state...');
       setUser(userToStore);
       
-      // Wait a bit to ensure state is updated
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
       console.log('=== SIGN IN SUCCESS ===');
       return { success: true };
     } catch (error) {
@@ -173,9 +170,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userToStore));
       setUser(userToStore);
-      
-      // Wait a bit to ensure state is updated
-      await new Promise(resolve => setTimeout(resolve, 100));
       
       console.log('=== SIGN UP SUCCESS ===');
       return { success: true };

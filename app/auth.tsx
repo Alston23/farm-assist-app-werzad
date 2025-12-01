@@ -64,9 +64,12 @@ export default function AuthScreen() {
       console.log('Auth result:', result);
 
       if (result && result.success) {
-        console.log('Authentication successful! Navigating to crops...');
-        // Navigate immediately after successful auth
-        router.replace('/(tabs)/crops');
+        console.log('Authentication successful!');
+        // Wait a bit for state to update, then navigate
+        setTimeout(() => {
+          console.log('Navigating to crops...');
+          router.replace('/(tabs)/crops');
+        }, 200);
       } else {
         console.log('Authentication failed:', result?.error);
         Alert.alert('Error', result?.error || 'An error occurred');
