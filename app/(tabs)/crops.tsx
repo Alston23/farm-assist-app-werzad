@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
   Platform,
   Modal,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -17,6 +19,7 @@ import { cropDatabase } from '@/data/cropDatabase';
 import { Crop } from '@/types/crop';
 import { IconSymbol } from '@/components/IconSymbol';
 import { storage } from '@/utils/storage';
+import { openAIService } from '@/utils/openaiService';
 
 export default function CropsScreen() {
   const router = useRouter();
@@ -320,10 +323,115 @@ function AddCropModal({ visible, onClose, onAdd }: { visible: boolean; onClose: 
     commonDiseases: [],
     specialNotes: '',
   });
+  const [isLoadingAI, setIsLoadingAI] = useState(false);
+
+  const handleAutoFillWithAI = async () => {
+    if (!formData.name || formData.name.trim().length === 0) {
+      Alert.alert('Crop Name Required', 'Please enter a crop name before using AI auto-fill.');
+      return;
+    }
+
+    setIsLoadingAI(true);
+
+    try {
+      // Create a comprehensive prompt with the crop database structure
+      const systemPrompt = `You are an expert agricultural database assistant. Your task is to analyze a crop name and provide comprehensive growing information based on similar crops in the database.
+
+The crop database contains the following structure for each crop:
+- name: string
+- category: 'vegetable' | 'fruit' | 'flower' | 'herb' | 'spice' | 'aromatic'
+- description: string (brief description)
+- sunlight: 'full-sun' | 'partial-shade' | 'full-shade'
+- sunlightHours: string (e.g., "6-8 hours")
+- waterNeeds: 'low' | 'moderate' | 'high'
+- waterFrequency: string (e.g., "1-2 inches per week")
+- soilType: array of strings (e.g., ["loamy", "well-drained"])
+- phMin: number (e.g., 6.0)
+- phMax: number (e.g., 7.0)
+- temperatureMin: number in Fahrenheit
+- temperatureMax: number in Fahrenheit
+- plantSpacing: number in inches
+- rowSpacing: number in inches
+- depth: number in inches (planting depth)
+- daysToGermination: string (e.g., "7-14")
+- daysToMaturity: string (e.g., "60-90")
+- harvestWindow: string (e.g., "2-3 weeks")
+- plantingSeasons: array of strings (e.g., ["spring", "fall"])
+- frostTolerance: 'tender' | 'half-hardy' | 'hardy'
+- yieldPerPlant: string (e.g., "2-4 lbs")
+- plantsPerSqFt: number
+- companionPlants: array of strings (crop names)
+- avoidPlants: array of strings (crop names)
+- recommendedCoverCrops: array of strings
+- fertilizer: string (description)
+- commonPests: array of strings
+- commonDiseases: array of strings
+- specialNotes: string
+
+Here are some example crops from the database:
+${JSON.stringify(cropDatabase.slice(0, 5), null, 2)}
+
+Respond ONLY with a valid JSON object containing all the fields above. Do not include any explanatory text, markdown formatting, or code blocks. Just the raw JSON object.`;
+
+      const userPrompt = `Provide comprehensive growing information for: ${formData.name}
+
+Based on similar crops in the database and your agricultural knowledge, fill in all the required fields with accurate, practical information for small farms and homesteads.`;
+
+      const response = await openAIService.chatCompletion({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        model: 'gpt-4o-mini',
+        temperature: 0.3,
+      });
+
+      if (response) {
+        try {
+          // Clean the response to extract JSON
+          let jsonString = response.trim();
+          
+          // Remove markdown code blocks if present
+          if (jsonString.startsWith('```')) {
+            jsonString = jsonString.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+          }
+          
+          const aiData = JSON.parse(jsonString);
+          
+          // Merge AI data with form data, keeping the user's crop name
+          setFormData({
+            ...aiData,
+            name: formData.name, // Keep the user's entered name
+          });
+
+          Alert.alert(
+            'AI Auto-Fill Complete',
+            'All crop information has been filled in. Please review and adjust as needed before saving.',
+            [{ text: 'OK' }]
+          );
+        } catch (parseError) {
+          console.error('Error parsing AI response:', parseError);
+          console.log('AI Response:', response);
+          Alert.alert(
+            'Error',
+            'Failed to parse AI response. Please try again or fill in the information manually.'
+          );
+        }
+      }
+    } catch (error: any) {
+      console.error('AI auto-fill error:', error);
+      Alert.alert(
+        'Error',
+        error.message || 'Failed to auto-fill crop information. Please check your OpenAI API key in Settings and try again.'
+      );
+    } finally {
+      setIsLoadingAI(false);
+    }
+  };
 
   const handleSubmit = () => {
     if (!formData.name) {
-      console.log('Crop name is required');
+      Alert.alert('Error', 'Crop name is required');
       return;
     }
 
@@ -426,6 +534,33 @@ function AddCropModal({ visible, onClose, onAdd }: { visible: boolean; onClose: 
               value={formData.name}
               onChangeText={(text) => setFormData({ ...formData, name: text })}
             />
+
+            <TouchableOpacity
+              style={[styles.aiButton, isLoadingAI && styles.aiButtonDisabled]}
+              onPress={handleAutoFillWithAI}
+              disabled={isLoadingAI}
+            >
+              {isLoadingAI ? (
+                <React.Fragment>
+                  <ActivityIndicator color={colors.card} size="small" />
+                  <Text style={styles.aiButtonText}>Analyzing with AI...</Text>
+                </React.Fragment>
+              ) : (
+                <React.Fragment>
+                  <IconSymbol
+                    ios_icon_name="sparkles"
+                    android_material_icon_name="auto-awesome"
+                    size={20}
+                    color={colors.card}
+                  />
+                  <Text style={styles.aiButtonText}>Auto-fill with AI</Text>
+                </React.Fragment>
+              )}
+            </TouchableOpacity>
+
+            <Text style={styles.aiHintText}>
+              Enter a crop name above and tap &quot;Auto-fill with AI&quot; to automatically populate all fields with growing information from our comprehensive database.
+            </Text>
 
             <Text style={styles.formLabel}>Category</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryPickerScroll}>
@@ -1059,5 +1194,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.card,
+  },
+  aiButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 12,
+    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.15)',
+    elevation: 4,
+  },
+  aiButtonDisabled: {
+    opacity: 0.6,
+  },
+  aiButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.card,
+  },
+  aiHintText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+    marginBottom: 20,
+    fontStyle: 'italic',
+    paddingHorizontal: 4,
   },
 });
