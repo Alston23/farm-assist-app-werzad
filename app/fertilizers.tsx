@@ -10,25 +10,25 @@ import {
   Modal,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { router } from 'expo-router';
-import { inventoryStorage } from '@/utils/inventoryStorage';
 import { FertilizerItem } from '@/types/inventory';
+import { supabase } from '@/lib/supabase';
 
 export default function FertilizersScreen() {
   const [fertilizers, setFertilizers] = useState<FertilizerItem[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<FertilizerItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
 
   // Form state
   const [name, setName] = useState('');
-  const [type, setType] = useState<FertilizerItem['type']>('nitrogen');
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState<FertilizerItem['unit']>('lbs');
-  const [lowStockThreshold, setLowStockThreshold] = useState('');
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
@@ -36,8 +36,32 @@ export default function FertilizersScreen() {
   }, []);
 
   const loadFertilizers = async () => {
-    const data = await inventoryStorage.getFertilizers();
-    setFertilizers(data);
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('No user found');
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('fertilizers')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading fertilizers:', error);
+        Alert.alert('Error', 'Failed to load fertilizers');
+      } else {
+        setFertilizers(data || []);
+      }
+    } catch (error) {
+      console.error('Error loading fertilizers:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const openAddModal = () => {
@@ -49,53 +73,84 @@ export default function FertilizersScreen() {
   const openEditModal = (item: FertilizerItem) => {
     setEditingItem(item);
     setName(item.name);
-    setType(item.type);
     setQuantity(item.quantity.toString());
     setUnit(item.unit);
-    setLowStockThreshold(item.lowStockThreshold.toString());
     setNotes(item.notes || '');
     setModalVisible(true);
   };
 
   const resetForm = () => {
     setName('');
-    setType('nitrogen');
     setQuantity('');
     setUnit('lbs');
-    setLowStockThreshold('');
     setNotes('');
   };
 
   const handleSave = async () => {
-    if (!name.trim() || !quantity || !lowStockThreshold) {
+    if (!name.trim() || !quantity) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
-    const newItem: FertilizerItem = {
-      id: editingItem?.id || Date.now().toString(),
-      name: name.trim(),
-      type,
-      quantity: parseFloat(quantity),
-      unit,
-      purchaseDate: editingItem?.purchaseDate || new Date().toISOString(),
-      lowStockThreshold: parseFloat(lowStockThreshold),
-      notes: notes.trim(),
-    };
-
-    let updatedFertilizers;
-    if (editingItem) {
-      updatedFertilizers = fertilizers.map(item =>
-        item.id === editingItem.id ? newItem : item
-      );
-    } else {
-      updatedFertilizers = [...fertilizers, newItem];
+    const qty = parseFloat(quantity);
+    if (isNaN(qty) || qty < 0) {
+      Alert.alert('Error', 'Please enter a valid quantity');
+      return;
     }
 
-    await inventoryStorage.saveFertilizers(updatedFertilizers);
-    setFertilizers(updatedFertilizers);
-    setModalVisible(false);
-    resetForm();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        Alert.alert('Error', 'You must be logged in');
+        return;
+      }
+
+      if (editingItem) {
+        // Update existing
+        const { error } = await supabase
+          .from('fertilizers')
+          .update({
+            name: name.trim(),
+            quantity: qty,
+            unit,
+            notes: notes.trim(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editingItem.id)
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error updating fertilizer:', error);
+          Alert.alert('Error', 'Failed to update fertilizer');
+          return;
+        }
+      } else {
+        // Insert new
+        const { error } = await supabase
+          .from('fertilizers')
+          .insert({
+            user_id: user.id,
+            name: name.trim(),
+            quantity: qty,
+            unit,
+            notes: notes.trim(),
+          });
+
+        if (error) {
+          console.error('Error adding fertilizer:', error);
+          Alert.alert('Error', 'Failed to add fertilizer');
+          return;
+        }
+      }
+
+      setModalVisible(false);
+      resetForm();
+      loadFertilizers();
+      Alert.alert('Success', `Fertilizer ${editingItem ? 'updated' : 'added'} successfully`);
+    } catch (error) {
+      console.error('Error saving fertilizer:', error);
+      Alert.alert('Error', 'An unexpected error occurred');
+    }
   };
 
   const handleDelete = (item: FertilizerItem) => {
@@ -108,9 +163,30 @@ export default function FertilizersScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            const updatedFertilizers = fertilizers.filter(f => f.id !== item.id);
-            await inventoryStorage.saveFertilizers(updatedFertilizers);
-            setFertilizers(updatedFertilizers);
+            try {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (!user) {
+                Alert.alert('Error', 'You must be logged in');
+                return;
+              }
+
+              const { error } = await supabase
+                .from('fertilizers')
+                .delete()
+                .eq('id', item.id)
+                .eq('user_id', user.id);
+
+              if (error) {
+                console.error('Error deleting fertilizer:', error);
+                Alert.alert('Error', 'Failed to delete fertilizer');
+              } else {
+                loadFertilizers();
+                Alert.alert('Success', 'Fertilizer deleted successfully');
+              }
+            } catch (error) {
+              console.error('Error deleting fertilizer:', error);
+              Alert.alert('Error', 'An unexpected error occurred');
+            }
           },
         },
       ]
@@ -118,21 +194,8 @@ export default function FertilizersScreen() {
   };
 
   const filteredFertilizers = fertilizers.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.type.toLowerCase().includes(searchQuery.toLowerCase())
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const getTypeColor = (itemType: string) => {
-    const colors_map: Record<string, string> = {
-      nitrogen: '#4CAF50',
-      phosphorus: '#FF9800',
-      potassium: '#2196F3',
-      organic: '#8BC34A',
-      compound: '#9C27B0',
-      other: '#757575',
-    };
-    return colors_map[itemType] || colors.text;
-  };
 
   return (
     <View style={commonStyles.container}>
@@ -181,52 +244,50 @@ export default function FertilizersScreen() {
       </View>
 
       {/* Fertilizer List */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {filteredFertilizers.length === 0 ? (
-          <View style={styles.emptyState}>
-            <IconSymbol
-              ios_icon_name="tray"
-              android_material_icon_name="inventory_2"
-              size={64}
-              color={colors.textSecondary}
-            />
-            <Text style={styles.emptyText}>No fertilizers found</Text>
-            <Text style={styles.emptySubtext}>
-              {searchQuery ? 'Try a different search' : 'Add your first fertilizer to get started'}
-            </Text>
-          </View>
-        ) : (
-          filteredFertilizers.map((item, index) => {
-            const isLowStock = item.quantity <= item.lowStockThreshold;
-            return (
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading fertilizers...</Text>
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {filteredFertilizers.length === 0 ? (
+            <View style={styles.emptyState}>
+              <IconSymbol
+                ios_icon_name="tray"
+                android_material_icon_name="inventory_2"
+                size={64}
+                color={colors.textSecondary}
+              />
+              <Text style={styles.emptyText}>No fertilizers found</Text>
+              <Text style={styles.emptySubtext}>
+                {searchQuery ? 'Try a different search' : 'Add your first fertilizer to get started'}
+              </Text>
+            </View>
+          ) : (
+            filteredFertilizers.map((item, index) => (
               <React.Fragment key={index}>
                 <TouchableOpacity
                   style={[commonStyles.card, styles.itemCard]}
                   onPress={() => openEditModal(item)}
                 >
                   <View style={styles.itemHeader}>
-                    <View style={styles.itemTitleRow}>
-                      <Text style={styles.itemName}>{item.name}</Text>
-                      {isLowStock && (
-                        <View style={styles.lowStockBadge}>
-                          <IconSymbol
-                            ios_icon_name="exclamationmark.triangle.fill"
-                            android_material_icon_name="warning"
-                            size={14}
-                            color={colors.warning}
-                          />
-                        </View>
-                      )}
-                    </View>
-                    <View style={[styles.typeBadge, { backgroundColor: getTypeColor(item.type) + '20' }]}>
-                      <Text style={[styles.typeText, { color: getTypeColor(item.type) }]}>
-                        {item.type}
-                      </Text>
-                    </View>
+                    <Text style={styles.itemName}>{item.name}</Text>
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => handleDelete(item)}
+                    >
+                      <IconSymbol
+                        ios_icon_name="trash.fill"
+                        android_material_icon_name="delete"
+                        size={20}
+                        color={colors.error}
+                      />
+                    </TouchableOpacity>
                   </View>
 
                   <View style={styles.itemDetails}>
@@ -241,17 +302,6 @@ export default function FertilizersScreen() {
                         {item.quantity} {item.unit}
                       </Text>
                     </View>
-                    <View style={styles.detailRow}>
-                      <IconSymbol
-                        ios_icon_name="chart.line.downtrend.xyaxis"
-                        android_material_icon_name="trending_down"
-                        size={16}
-                        color={colors.textSecondary}
-                      />
-                      <Text style={styles.detailText}>
-                        Low stock: {item.lowStockThreshold} {item.unit}
-                      </Text>
-                    </View>
                   </View>
 
                   {item.notes && (
@@ -259,26 +309,14 @@ export default function FertilizersScreen() {
                       {item.notes}
                     </Text>
                   )}
-
-                  <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => handleDelete(item)}
-                  >
-                    <IconSymbol
-                      ios_icon_name="trash.fill"
-                      android_material_icon_name="delete"
-                      size={20}
-                      color={colors.error}
-                    />
-                  </TouchableOpacity>
                 </TouchableOpacity>
               </React.Fragment>
-            );
-          })
-        )}
+            ))
+          )}
 
-        <View style={{ height: 100 }} />
-      </ScrollView>
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      )}
 
       {/* Add/Edit Modal */}
       <Modal
@@ -313,31 +351,6 @@ export default function FertilizersScreen() {
                 onChangeText={setName}
               />
 
-              <Text style={styles.label}>Type *</Text>
-              <View style={styles.typeSelector}>
-                {(['nitrogen', 'phosphorus', 'potassium', 'organic', 'compound', 'other'] as const).map((t, idx) => (
-                  <React.Fragment key={idx}>
-                    <TouchableOpacity
-                      style={[
-                        styles.typeOption,
-                        type === t && styles.typeOptionSelected,
-                        { borderColor: getTypeColor(t) },
-                      ]}
-                      onPress={() => setType(t)}
-                    >
-                      <Text
-                        style={[
-                          styles.typeOptionText,
-                          type === t && { color: getTypeColor(t), fontWeight: '600' },
-                        ]}
-                      >
-                        {t}
-                      </Text>
-                    </TouchableOpacity>
-                  </React.Fragment>
-                ))}
-              </View>
-
               <Text style={styles.label}>Quantity *</Text>
               <View style={styles.inputRow}>
                 <TextInput
@@ -349,7 +362,7 @@ export default function FertilizersScreen() {
                   keyboardType="decimal-pad"
                 />
                 <View style={styles.unitSelector}>
-                  {(['lbs', 'kg', 'bags', 'gallons', 'liters'] as const).map((u, idx) => (
+                  {(['lbs', 'bags', 'trucks'] as const).map((u, idx) => (
                     <React.Fragment key={idx}>
                       <TouchableOpacity
                         style={[
@@ -371,16 +384,6 @@ export default function FertilizersScreen() {
                   ))}
                 </View>
               </View>
-
-              <Text style={styles.label}>Low Stock Threshold *</Text>
-              <TextInput
-                style={commonStyles.input}
-                placeholder="Alert when below this amount"
-                placeholderTextColor={colors.textSecondary}
-                value={lowStockThreshold}
-                onChangeText={setLowStockThreshold}
-                keyboardType="decimal-pad"
-              />
 
               <Text style={styles.label}>Notes</Text>
               <TextInput
@@ -450,6 +453,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
   },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
   scrollView: {
     flex: 1,
   },
@@ -479,12 +493,10 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   itemHeader: {
-    marginBottom: 12,
-  },
-  itemTitleRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   itemName: {
     fontSize: 18,
@@ -492,19 +504,8 @@ const styles = StyleSheet.create({
     color: colors.text,
     flex: 1,
   },
-  lowStockBadge: {
-    marginLeft: 8,
-  },
-  typeBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  typeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'capitalize',
+  deleteButton: {
+    padding: 4,
   },
   itemDetails: {
     marginBottom: 8,
@@ -524,12 +525,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontStyle: 'italic',
     marginTop: 4,
-  },
-  deleteButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    padding: 4,
   },
   modalOverlay: {
     flex: 1,
@@ -565,27 +560,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 8,
     marginTop: 16,
-  },
-  typeSelector: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: -4,
-  },
-  typeOption: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    margin: 4,
-  },
-  typeOptionSelected: {
-    borderWidth: 2,
-  },
-  typeOptionText: {
-    fontSize: 14,
-    color: colors.text,
-    textTransform: 'capitalize',
   },
   inputRow: {
     flexDirection: 'row',

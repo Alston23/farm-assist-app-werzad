@@ -1,42 +1,58 @@
 
 export interface FertilizerItem {
   id: string;
+  user_id?: string;
   name: string;
-  type: 'nitrogen' | 'phosphorus' | 'potassium' | 'organic' | 'compound' | 'other';
   quantity: number;
-  unit: 'lbs' | 'kg' | 'bags' | 'gallons' | 'liters';
-  purchaseDate: string;
-  expirationDate?: string;
-  lowStockThreshold: number;
+  unit: 'lbs' | 'bags' | 'trucks';
   notes?: string;
+  created_at?: string;
 }
 
 export interface SeedItem {
   id: string;
-  cropName: string;
-  variety: string;
-  itemType: 'seed' | 'transplant';
+  user_id?: string;
+  name: string;
   quantity: number;
-  unit: 'seeds' | 'packets' | 'lbs' | 'kg' | 'plants' | 'trays';
-  purchaseDate: string;
-  expirationDate?: string;
-  viabilityRate?: number; // percentage
-  lowStockThreshold: number;
-  notes?: string;
+  unit: 'lbs' | 'bags' | 'units';
+  created_at?: string;
 }
 
 export interface PackagingItem {
   id: string;
+  user_id?: string;
   name: string;
-  type: 'box' | 'bag' | 'container' | 'crate' | 'basket' | 'bouquet_paper' | 'other';
   quantity: number;
-  size?: string; // e.g., "small", "medium", "large", or specific dimensions
-  lowStockThreshold: number;
+  unit: string;
+  created_at?: string;
+}
+
+export interface StorageLocation {
+  id: string;
+  user_id?: string;
+  type: 'dry' | 'refrigerated' | 'freezer';
+  unit: 'sqft' | 'shelf';
+  capacity: number;
+  used: number;
+  created_at?: string;
+}
+
+export interface UsageRecord {
+  id: string;
+  user_id?: string;
+  itemType: 'fertilizer' | 'seed' | 'packaging';
+  itemId: string;
+  itemName: string;
+  quantity: number;
+  unit: string;
+  usageDate: string;
+  usedFor?: string;
   notes?: string;
 }
 
 export interface YieldItem {
   id: string;
+  user_id?: string;
   cropName: string;
   variety?: string;
   quantity: number;
@@ -44,12 +60,13 @@ export interface YieldItem {
   harvestDate: string;
   storageLocation: 'dry' | 'refrigerated';
   quality?: 'excellent' | 'good' | 'fair';
-  lotNumber?: string; // For food safety tracking, especially for restaurant sales
+  lotNumber?: string;
   notes?: string;
 }
 
 export interface SaleRecord {
   id: string;
+  user_id?: string;
   yieldItemId: string;
   cropName: string;
   quantity: number;
@@ -58,27 +75,5 @@ export interface SaleRecord {
   price?: number;
   paymentMethod: 'cash' | 'credit_debit' | 'payment_app';
   customer?: string;
-  notes?: string;
-}
-
-export interface StorageLocation {
-  id: string;
-  name: string;
-  type: 'dry' | 'cold' | 'frozen';
-  capacityType: 'fixed' | 'percentage';
-  totalCapacity: number;
-  unit: 'sq_ft' | 'percentage';
-  notes?: string;
-}
-
-export interface UsageRecord {
-  id: string;
-  itemType: 'fertilizer' | 'seed' | 'packaging';
-  itemId: string;
-  itemName: string;
-  quantity: number;
-  unit: string;
-  usageDate: string;
-  usedFor?: string; // crop name, field name, etc.
   notes?: string;
 }

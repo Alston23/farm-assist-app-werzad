@@ -10,33 +10,56 @@ import {
   Modal,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { router } from 'expo-router';
-import { inventoryStorage } from '@/utils/inventoryStorage';
 import { StorageLocation } from '@/types/inventory';
+import { supabase } from '@/lib/supabase';
 
 export default function StorageLocationsScreen() {
   const [locations, setLocations] = useState<StorageLocation[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<StorageLocation | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Form state
-  const [name, setName] = useState('');
   const [type, setType] = useState<StorageLocation['type']>('dry');
-  const [capacityType, setCapacityType] = useState<StorageLocation['capacityType']>('fixed');
-  const [totalCapacity, setTotalCapacity] = useState('');
-  const [unit, setUnit] = useState<StorageLocation['unit']>('sq_ft');
-  const [notes, setNotes] = useState('');
+  const [unit, setUnit] = useState<StorageLocation['unit']>('sqft');
+  const [capacity, setCapacity] = useState('');
 
   useEffect(() => {
     loadLocations();
   }, []);
 
   const loadLocations = async () => {
-    const data = await inventoryStorage.getStorageLocations();
-    setLocations(data);
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('No user found');
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('storage_locations')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading storage locations:', error);
+        Alert.alert('Error', 'Failed to load storage locations');
+      } else {
+        setLocations(data || []);
+      }
+    } catch (error) {
+      console.error('Error loading storage locations:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const openAddModal = () => {
@@ -47,81 +70,118 @@ export default function StorageLocationsScreen() {
 
   const openEditModal = (item: StorageLocation) => {
     setEditingItem(item);
-    setName(item.name);
     setType(item.type);
-    setCapacityType(item.capacityType);
-    setTotalCapacity(item.totalCapacity.toString());
     setUnit(item.unit);
-    setNotes(item.notes || '');
+    setCapacity(item.capacity.toString());
     setModalVisible(true);
   };
 
   const resetForm = () => {
-    setName('');
     setType('dry');
-    setCapacityType('fixed');
-    setTotalCapacity('');
-    setUnit('sq_ft');
-    setNotes('');
+    setUnit('sqft');
+    setCapacity('');
   };
 
   const handleSave = async () => {
-    if (!name.trim() || !totalCapacity) {
-      Alert.alert('Error', 'Please fill in all required fields');
+    if (!capacity) {
+      Alert.alert('Error', 'Please enter capacity');
       return;
     }
 
-    const capacity = parseFloat(totalCapacity);
-    if (isNaN(capacity) || capacity <= 0) {
+    const cap = parseFloat(capacity);
+    if (isNaN(cap) || cap <= 0) {
       Alert.alert('Error', 'Please enter a valid capacity');
       return;
     }
 
-    if (capacityType === 'percentage' && capacity > 100) {
-      Alert.alert('Error', 'Percentage cannot exceed 100%');
-      return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        Alert.alert('Error', 'You must be logged in');
+        return;
+      }
+
+      if (editingItem) {
+        // Update existing
+        const { error } = await supabase
+          .from('storage_locations')
+          .update({
+            type,
+            unit,
+            capacity: cap,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editingItem.id)
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error updating storage location:', error);
+          Alert.alert('Error', 'Failed to update storage location');
+          return;
+        }
+      } else {
+        // Insert new
+        const { error } = await supabase
+          .from('storage_locations')
+          .insert({
+            user_id: user.id,
+            type,
+            unit,
+            capacity: cap,
+            used: 0,
+          });
+
+        if (error) {
+          console.error('Error adding storage location:', error);
+          Alert.alert('Error', 'Failed to add storage location');
+          return;
+        }
+      }
+
+      setModalVisible(false);
+      resetForm();
+      loadLocations();
+      Alert.alert('Success', `Storage location ${editingItem ? 'updated' : 'added'} successfully`);
+    } catch (error) {
+      console.error('Error saving storage location:', error);
+      Alert.alert('Error', 'An unexpected error occurred');
     }
-
-    const newItem: StorageLocation = {
-      id: editingItem?.id || Date.now().toString(),
-      name: name.trim(),
-      type,
-      capacityType,
-      totalCapacity: capacity,
-      unit: capacityType === 'percentage' ? 'percentage' : unit,
-      notes: notes.trim(),
-    };
-
-    let updatedLocations;
-    if (editingItem) {
-      updatedLocations = locations.map(item =>
-        item.id === editingItem.id ? newItem : item
-      );
-    } else {
-      updatedLocations = [...locations, newItem];
-    }
-
-    await inventoryStorage.saveStorageLocations(updatedLocations);
-    setLocations(updatedLocations);
-    setModalVisible(false);
-    resetForm();
-    Alert.alert('Success', `Storage location ${editingItem ? 'updated' : 'added'} successfully`);
   };
 
   const handleDelete = (item: StorageLocation) => {
     Alert.alert(
       'Delete Storage Location',
-      `Are you sure you want to delete ${item.name}?`,
+      `Are you sure you want to delete this ${item.type} storage location?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            const updatedLocations = locations.filter(l => l.id !== item.id);
-            await inventoryStorage.saveStorageLocations(updatedLocations);
-            setLocations(updatedLocations);
-            Alert.alert('Success', 'Storage location deleted successfully');
+            try {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (!user) {
+                Alert.alert('Error', 'You must be logged in');
+                return;
+              }
+
+              const { error } = await supabase
+                .from('storage_locations')
+                .delete()
+                .eq('id', item.id)
+                .eq('user_id', user.id);
+
+              if (error) {
+                console.error('Error deleting storage location:', error);
+                Alert.alert('Error', 'Failed to delete storage location');
+              } else {
+                loadLocations();
+                Alert.alert('Success', 'Storage location deleted successfully');
+              }
+            } catch (error) {
+              console.error('Error deleting storage location:', error);
+              Alert.alert('Error', 'An unexpected error occurred');
+            }
           },
         },
       ]
@@ -129,12 +189,15 @@ export default function StorageLocationsScreen() {
   };
 
   const dryLocations = locations.filter(l => l.type === 'dry');
-  const coldLocations = locations.filter(l => l.type === 'cold');
-  const frozenLocations = locations.filter(l => l.type === 'frozen');
+  const refrigeratedLocations = locations.filter(l => l.type === 'refrigerated');
+  const freezerLocations = locations.filter(l => l.type === 'freezer');
 
   const getTotalCapacity = (locs: StorageLocation[]) => {
-    const fixedLocs = locs.filter(l => l.capacityType === 'fixed');
-    return fixedLocs.reduce((sum, l) => sum + l.totalCapacity, 0);
+    return locs.reduce((sum, l) => sum + l.capacity, 0);
+  };
+
+  const getTotalUsed = (locs: StorageLocation[]) => {
+    return locs.reduce((sum, l) => sum + (l.used || 0), 0);
   };
 
   return (
@@ -183,7 +246,7 @@ export default function StorageLocationsScreen() {
           <Text style={styles.summaryTitle}>Dry Storage</Text>
           <Text style={styles.summaryValue}>{dryLocations.length} locations</Text>
           <Text style={styles.summaryCapacity}>
-            {getTotalCapacity(dryLocations).toFixed(0)} sq ft
+            {getTotalUsed(dryLocations).toFixed(0)} / {getTotalCapacity(dryLocations).toFixed(0)}
           </Text>
         </View>
 
@@ -194,10 +257,10 @@ export default function StorageLocationsScreen() {
             size={28}
             color="#2196F3"
           />
-          <Text style={styles.summaryTitle}>Cold Storage</Text>
-          <Text style={styles.summaryValue}>{coldLocations.length} locations</Text>
+          <Text style={styles.summaryTitle}>Refrigerated</Text>
+          <Text style={styles.summaryValue}>{refrigeratedLocations.length} locations</Text>
           <Text style={styles.summaryCapacity}>
-            {getTotalCapacity(coldLocations).toFixed(0)} sq ft
+            {getTotalUsed(refrigeratedLocations).toFixed(0)} / {getTotalCapacity(refrigeratedLocations).toFixed(0)}
           </Text>
         </View>
 
@@ -208,246 +271,295 @@ export default function StorageLocationsScreen() {
             size={28}
             color="#00BCD4"
           />
-          <Text style={styles.summaryTitle}>Frozen Storage</Text>
-          <Text style={styles.summaryValue}>{frozenLocations.length} locations</Text>
+          <Text style={styles.summaryTitle}>Freezer</Text>
+          <Text style={styles.summaryValue}>{freezerLocations.length} locations</Text>
           <Text style={styles.summaryCapacity}>
-            {getTotalCapacity(frozenLocations).toFixed(0)} sq ft
+            {getTotalUsed(freezerLocations).toFixed(0)} / {getTotalCapacity(freezerLocations).toFixed(0)}
           </Text>
         </View>
       </ScrollView>
 
       {/* Storage Locations List */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {locations.length === 0 ? (
-          <View style={styles.emptyState}>
-            <IconSymbol
-              ios_icon_name="archivebox"
-              android_material_icon_name="warehouse"
-              size={64}
-              color={colors.textSecondary}
-            />
-            <Text style={styles.emptyText}>No storage locations</Text>
-            <Text style={styles.emptySubtext}>
-              Add your first storage location to track capacity
-            </Text>
-          </View>
-        ) : (
-          <React.Fragment>
-            {/* Dry Storage Section */}
-            {dryLocations.length > 0 && (
-              <React.Fragment>
-                <View style={styles.sectionHeader}>
-                  <IconSymbol
-                    ios_icon_name="cube.box.fill"
-                    android_material_icon_name="inventory"
-                    size={20}
-                    color={colors.text}
-                  />
-                  <Text style={styles.sectionTitle}>Dry Storage</Text>
-                </View>
-                {dryLocations.map((item, index) => (
-                  <React.Fragment key={index}>
-                    <TouchableOpacity
-                      style={[commonStyles.card, styles.locationCard]}
-                      onPress={() => openEditModal(item)}
-                    >
-                      <View style={styles.locationHeader}>
-                        <Text style={styles.locationName}>{item.name}</Text>
-                        <TouchableOpacity
-                          style={styles.deleteButton}
-                          onPress={() => handleDelete(item)}
-                        >
-                          <IconSymbol
-                            ios_icon_name="trash.fill"
-                            android_material_icon_name="delete"
-                            size={20}
-                            color={colors.error}
-                          />
-                        </TouchableOpacity>
-                      </View>
-
-                      <View style={styles.locationDetails}>
-                        <View style={styles.detailRow}>
-                          <IconSymbol
-                            ios_icon_name="scalemass.fill"
-                            android_material_icon_name="scale"
-                            size={16}
-                            color={colors.textSecondary}
-                          />
-                          <Text style={styles.detailText}>
-                            Capacity: {item.totalCapacity} {item.unit === 'percentage' ? '%' : item.unit}
-                          </Text>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading storage locations...</Text>
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {locations.length === 0 ? (
+            <View style={styles.emptyState}>
+              <IconSymbol
+                ios_icon_name="archivebox"
+                android_material_icon_name="warehouse"
+                size={64}
+                color={colors.textSecondary}
+              />
+              <Text style={styles.emptyText}>No storage locations</Text>
+              <Text style={styles.emptySubtext}>
+                Add your first storage location to track capacity
+              </Text>
+            </View>
+          ) : (
+            <React.Fragment>
+              {/* Dry Storage Section */}
+              {dryLocations.length > 0 && (
+                <React.Fragment>
+                  <View style={styles.sectionHeader}>
+                    <IconSymbol
+                      ios_icon_name="cube.box.fill"
+                      android_material_icon_name="inventory"
+                      size={20}
+                      color={colors.text}
+                    />
+                    <Text style={styles.sectionTitle}>Dry Storage</Text>
+                  </View>
+                  {dryLocations.map((item, index) => (
+                    <React.Fragment key={index}>
+                      <TouchableOpacity
+                        style={[commonStyles.card, styles.locationCard]}
+                        onPress={() => openEditModal(item)}
+                      >
+                        <View style={styles.locationHeader}>
+                          <Text style={styles.locationName}>{item.type.charAt(0).toUpperCase() + item.type.slice(1)} Storage</Text>
+                          <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => handleDelete(item)}
+                          >
+                            <IconSymbol
+                              ios_icon_name="trash.fill"
+                              android_material_icon_name="delete"
+                              size={20}
+                              color={colors.error}
+                            />
+                          </TouchableOpacity>
                         </View>
-                        <View style={styles.detailRow}>
-                          <IconSymbol
-                            ios_icon_name="chart.bar.fill"
-                            android_material_icon_name="bar_chart"
-                            size={16}
-                            color={colors.textSecondary}
-                          />
-                          <Text style={styles.detailText}>
-                            Type: {item.capacityType === 'fixed' ? 'Fixed' : 'Percentage'}
-                          </Text>
+
+                        <View style={styles.locationDetails}>
+                          <View style={styles.detailRow}>
+                            <IconSymbol
+                              ios_icon_name="scalemass.fill"
+                              android_material_icon_name="scale"
+                              size={16}
+                              color={colors.textSecondary}
+                            />
+                            <Text style={styles.detailText}>
+                              Capacity: {item.capacity} {item.unit}
+                            </Text>
+                          </View>
+                          <View style={styles.detailRow}>
+                            <IconSymbol
+                              ios_icon_name="chart.bar.fill"
+                              android_material_icon_name="bar_chart"
+                              size={16}
+                              color={colors.textSecondary}
+                            />
+                            <Text style={styles.detailText}>
+                              Used: {item.used || 0} {item.unit}
+                            </Text>
+                          </View>
                         </View>
-                      </View>
 
-                      {item.notes && (
-                        <Text style={styles.locationNotes} numberOfLines={2}>
-                          {item.notes}
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  </React.Fragment>
-                ))}
-              </React.Fragment>
-            )}
-
-            {/* Cold Storage Section */}
-            {coldLocations.length > 0 && (
-              <React.Fragment>
-                <View style={[styles.sectionHeader, { marginTop: 24 }]}>
-                  <IconSymbol
-                    ios_icon_name="snowflake"
-                    android_material_icon_name="ac_unit"
-                    size={20}
-                    color={colors.text}
-                  />
-                  <Text style={styles.sectionTitle}>Cold Storage</Text>
-                </View>
-                {coldLocations.map((item, index) => (
-                  <React.Fragment key={index}>
-                    <TouchableOpacity
-                      style={[commonStyles.card, styles.locationCard]}
-                      onPress={() => openEditModal(item)}
-                    >
-                      <View style={styles.locationHeader}>
-                        <Text style={styles.locationName}>{item.name}</Text>
-                        <TouchableOpacity
-                          style={styles.deleteButton}
-                          onPress={() => handleDelete(item)}
-                        >
-                          <IconSymbol
-                            ios_icon_name="trash.fill"
-                            android_material_icon_name="delete"
-                            size={20}
-                            color={colors.error}
-                          />
-                        </TouchableOpacity>
-                      </View>
-
-                      <View style={styles.locationDetails}>
-                        <View style={styles.detailRow}>
-                          <IconSymbol
-                            ios_icon_name="scalemass.fill"
-                            android_material_icon_name="scale"
-                            size={16}
-                            color={colors.textSecondary}
-                          />
-                          <Text style={styles.detailText}>
-                            Capacity: {item.totalCapacity} {item.unit === 'percentage' ? '%' : item.unit}
-                          </Text>
+                        {/* Progress Bar */}
+                        <View style={styles.progressContainer}>
+                          <View style={styles.progressBar}>
+                            <View
+                              style={[
+                                styles.progressFill,
+                                {
+                                  width: `${Math.min(((item.used || 0) / item.capacity) * 100, 100)}%`,
+                                  backgroundColor:
+                                    ((item.used || 0) / item.capacity) > 0.9
+                                      ? colors.error
+                                      : ((item.used || 0) / item.capacity) > 0.7
+                                      ? colors.warning
+                                      : colors.success,
+                                },
+                              ]}
+                            />
+                          </View>
                         </View>
-                        <View style={styles.detailRow}>
-                          <IconSymbol
-                            ios_icon_name="chart.bar.fill"
-                            android_material_icon_name="bar_chart"
-                            size={16}
-                            color={colors.textSecondary}
-                          />
-                          <Text style={styles.detailText}>
-                            Type: {item.capacityType === 'fixed' ? 'Fixed' : 'Percentage'}
-                          </Text>
+                      </TouchableOpacity>
+                    </React.Fragment>
+                  ))}
+                </React.Fragment>
+              )}
+
+              {/* Refrigerated Storage Section */}
+              {refrigeratedLocations.length > 0 && (
+                <React.Fragment>
+                  <View style={[styles.sectionHeader, { marginTop: 24 }]}>
+                    <IconSymbol
+                      ios_icon_name="snowflake"
+                      android_material_icon_name="ac_unit"
+                      size={20}
+                      color={colors.text}
+                    />
+                    <Text style={styles.sectionTitle}>Refrigerated Storage</Text>
+                  </View>
+                  {refrigeratedLocations.map((item, index) => (
+                    <React.Fragment key={index}>
+                      <TouchableOpacity
+                        style={[commonStyles.card, styles.locationCard]}
+                        onPress={() => openEditModal(item)}
+                      >
+                        <View style={styles.locationHeader}>
+                          <Text style={styles.locationName}>{item.type.charAt(0).toUpperCase() + item.type.slice(1)} Storage</Text>
+                          <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => handleDelete(item)}
+                          >
+                            <IconSymbol
+                              ios_icon_name="trash.fill"
+                              android_material_icon_name="delete"
+                              size={20}
+                              color={colors.error}
+                            />
+                          </TouchableOpacity>
                         </View>
-                      </View>
 
-                      {item.notes && (
-                        <Text style={styles.locationNotes} numberOfLines={2}>
-                          {item.notes}
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  </React.Fragment>
-                ))}
-              </React.Fragment>
-            )}
-
-            {/* Frozen Storage Section */}
-            {frozenLocations.length > 0 && (
-              <React.Fragment>
-                <View style={[styles.sectionHeader, { marginTop: 24 }]}>
-                  <IconSymbol
-                    ios_icon_name="thermometer.snowflake"
-                    android_material_icon_name="ac_unit"
-                    size={20}
-                    color={colors.text}
-                  />
-                  <Text style={styles.sectionTitle}>Frozen Storage</Text>
-                </View>
-                {frozenLocations.map((item, index) => (
-                  <React.Fragment key={index}>
-                    <TouchableOpacity
-                      style={[commonStyles.card, styles.locationCard]}
-                      onPress={() => openEditModal(item)}
-                    >
-                      <View style={styles.locationHeader}>
-                        <Text style={styles.locationName}>{item.name}</Text>
-                        <TouchableOpacity
-                          style={styles.deleteButton}
-                          onPress={() => handleDelete(item)}
-                        >
-                          <IconSymbol
-                            ios_icon_name="trash.fill"
-                            android_material_icon_name="delete"
-                            size={20}
-                            color={colors.error}
-                          />
-                        </TouchableOpacity>
-                      </View>
-
-                      <View style={styles.locationDetails}>
-                        <View style={styles.detailRow}>
-                          <IconSymbol
-                            ios_icon_name="scalemass.fill"
-                            android_material_icon_name="scale"
-                            size={16}
-                            color={colors.textSecondary}
-                          />
-                          <Text style={styles.detailText}>
-                            Capacity: {item.totalCapacity} {item.unit === 'percentage' ? '%' : item.unit}
-                          </Text>
+                        <View style={styles.locationDetails}>
+                          <View style={styles.detailRow}>
+                            <IconSymbol
+                              ios_icon_name="scalemass.fill"
+                              android_material_icon_name="scale"
+                              size={16}
+                              color={colors.textSecondary}
+                            />
+                            <Text style={styles.detailText}>
+                              Capacity: {item.capacity} {item.unit}
+                            </Text>
+                          </View>
+                          <View style={styles.detailRow}>
+                            <IconSymbol
+                              ios_icon_name="chart.bar.fill"
+                              android_material_icon_name="bar_chart"
+                              size={16}
+                              color={colors.textSecondary}
+                            />
+                            <Text style={styles.detailText}>
+                              Used: {item.used || 0} {item.unit}
+                            </Text>
+                          </View>
                         </View>
-                        <View style={styles.detailRow}>
-                          <IconSymbol
-                            ios_icon_name="chart.bar.fill"
-                            android_material_icon_name="bar_chart"
-                            size={16}
-                            color={colors.textSecondary}
-                          />
-                          <Text style={styles.detailText}>
-                            Type: {item.capacityType === 'fixed' ? 'Fixed' : 'Percentage'}
-                          </Text>
+
+                        {/* Progress Bar */}
+                        <View style={styles.progressContainer}>
+                          <View style={styles.progressBar}>
+                            <View
+                              style={[
+                                styles.progressFill,
+                                {
+                                  width: `${Math.min(((item.used || 0) / item.capacity) * 100, 100)}%`,
+                                  backgroundColor:
+                                    ((item.used || 0) / item.capacity) > 0.9
+                                      ? colors.error
+                                      : ((item.used || 0) / item.capacity) > 0.7
+                                      ? colors.warning
+                                      : colors.success,
+                                },
+                              ]}
+                            />
+                          </View>
                         </View>
-                      </View>
+                      </TouchableOpacity>
+                    </React.Fragment>
+                  ))}
+                </React.Fragment>
+              )}
 
-                      {item.notes && (
-                        <Text style={styles.locationNotes} numberOfLines={2}>
-                          {item.notes}
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  </React.Fragment>
-                ))}
-              </React.Fragment>
-            )}
-          </React.Fragment>
-        )}
+              {/* Freezer Storage Section */}
+              {freezerLocations.length > 0 && (
+                <React.Fragment>
+                  <View style={[styles.sectionHeader, { marginTop: 24 }]}>
+                    <IconSymbol
+                      ios_icon_name="thermometer.snowflake"
+                      android_material_icon_name="ac_unit"
+                      size={20}
+                      color={colors.text}
+                    />
+                    <Text style={styles.sectionTitle}>Freezer Storage</Text>
+                  </View>
+                  {freezerLocations.map((item, index) => (
+                    <React.Fragment key={index}>
+                      <TouchableOpacity
+                        style={[commonStyles.card, styles.locationCard]}
+                        onPress={() => openEditModal(item)}
+                      >
+                        <View style={styles.locationHeader}>
+                          <Text style={styles.locationName}>{item.type.charAt(0).toUpperCase() + item.type.slice(1)} Storage</Text>
+                          <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => handleDelete(item)}
+                          >
+                            <IconSymbol
+                              ios_icon_name="trash.fill"
+                              android_material_icon_name="delete"
+                              size={20}
+                              color={colors.error}
+                            />
+                          </TouchableOpacity>
+                        </View>
 
-        <View style={{ height: 100 }} />
-      </ScrollView>
+                        <View style={styles.locationDetails}>
+                          <View style={styles.detailRow}>
+                            <IconSymbol
+                              ios_icon_name="scalemass.fill"
+                              android_material_icon_name="scale"
+                              size={16}
+                              color={colors.textSecondary}
+                            />
+                            <Text style={styles.detailText}>
+                              Capacity: {item.capacity} {item.unit}
+                            </Text>
+                          </View>
+                          <View style={styles.detailRow}>
+                            <IconSymbol
+                              ios_icon_name="chart.bar.fill"
+                              android_material_icon_name="bar_chart"
+                              size={16}
+                              color={colors.textSecondary}
+                            />
+                            <Text style={styles.detailText}>
+                              Used: {item.used || 0} {item.unit}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Progress Bar */}
+                        <View style={styles.progressContainer}>
+                          <View style={styles.progressBar}>
+                            <View
+                              style={[
+                                styles.progressFill,
+                                {
+                                  width: `${Math.min(((item.used || 0) / item.capacity) * 100, 100)}%`,
+                                  backgroundColor:
+                                    ((item.used || 0) / item.capacity) > 0.9
+                                      ? colors.error
+                                      : ((item.used || 0) / item.capacity) > 0.7
+                                      ? colors.warning
+                                      : colors.success,
+                                },
+                              ]}
+                            />
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    </React.Fragment>
+                  ))}
+                </React.Fragment>
+              )}
+            </React.Fragment>
+          )}
+
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      )}
 
       {/* Add/Edit Modal */}
       <Modal
@@ -473,156 +585,62 @@ export default function StorageLocationsScreen() {
             </View>
 
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-              <Text style={styles.label}>Name *</Text>
-              <TextInput
-                style={commonStyles.input}
-                placeholder="e.g., Main Barn, Walk-in Cooler"
-                placeholderTextColor={colors.textSecondary}
-                value={name}
-                onChangeText={setName}
-              />
-
               <Text style={styles.label}>Storage Type *</Text>
               <View style={styles.typeSelector}>
-                <TouchableOpacity
-                  style={[
-                    styles.typeButton,
-                    type === 'dry' && styles.typeButtonActive,
-                  ]}
-                  onPress={() => setType('dry')}
-                >
-                  <IconSymbol
-                    ios_icon_name="cube.box.fill"
-                    android_material_icon_name="inventory"
-                    size={20}
-                    color={type === 'dry' ? colors.primary : colors.textSecondary}
-                  />
-                  <Text
-                    style={[
-                      styles.typeButtonText,
-                      type === 'dry' && styles.typeButtonTextActive,
-                    ]}
-                  >
-                    Dry
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.typeButton,
-                    type === 'cold' && styles.typeButtonActive,
-                  ]}
-                  onPress={() => setType('cold')}
-                >
-                  <IconSymbol
-                    ios_icon_name="snowflake"
-                    android_material_icon_name="ac_unit"
-                    size={20}
-                    color={type === 'cold' ? colors.primary : colors.textSecondary}
-                  />
-                  <Text
-                    style={[
-                      styles.typeButtonText,
-                      type === 'cold' && styles.typeButtonTextActive,
-                    ]}
-                  >
-                    Cold
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.typeButton,
-                    type === 'frozen' && styles.typeButtonActive,
-                  ]}
-                  onPress={() => setType('frozen')}
-                >
-                  <IconSymbol
-                    ios_icon_name="thermometer.snowflake"
-                    android_material_icon_name="ac_unit"
-                    size={20}
-                    color={type === 'frozen' ? colors.primary : colors.textSecondary}
-                  />
-                  <Text
-                    style={[
-                      styles.typeButtonText,
-                      type === 'frozen' && styles.typeButtonTextActive,
-                    ]}
-                  >
-                    Frozen
-                  </Text>
-                </TouchableOpacity>
+                {(['dry', 'refrigerated', 'freezer'] as const).map((t, idx) => (
+                  <React.Fragment key={idx}>
+                    <TouchableOpacity
+                      style={[
+                        styles.typeButton,
+                        type === t && styles.typeButtonActive,
+                      ]}
+                      onPress={() => setType(t)}
+                    >
+                      <Text
+                        style={[
+                          styles.typeButtonText,
+                          type === t && styles.typeButtonTextActive,
+                        ]}
+                      >
+                        {t.charAt(0).toUpperCase() + t.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
               </View>
 
-              <Text style={styles.label}>Capacity Type *</Text>
-              <View style={styles.capacityTypeSelector}>
-                <TouchableOpacity
-                  style={[
-                    styles.capacityTypeButton,
-                    capacityType === 'fixed' && styles.capacityTypeButtonActive,
-                  ]}
-                  onPress={() => {
-                    setCapacityType('fixed');
-                    setUnit('sq_ft');
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.capacityTypeButtonText,
-                      capacityType === 'fixed' && styles.capacityTypeButtonTextActive,
-                    ]}
-                  >
-                    Fixed (sq ft)
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.capacityTypeButton,
-                    capacityType === 'percentage' && styles.capacityTypeButtonActive,
-                  ]}
-                  onPress={() => {
-                    setCapacityType('percentage');
-                    setUnit('percentage');
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.capacityTypeButtonText,
-                      capacityType === 'percentage' && styles.capacityTypeButtonTextActive,
-                    ]}
-                  >
-                    Percentage (%)
-                  </Text>
-                </TouchableOpacity>
+              <Text style={styles.label}>Unit *</Text>
+              <View style={styles.unitSelector}>
+                {(['sqft', 'shelf'] as const).map((u, idx) => (
+                  <React.Fragment key={idx}>
+                    <TouchableOpacity
+                      style={[
+                        styles.unitButton,
+                        unit === u && styles.unitButtonActive,
+                      ]}
+                      onPress={() => setUnit(u)}
+                    >
+                      <Text
+                        style={[
+                          styles.unitButtonText,
+                          unit === u && styles.unitButtonTextActive,
+                        ]}
+                      >
+                        {u === 'sqft' ? 'Square Feet' : 'Shelf'}
+                      </Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
               </View>
 
-              <Text style={styles.label}>
-                {capacityType === 'percentage' ? 'Percentage *' : 'Total Capacity (sq ft) *'}
-              </Text>
+              <Text style={styles.label}>Capacity *</Text>
               <TextInput
                 style={commonStyles.input}
-                placeholder={capacityType === 'percentage' ? '0-100' : '0'}
+                placeholder="0"
                 placeholderTextColor={colors.textSecondary}
-                value={totalCapacity}
-                onChangeText={setTotalCapacity}
+                value={capacity}
+                onChangeText={setCapacity}
                 keyboardType="decimal-pad"
-              />
-              {capacityType === 'percentage' && (
-                <Text style={styles.helpText}>
-                  Enter the percentage of total farm storage capacity
-                </Text>
-              )}
-
-              <Text style={styles.label}>Notes</Text>
-              <TextInput
-                style={[commonStyles.input, styles.notesInput]}
-                placeholder="Additional information..."
-                placeholderTextColor={colors.textSecondary}
-                value={notes}
-                onChangeText={setNotes}
-                multiline
-                numberOfLines={3}
               />
 
               <TouchableOpacity
@@ -694,6 +712,17 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
   scrollView: {
     flex: 1,
   },
@@ -748,7 +777,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   locationDetails: {
-    marginBottom: 8,
+    marginBottom: 12,
   },
   detailRow: {
     flexDirection: 'row',
@@ -760,11 +789,18 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginLeft: 8,
   },
-  locationNotes: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-    marginTop: 4,
+  progressContainer: {
+    marginTop: 8,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: colors.highlight,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
   },
   modalOverlay: {
     flex: 1,
@@ -807,22 +843,19 @@ const styles = StyleSheet.create({
   },
   typeButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
     paddingVertical: 12,
     borderRadius: 12,
     backgroundColor: colors.card,
     borderWidth: 2,
     borderColor: colors.border,
+    alignItems: 'center',
   },
   typeButtonActive: {
     borderColor: colors.primary,
     backgroundColor: colors.primary + '10',
   },
   typeButtonText: {
-    fontSize: 12,
+    fontSize: 14,
     color: colors.textSecondary,
     fontWeight: '500',
   },
@@ -830,11 +863,11 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
-  capacityTypeSelector: {
+  unitSelector: {
     flexDirection: 'row',
     gap: 12,
   },
-  capacityTypeButton: {
+  unitButton: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 12,
@@ -843,28 +876,18 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: 'center',
   },
-  capacityTypeButtonActive: {
+  unitButtonActive: {
     borderColor: colors.primary,
     backgroundColor: colors.primary + '10',
   },
-  capacityTypeButtonText: {
+  unitButtonText: {
     fontSize: 14,
     color: colors.textSecondary,
     fontWeight: '500',
   },
-  capacityTypeButtonTextActive: {
+  unitButtonTextActive: {
     color: colors.primary,
     fontWeight: '600',
-  },
-  helpText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 4,
-    fontStyle: 'italic',
-  },
-  notesInput: {
-    height: 80,
-    textAlignVertical: 'top',
   },
   saveButton: {
     marginTop: 24,
