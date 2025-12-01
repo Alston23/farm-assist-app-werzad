@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -16,10 +16,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { colors } from '@/styles/commonStyles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { IconSymbol } from '@/components/IconSymbol';
-import { Redirect } from 'expo-router';
 
 export default function AuthScreen() {
-  const { signIn, signUp, user, isLoading } = useAuth();
+  const { signIn, signUp, isLoading } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,12 +27,6 @@ export default function AuthScreen() {
   const [name, setName] = useState('');
   const [farmName, setFarmName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
-  // If user is already logged in, redirect immediately
-  if (!isLoading && user) {
-    console.log('Auth screen: User is logged in, redirecting to crops');
-    return <Redirect href="/(tabs)/crops" />;
-  }
 
   const handleSubmit = async () => {
     console.log('=== SUBMIT PRESSED ===');
@@ -75,8 +68,7 @@ export default function AuthScreen() {
 
       if (result && result.success) {
         console.log('✅ Authentication successful!');
-        // Don't manually navigate - the Redirect component will handle it
-        // when the user state updates
+        // Navigation will happen automatically via the _layout.tsx useEffect
       } else {
         console.log('❌ Authentication failed:', result?.error);
         Alert.alert('Error', result?.error || 'An error occurred');

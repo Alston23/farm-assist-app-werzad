@@ -27,7 +27,7 @@ export const unstable_settings = {
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const networkState = useNetworkState();
-  const { user, isLoading, autoSignIn } = useAuth();
+  const { user, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const [loaded] = useFonts({
@@ -40,32 +40,30 @@ function RootLayoutNav() {
     }
   }, [loaded, isLoading]);
 
-  // Auto sign in on first load
-  useEffect(() => {
-    if (!isLoading && !user && loaded) {
-      console.log('No user found, auto-signing in...');
-      autoSignIn();
-    }
-  }, [isLoading, user, loaded]);
-
   // Handle navigation based on auth state
   useEffect(() => {
     if (isLoading || !loaded) {
+      console.log('Still loading, skipping navigation');
       return;
     }
 
     const inAuthGroup = segments[0] === 'auth';
-    const inTabsGroup = segments[0] === '(tabs)';
 
     console.log('=== NAVIGATION CHECK ===');
     console.log('User:', user ? user.email : 'null');
     console.log('Segments:', segments);
     console.log('In auth group:', inAuthGroup);
-    console.log('In tabs group:', inTabsGroup);
 
-    if (user && !inTabsGroup) {
-      console.log('✅ User logged in, navigating to crops');
+    if (!user && !inAuthGroup) {
+      // User is not logged in and not on auth screen - redirect to auth
+      console.log('❌ No user, redirecting to auth');
+      router.replace('/auth');
+    } else if (user && inAuthGroup) {
+      // User is logged in but on auth screen - redirect to app
+      console.log('✅ User logged in, redirecting to crops');
       router.replace('/(tabs)/crops');
+    } else {
+      console.log('✓ Navigation state is correct');
     }
   }, [user, segments, isLoading, loaded]);
 
@@ -171,6 +169,13 @@ function RootLayoutNav() {
               options={{
                 presentation: "modal",
                 title: "Seeds",
+              }}
+            />
+            <Stack.Screen
+              name="yields"
+              options={{
+                presentation: "modal",
+                title: "Yields",
               }}
             />
           </Stack>
