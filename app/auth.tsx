@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -16,10 +16,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { colors } from '@/styles/commonStyles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { IconSymbol } from '@/components/IconSymbol';
-import { Redirect } from 'expo-router';
 
 export default function AuthScreen() {
-  const { signIn, signUp, isLoading, user } = useAuth();
+  const { signIn, signUp, isLoading } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -33,12 +32,6 @@ export default function AuthScreen() {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [nameError, setNameError] = useState('');
-
-  // If user is already logged in, redirect to crops
-  if (user && !isLoading) {
-    console.log('User already logged in, redirecting to crops');
-    return <Redirect href="/(tabs)/crops" />;
-  }
 
   const validateEmail = (text: string) => {
     setEmail(text);
@@ -131,9 +124,10 @@ export default function AuthScreen() {
       console.log('Auth result:', result);
 
       if (result && result.success) {
-        console.log('✅ Authentication successful! Navigation will be handled by _layout.tsx');
+        console.log('✅ Authentication successful! User state updated, navigation will happen automatically');
         // Don't navigate here - let the _layout.tsx handle it based on user state
         // The user state has been updated in the context, which will trigger navigation
+        // Keep isSubmitting true to prevent double-submission while navigation happens
       } else {
         console.log('❌ Authentication failed:', result?.error);
         Alert.alert('Authentication Failed', result?.error || 'An error occurred');
@@ -360,7 +354,6 @@ export default function AuthScreen() {
             </Text>
           </View>
 
-          {/* Quick test credentials hint for development */}
           {__DEV__ && (
             <View style={styles.devHint}>
               <Text style={styles.devHintText}>

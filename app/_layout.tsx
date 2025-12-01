@@ -1,6 +1,6 @@
 
 import "react-native-reanimated";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -43,29 +43,41 @@ function RootLayoutNav() {
   // Handle navigation based on auth state
   useEffect(() => {
     if (!loaded || isLoading) {
-      console.log('Still loading fonts or auth...');
+      console.log('⏳ Still loading... fonts:', loaded, 'auth:', !isLoading);
       return;
     }
 
     const inAuthGroup = segments[0] === 'auth';
+    const inTestAuth = segments[0] === 'test-auth';
 
     console.log('=== NAVIGATION CHECK ===');
     console.log('User:', user ? user.email : 'null');
     console.log('Current segments:', segments);
     console.log('In auth group:', inAuthGroup);
+    console.log('In test-auth:', inTestAuth);
+
+    // Don't redirect if we're in test-auth
+    if (inTestAuth) {
+      console.log('✓ In test-auth, allowing access');
+      return;
+    }
 
     if (!user && !inAuthGroup) {
       // User is not logged in and not on auth screen - redirect to auth
       console.log('❌ No user found, redirecting to /auth');
-      router.replace('/auth');
+      setTimeout(() => {
+        router.replace('/auth');
+      }, 100);
     } else if (user && inAuthGroup) {
       // User is logged in but still on auth screen - redirect to app
       console.log('✅ User logged in, redirecting to /(tabs)/crops');
-      router.replace('/(tabs)/crops');
+      setTimeout(() => {
+        router.replace('/(tabs)/crops');
+      }, 100);
     } else {
       console.log('✓ Navigation state is correct, no action needed');
     }
-  }, [user, segments, isLoading, loaded]);
+  }, [user, segments, isLoading, loaded, router]);
 
   React.useEffect(() => {
     if (
