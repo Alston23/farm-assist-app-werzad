@@ -42,29 +42,25 @@ function RootLayoutNav() {
 
   useEffect(() => {
     if (isLoading || !loaded) {
-      console.log('Root layout - waiting... isLoading:', isLoading, 'loaded:', loaded);
+      console.log('Root layout waiting - isLoading:', isLoading, 'loaded:', loaded);
       return;
     }
 
-    console.log('Root layout - user:', user ? user.email : 'null', 'segments:', segments);
+    console.log('=== ROOT LAYOUT NAVIGATION CHECK ===');
+    console.log('User:', user ? user.email : 'null');
+    console.log('Segments:', segments);
 
     const inAuthGroup = segments[0] === 'auth';
     const inTabsGroup = segments[0] === '(tabs)';
 
-    if (!user && inTabsGroup) {
-      console.log('Root layout - No user but in tabs, redirecting to auth');
-      router.replace('/auth');
-    } else if (user && inAuthGroup) {
-      console.log('Root layout - User exists but on auth screen, redirecting to crops');
-      router.replace('/(tabs)/crops');
-    } else if (user && !inTabsGroup && !inAuthGroup) {
-      console.log('Root layout - User exists but not in tabs or auth, redirecting to crops');
+    if (user && !inTabsGroup) {
+      console.log('User logged in, navigating to crops');
       router.replace('/(tabs)/crops');
     } else if (!user && !inAuthGroup) {
-      console.log('Root layout - No user and not on auth, redirecting to auth');
+      console.log('No user, navigating to auth');
       router.replace('/auth');
     } else {
-      console.log('Root layout - Navigation state is correct');
+      console.log('Navigation state is correct');
     }
   }, [user, segments, isLoading, loaded]);
 

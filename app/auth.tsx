@@ -31,73 +31,63 @@ export default function AuthScreen() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    console.log('Auth screen - authLoading:', authLoading, 'user:', user ? user.email : 'null');
+    console.log('Auth screen - user:', user ? user.email : 'null', 'authLoading:', authLoading);
+    
     if (!authLoading && user) {
-      console.log('Auth screen - User is logged in, redirecting to crops...');
-      setTimeout(() => {
-        router.replace('/(tabs)/crops');
-      }, 100);
+      console.log('User is logged in, navigating to crops...');
+      router.replace('/(tabs)/crops');
     }
   }, [user, authLoading]);
 
   const handleSubmit = async () => {
-    console.log('=== SUBMIT BUTTON PRESSED ===');
-    console.log('isSubmitting:', isSubmitting);
-    console.log('isLogin:', isLogin);
-    console.log('Form data:', { email: email.trim(), name: name.trim(), farmName: farmName.trim() });
-
+    console.log('=== SUBMIT PRESSED ===');
+    
     if (isSubmitting) {
-      console.log('Already submitting, ignoring...');
+      console.log('Already submitting, ignoring');
       return;
     }
 
     if (!email.trim() || !password.trim()) {
-      console.log('Validation failed: email or password empty');
       Alert.alert('Error', 'Please enter your email and password');
       return;
     }
 
     if (!isLogin && !name.trim()) {
-      console.log('Validation failed: name empty for signup');
       Alert.alert('Error', 'Please enter your name');
       return;
     }
 
-    console.log('Validation passed, setting submitting to true');
     setIsSubmitting(true);
 
     try {
       let result;
+      
       if (isLogin) {
-        console.log('=== CALLING SIGN IN ===');
+        console.log('Calling signIn...');
         result = await signIn(email.trim(), password);
-        console.log('=== SIGN IN RESULT ===', result);
       } else {
-        console.log('=== CALLING SIGN UP ===');
+        console.log('Calling signUp...');
         result = await signUp(name.trim(), farmName.trim(), email.trim(), password);
-        console.log('=== SIGN UP RESULT ===', result);
       }
 
+      console.log('Auth result:', result);
+
       if (result && result.success) {
-        console.log('=== AUTHENTICATION SUCCESSFUL ===');
-        console.log('User state will update and trigger navigation via useEffect');
-        // Don't set isSubmitting to false - let the navigation happen
-        // The component will unmount when navigation occurs
+        console.log('Authentication successful!');
+        // Navigation will happen via useEffect when user state updates
       } else {
-        console.log('=== AUTHENTICATION FAILED ===');
-        console.log('Error:', result?.error);
+        console.log('Authentication failed:', result?.error);
         Alert.alert('Error', result?.error || 'An error occurred');
         setIsSubmitting(false);
       }
     } catch (error) {
-      console.error('=== AUTH ERROR ===', error);
+      console.error('Auth error:', error);
       Alert.alert('Error', 'An unexpected error occurred. Please try again.');
       setIsSubmitting(false);
     }
   };
 
   const toggleMode = () => {
-    console.log('Toggling mode from', isLogin ? 'login' : 'signup', 'to', isLogin ? 'signup' : 'login');
     setIsLogin(!isLogin);
     setEmail('');
     setPassword('');
