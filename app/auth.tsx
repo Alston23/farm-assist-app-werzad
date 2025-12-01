@@ -28,6 +28,41 @@ export default function AuthScreen() {
   const [farmName, setFarmName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // Form validation states
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [nameError, setNameError] = useState('');
+
+  const validateEmail = (text: string) => {
+    setEmail(text);
+    setEmailError('');
+    
+    if (text.length > 0) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(text)) {
+        setEmailError('Please enter a valid email address');
+      }
+    }
+  };
+
+  const validatePassword = (text: string) => {
+    setPassword(text);
+    setPasswordError('');
+    
+    if (!isLogin && text.length > 0 && text.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+    }
+  };
+
+  const validateName = (text: string) => {
+    setName(text);
+    setNameError('');
+    
+    if (!isLogin && text.length > 0 && text.length < 2) {
+      setNameError('Name must be at least 2 characters');
+    }
+  };
+
   const handleSubmit = async () => {
     console.log('=== SUBMIT PRESSED ===');
     
@@ -41,13 +76,34 @@ export default function AuthScreen() {
     const trimmedName = name.trim();
     const trimmedFarmName = farmName.trim();
 
-    if (!trimmedEmail || !trimmedPassword) {
-      Alert.alert('Error', 'Please enter your email and password');
-      return;
+    // Validate all fields
+    let hasError = false;
+
+    if (!trimmedEmail) {
+      setEmailError('Email is required');
+      hasError = true;
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmedEmail)) {
+        setEmailError('Please enter a valid email address');
+        hasError = true;
+      }
+    }
+
+    if (!trimmedPassword) {
+      setPasswordError('Password is required');
+      hasError = true;
+    } else if (!isLogin && trimmedPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      hasError = true;
     }
 
     if (!isLogin && !trimmedName) {
-      Alert.alert('Error', 'Please enter your name');
+      setNameError('Name is required');
+      hasError = true;
+    }
+
+    if (hasError) {
       return;
     }
 
@@ -71,7 +127,7 @@ export default function AuthScreen() {
         // Navigation will happen automatically via the _layout.tsx useEffect
       } else {
         console.log('❌ Authentication failed:', result?.error);
-        Alert.alert('Error', result?.error || 'An error occurred');
+        Alert.alert('Authentication Failed', result?.error || 'An error occurred');
         setIsSubmitting(false);
       }
     } catch (error) {
@@ -88,6 +144,9 @@ export default function AuthScreen() {
     setName('');
     setFarmName('');
     setShowPassword(false);
+    setEmailError('');
+    setPasswordError('');
+    setNameError('');
   };
 
   if (isLoading) {
@@ -132,24 +191,30 @@ export default function AuthScreen() {
             </Text>
 
             {!isLogin && (
-              <View style={styles.inputContainer}>
-                <IconSymbol
-                  ios_icon_name="person.fill"
-                  android_material_icon_name="person"
-                  size={20}
-                  color={colors.textSecondary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Full Name"
-                  placeholderTextColor={colors.textSecondary}
-                  value={name}
-                  onChangeText={setName}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                  editable={!isSubmitting}
-                />
+              <View>
+                <View style={[
+                  styles.inputContainer,
+                  nameError ? styles.inputContainerError : null
+                ]}>
+                  <IconSymbol
+                    ios_icon_name="person.fill"
+                    android_material_icon_name="person"
+                    size={20}
+                    color={nameError ? colors.error : colors.textSecondary}
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Full Name"
+                    placeholderTextColor={colors.textSecondary}
+                    value={name}
+                    onChangeText={validateName}
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                    editable={!isSubmitting}
+                  />
+                </View>
+                {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
               </View>
             )}
 
@@ -175,58 +240,70 @@ export default function AuthScreen() {
               </View>
             )}
 
-            <View style={styles.inputContainer}>
-              <IconSymbol
-                ios_icon_name="envelope.fill"
-                android_material_icon_name="email"
-                size={20}
-                color={colors.textSecondary}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Email"
-                placeholderTextColor={colors.textSecondary}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isSubmitting}
-              />
+            <View>
+              <View style={[
+                styles.inputContainer,
+                emailError ? styles.inputContainerError : null
+              ]}>
+                <IconSymbol
+                  ios_icon_name="envelope.fill"
+                  android_material_icon_name="email"
+                  size={20}
+                  color={emailError ? colors.error : colors.textSecondary}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email"
+                  placeholderTextColor={colors.textSecondary}
+                  value={email}
+                  onChangeText={validateEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!isSubmitting}
+                />
+              </View>
+              {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
             </View>
 
-            <View style={styles.inputContainer}>
-              <IconSymbol
-                ios_icon_name="lock.fill"
-                android_material_icon_name="lock"
-                size={20}
-                color={colors.textSecondary}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor={colors.textSecondary}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isSubmitting}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
-                disabled={isSubmitting}
-              >
+            <View>
+              <View style={[
+                styles.inputContainer,
+                passwordError ? styles.inputContainerError : null
+              ]}>
                 <IconSymbol
-                  ios_icon_name={showPassword ? 'eye.slash.fill' : 'eye.fill'}
-                  android_material_icon_name={showPassword ? 'visibility_off' : 'visibility'}
+                  ios_icon_name="lock.fill"
+                  android_material_icon_name="lock"
                   size={20}
-                  color={colors.textSecondary}
+                  color={passwordError ? colors.error : colors.textSecondary}
+                  style={styles.inputIcon}
                 />
-              </TouchableOpacity>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Password"
+                  placeholderTextColor={colors.textSecondary}
+                  value={password}
+                  onChangeText={validatePassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!isSubmitting}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeIcon}
+                  disabled={isSubmitting}
+                >
+                  <IconSymbol
+                    ios_icon_name={showPassword ? 'eye.slash.fill' : 'eye.fill'}
+                    android_material_icon_name={showPassword ? 'visibility_off' : 'visibility'}
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+              {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
             </View>
 
             <TouchableOpacity
@@ -261,9 +338,27 @@ export default function AuthScreen() {
             </View>
           </View>
 
-          <Text style={styles.infoText}>
-            Your data is stored locally on your device and is secure.
-          </Text>
+          <View style={styles.infoContainer}>
+            <IconSymbol
+              ios_icon_name="lock.shield.fill"
+              android_material_icon_name="security"
+              size={16}
+              color={colors.card}
+              style={{ opacity: 0.8 }}
+            />
+            <Text style={styles.infoText}>
+              Your data is stored securely on your device
+            </Text>
+          </View>
+
+          {/* Quick test credentials hint for development */}
+          {__DEV__ && (
+            <View style={styles.devHint}>
+              <Text style={styles.devHintText}>
+                💡 Dev Tip: Create an account to test, or sign in if you already have one
+              </Text>
+            </View>
+          )}
         </ScrollView>
       </LinearGradient>
     </KeyboardAvoidingView>
@@ -323,6 +418,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  inputContainerError: {
+    borderColor: colors.error,
+    borderWidth: 2,
+    marginBottom: 4,
+  },
   inputIcon: {
     marginRight: 12,
   },
@@ -334,6 +434,13 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     padding: 8,
+  },
+  errorText: {
+    color: colors.error,
+    fontSize: 12,
+    marginBottom: 12,
+    marginLeft: 16,
+    marginTop: -8,
   },
   submitButton: {
     backgroundColor: colors.primary,
@@ -379,11 +486,27 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
+  infoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+    gap: 8,
+  },
   infoText: {
     fontSize: 12,
     color: colors.card,
-    textAlign: 'center',
-    marginTop: 24,
     opacity: 0.8,
+  },
+  devHint: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+  },
+  devHintText: {
+    fontSize: 12,
+    color: colors.card,
+    textAlign: 'center',
   },
 });

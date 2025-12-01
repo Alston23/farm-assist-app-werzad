@@ -178,6 +178,13 @@ function RootLayoutNav() {
                 title: "Yields",
               }}
             />
+            <Stack.Screen
+              name="test-auth"
+              options={{
+                presentation: "modal",
+                title: "Auth Testing",
+              }}
+            />
           </Stack>
           <SystemBars style={"auto"} />
         </GestureHandlerRootView>
