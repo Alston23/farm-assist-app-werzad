@@ -48,6 +48,8 @@ export default function InventoryScreen() {
   const [saleYieldId, setSaleYieldId] = useState('');
   const [saleQuantity, setSaleQuantity] = useState('');
   const [salePrice, setSalePrice] = useState('');
+  const [saleDate, setSaleDate] = useState(new Date().toISOString().split('T')[0]);
+  const [salePaymentMethod, setSalePaymentMethod] = useState<'cash' | 'credit_debit' | 'payment_app'>('cash');
   const [saleCustomer, setSaleCustomer] = useState('');
   const [saleNotes, setSaleNotes] = useState('');
 
@@ -242,8 +244,9 @@ export default function InventoryScreen() {
       cropName: yieldItem.cropName,
       quantity,
       unit: yieldItem.unit,
-      saleDate: new Date().toISOString(),
+      saleDate: saleDate || new Date().toISOString().split('T')[0],
       price: salePrice ? parseFloat(salePrice) : undefined,
+      paymentMethod: salePaymentMethod,
       customer: saleCustomer.trim(),
       notes: saleNotes.trim(),
     };
@@ -268,6 +271,8 @@ export default function InventoryScreen() {
     setSaleYieldId('');
     setSaleQuantity('');
     setSalePrice('');
+    setSaleDate(new Date().toISOString().split('T')[0]);
+    setSalePaymentMethod('cash');
     setSaleCustomer('');
     setSaleNotes('');
   };
@@ -539,7 +544,7 @@ export default function InventoryScreen() {
 
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => Alert.alert('Coming Soon', 'View reports feature will be available soon!')}
+              onPress={() => router.push('/reports')}
             >
               <IconSymbol
                 ios_icon_name="chart.bar.fill"
@@ -723,6 +728,15 @@ export default function InventoryScreen() {
                 keyboardType="decimal-pad"
               />
 
+              <Text style={styles.label}>Sale Date *</Text>
+              <TextInput
+                style={commonStyles.input}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={colors.textSecondary}
+                value={saleDate}
+                onChangeText={setSaleDate}
+              />
+
               <Text style={styles.label}>Sale Price</Text>
               <TextInput
                 style={commonStyles.input}
@@ -732,6 +746,40 @@ export default function InventoryScreen() {
                 onChangeText={setSalePrice}
                 keyboardType="decimal-pad"
               />
+
+              <Text style={styles.label}>Payment Method *</Text>
+              <View style={styles.paymentMethodSelector}>
+                {([
+                  { value: 'cash', label: 'Cash', icon: 'money' },
+                  { value: 'credit_debit', label: 'Credit/Debit', icon: 'credit_card' },
+                  { value: 'payment_app', label: 'Payment App', icon: 'smartphone' },
+                ] as const).map((method, idx) => (
+                  <React.Fragment key={idx}>
+                    <TouchableOpacity
+                      style={[
+                        styles.paymentMethodButton,
+                        salePaymentMethod === method.value && styles.paymentMethodButtonActive,
+                      ]}
+                      onPress={() => setSalePaymentMethod(method.value)}
+                    >
+                      <IconSymbol
+                        ios_icon_name={method.icon}
+                        android_material_icon_name={method.icon}
+                        size={20}
+                        color={salePaymentMethod === method.value ? colors.primary : colors.textSecondary}
+                      />
+                      <Text
+                        style={[
+                          styles.paymentMethodText,
+                          salePaymentMethod === method.value && styles.paymentMethodTextActive,
+                        ]}
+                      >
+                        {method.label}
+                      </Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
 
               <Text style={styles.label}>Customer</Text>
               <TextInput
@@ -1016,5 +1064,32 @@ const styles = StyleSheet.create({
   saveButton: {
     marginTop: 24,
     marginBottom: 16,
+  },
+  paymentMethodSelector: {
+    gap: 8,
+  },
+  paymentMethodButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: colors.card,
+    borderWidth: 2,
+    borderColor: colors.border,
+  },
+  paymentMethodButtonActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary + '10',
+  },
+  paymentMethodText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  paymentMethodTextActive: {
+    color: colors.primary,
+    fontWeight: '600',
   },
 });

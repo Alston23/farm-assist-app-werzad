@@ -349,7 +349,7 @@ export default function FertilizersScreen() {
                   keyboardType="decimal-pad"
                 />
                 <View style={styles.unitSelector}>
-                  {(['lbs', 'kg', 'gallons', 'liters'] as const).map((u, idx) => (
+                  {(['lbs', 'kg', 'bags', 'gallons', 'liters'] as const).map((u, idx) => (
                     <React.Fragment key={idx}>
                       <TouchableOpacity
                         style={[

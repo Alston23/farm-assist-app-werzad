@@ -4,7 +4,7 @@ export interface FertilizerItem {
   name: string;
   type: 'nitrogen' | 'phosphorus' | 'potassium' | 'organic' | 'compound' | 'other';
   quantity: number;
-  unit: 'lbs' | 'kg' | 'gallons' | 'liters';
+  unit: 'lbs' | 'kg' | 'bags' | 'gallons' | 'liters';
   purchaseDate: string;
   expirationDate?: string;
   lowStockThreshold: number;
@@ -15,8 +15,9 @@ export interface SeedItem {
   id: string;
   cropName: string;
   variety: string;
+  itemType: 'seed' | 'transplant';
   quantity: number;
-  unit: 'seeds' | 'packets' | 'lbs' | 'kg';
+  unit: 'seeds' | 'packets' | 'lbs' | 'kg' | 'plants' | 'trays';
   purchaseDate: string;
   expirationDate?: string;
   viabilityRate?: number; // percentage
@@ -27,7 +28,7 @@ export interface SeedItem {
 export interface PackagingItem {
   id: string;
   name: string;
-  type: 'box' | 'bag' | 'container' | 'crate' | 'basket' | 'other';
+  type: 'box' | 'bag' | 'container' | 'crate' | 'basket' | 'bouquet_paper' | 'other';
   quantity: number;
   size?: string; // e.g., "small", "medium", "large", or specific dimensions
   lowStockThreshold: number;
@@ -55,6 +56,7 @@ export interface SaleRecord {
   unit: string;
   saleDate: string;
   price?: number;
+  paymentMethod: 'cash' | 'credit_debit' | 'payment_app';
   customer?: string;
   notes?: string;
 }
@@ -62,9 +64,10 @@ export interface SaleRecord {
 export interface StorageLocation {
   id: string;
   name: string;
-  type: 'dry' | 'refrigerated';
+  type: 'dry' | 'cold' | 'frozen';
+  capacityType: 'fixed' | 'percentage';
   totalCapacity: number;
-  unit: 'cubic_feet' | 'cubic_meters' | 'lbs' | 'kg';
+  unit: 'sq_ft' | 'percentage';
   notes?: string;
 }
 

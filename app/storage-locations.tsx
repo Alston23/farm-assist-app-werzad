@@ -25,8 +25,9 @@ export default function StorageLocationsScreen() {
   // Form state
   const [name, setName] = useState('');
   const [type, setType] = useState<StorageLocation['type']>('dry');
+  const [capacityType, setCapacityType] = useState<StorageLocation['capacityType']>('fixed');
   const [totalCapacity, setTotalCapacity] = useState('');
-  const [unit, setUnit] = useState<StorageLocation['unit']>('lbs');
+  const [unit, setUnit] = useState<StorageLocation['unit']>('sq_ft');
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
@@ -48,6 +49,7 @@ export default function StorageLocationsScreen() {
     setEditingItem(item);
     setName(item.name);
     setType(item.type);
+    setCapacityType(item.capacityType);
     setTotalCapacity(item.totalCapacity.toString());
     setUnit(item.unit);
     setNotes(item.notes || '');
@@ -57,8 +59,9 @@ export default function StorageLocationsScreen() {
   const resetForm = () => {
     setName('');
     setType('dry');
+    setCapacityType('fixed');
     setTotalCapacity('');
-    setUnit('lbs');
+    setUnit('sq_ft');
     setNotes('');
   };
 
@@ -74,12 +77,18 @@ export default function StorageLocationsScreen() {
       return;
     }
 
+    if (capacityType === 'percentage' && capacity > 100) {
+      Alert.alert('Error', 'Percentage cannot exceed 100%');
+      return;
+    }
+
     const newItem: StorageLocation = {
       id: editingItem?.id || Date.now().toString(),
       name: name.trim(),
       type,
+      capacityType,
       totalCapacity: capacity,
-      unit,
+      unit: capacityType === 'percentage' ? 'percentage' : unit,
       notes: notes.trim(),
     };
 
@@ -120,10 +129,12 @@ export default function StorageLocationsScreen() {
   };
 
   const dryLocations = locations.filter(l => l.type === 'dry');
-  const refrigeratedLocations = locations.filter(l => l.type === 'refrigerated');
+  const coldLocations = locations.filter(l => l.type === 'cold');
+  const frozenLocations = locations.filter(l => l.type === 'frozen');
 
   const getTotalCapacity = (locs: StorageLocation[]) => {
-    return locs.reduce((sum, l) => sum + l.totalCapacity, 0);
+    const fixedLocs = locs.filter(l => l.capacityType === 'fixed');
+    return fixedLocs.reduce((sum, l) => sum + l.totalCapacity, 0);
   };
 
   return (
@@ -156,18 +167,23 @@ export default function StorageLocationsScreen() {
       </View>
 
       {/* Summary Cards */}
-      <View style={styles.summaryContainer}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.summaryScroll}
+        contentContainerStyle={styles.summaryContainer}
+      >
         <View style={[commonStyles.card, styles.summaryCard]}>
           <IconSymbol
             ios_icon_name="cube.box.fill"
             android_material_icon_name="inventory"
-            size={32}
+            size={28}
             color={colors.primary}
           />
           <Text style={styles.summaryTitle}>Dry Storage</Text>
           <Text style={styles.summaryValue}>{dryLocations.length} locations</Text>
           <Text style={styles.summaryCapacity}>
-            {getTotalCapacity(dryLocations).toFixed(0)} lbs total
+            {getTotalCapacity(dryLocations).toFixed(0)} sq ft
           </Text>
         </View>
 
@@ -175,16 +191,30 @@ export default function StorageLocationsScreen() {
           <IconSymbol
             ios_icon_name="snowflake"
             android_material_icon_name="ac_unit"
-            size={32}
+            size={28}
             color="#2196F3"
           />
-          <Text style={styles.summaryTitle}>Refrigerated</Text>
-          <Text style={styles.summaryValue}>{refrigeratedLocations.length} locations</Text>
+          <Text style={styles.summaryTitle}>Cold Storage</Text>
+          <Text style={styles.summaryValue}>{coldLocations.length} locations</Text>
           <Text style={styles.summaryCapacity}>
-            {getTotalCapacity(refrigeratedLocations).toFixed(0)} lbs total
+            {getTotalCapacity(coldLocations).toFixed(0)} sq ft
           </Text>
         </View>
-      </View>
+
+        <View style={[commonStyles.card, styles.summaryCard]}>
+          <IconSymbol
+            ios_icon_name="thermometer.snowflake"
+            android_material_icon_name="ac_unit"
+            size={28}
+            color="#00BCD4"
+          />
+          <Text style={styles.summaryTitle}>Frozen Storage</Text>
+          <Text style={styles.summaryValue}>{frozenLocations.length} locations</Text>
+          <Text style={styles.summaryCapacity}>
+            {getTotalCapacity(frozenLocations).toFixed(0)} sq ft
+          </Text>
+        </View>
+      </ScrollView>
 
       {/* Storage Locations List */}
       <ScrollView
@@ -249,7 +279,18 @@ export default function StorageLocationsScreen() {
                             color={colors.textSecondary}
                           />
                           <Text style={styles.detailText}>
-                            Capacity: {item.totalCapacity} {item.unit}
+                            Capacity: {item.totalCapacity} {item.unit === 'percentage' ? '%' : item.unit}
+                          </Text>
+                        </View>
+                        <View style={styles.detailRow}>
+                          <IconSymbol
+                            ios_icon_name="chart.bar.fill"
+                            android_material_icon_name="bar_chart"
+                            size={16}
+                            color={colors.textSecondary}
+                          />
+                          <Text style={styles.detailText}>
+                            Type: {item.capacityType === 'fixed' ? 'Fixed' : 'Percentage'}
                           </Text>
                         </View>
                       </View>
@@ -265,8 +306,8 @@ export default function StorageLocationsScreen() {
               </React.Fragment>
             )}
 
-            {/* Refrigerated Storage Section */}
-            {refrigeratedLocations.length > 0 && (
+            {/* Cold Storage Section */}
+            {coldLocations.length > 0 && (
               <React.Fragment>
                 <View style={[styles.sectionHeader, { marginTop: 24 }]}>
                   <IconSymbol
@@ -275,9 +316,9 @@ export default function StorageLocationsScreen() {
                     size={20}
                     color={colors.text}
                   />
-                  <Text style={styles.sectionTitle}>Refrigerated Storage</Text>
+                  <Text style={styles.sectionTitle}>Cold Storage</Text>
                 </View>
-                {refrigeratedLocations.map((item, index) => (
+                {coldLocations.map((item, index) => (
                   <React.Fragment key={index}>
                     <TouchableOpacity
                       style={[commonStyles.card, styles.locationCard]}
@@ -307,7 +348,87 @@ export default function StorageLocationsScreen() {
                             color={colors.textSecondary}
                           />
                           <Text style={styles.detailText}>
-                            Capacity: {item.totalCapacity} {item.unit}
+                            Capacity: {item.totalCapacity} {item.unit === 'percentage' ? '%' : item.unit}
+                          </Text>
+                        </View>
+                        <View style={styles.detailRow}>
+                          <IconSymbol
+                            ios_icon_name="chart.bar.fill"
+                            android_material_icon_name="bar_chart"
+                            size={16}
+                            color={colors.textSecondary}
+                          />
+                          <Text style={styles.detailText}>
+                            Type: {item.capacityType === 'fixed' ? 'Fixed' : 'Percentage'}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {item.notes && (
+                        <Text style={styles.locationNotes} numberOfLines={2}>
+                          {item.notes}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </React.Fragment>
+            )}
+
+            {/* Frozen Storage Section */}
+            {frozenLocations.length > 0 && (
+              <React.Fragment>
+                <View style={[styles.sectionHeader, { marginTop: 24 }]}>
+                  <IconSymbol
+                    ios_icon_name="thermometer.snowflake"
+                    android_material_icon_name="ac_unit"
+                    size={20}
+                    color={colors.text}
+                  />
+                  <Text style={styles.sectionTitle}>Frozen Storage</Text>
+                </View>
+                {frozenLocations.map((item, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={[commonStyles.card, styles.locationCard]}
+                      onPress={() => openEditModal(item)}
+                    >
+                      <View style={styles.locationHeader}>
+                        <Text style={styles.locationName}>{item.name}</Text>
+                        <TouchableOpacity
+                          style={styles.deleteButton}
+                          onPress={() => handleDelete(item)}
+                        >
+                          <IconSymbol
+                            ios_icon_name="trash.fill"
+                            android_material_icon_name="delete"
+                            size={20}
+                            color={colors.error}
+                          />
+                        </TouchableOpacity>
+                      </View>
+
+                      <View style={styles.locationDetails}>
+                        <View style={styles.detailRow}>
+                          <IconSymbol
+                            ios_icon_name="scalemass.fill"
+                            android_material_icon_name="scale"
+                            size={16}
+                            color={colors.textSecondary}
+                          />
+                          <Text style={styles.detailText}>
+                            Capacity: {item.totalCapacity} {item.unit === 'percentage' ? '%' : item.unit}
+                          </Text>
+                        </View>
+                        <View style={styles.detailRow}>
+                          <IconSymbol
+                            ios_icon_name="chart.bar.fill"
+                            android_material_icon_name="bar_chart"
+                            size={16}
+                            color={colors.textSecondary}
+                          />
+                          <Text style={styles.detailText}>
+                            Type: {item.capacityType === 'fixed' ? 'Fixed' : 'Percentage'}
                           </Text>
                         </View>
                       </View>
@@ -361,7 +482,7 @@ export default function StorageLocationsScreen() {
                 onChangeText={setName}
               />
 
-              <Text style={styles.label}>Type *</Text>
+              <Text style={styles.label}>Storage Type *</Text>
               <View style={styles.typeSelector}>
                 <TouchableOpacity
                   style={[
@@ -373,7 +494,7 @@ export default function StorageLocationsScreen() {
                   <IconSymbol
                     ios_icon_name="cube.box.fill"
                     android_material_icon_name="inventory"
-                    size={24}
+                    size={20}
                     color={type === 'dry' ? colors.primary : colors.textSecondary}
                   />
                   <Text
@@ -382,67 +503,116 @@ export default function StorageLocationsScreen() {
                       type === 'dry' && styles.typeButtonTextActive,
                     ]}
                   >
-                    Dry Storage
+                    Dry
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   style={[
                     styles.typeButton,
-                    type === 'refrigerated' && styles.typeButtonActive,
+                    type === 'cold' && styles.typeButtonActive,
                   ]}
-                  onPress={() => setType('refrigerated')}
+                  onPress={() => setType('cold')}
                 >
                   <IconSymbol
                     ios_icon_name="snowflake"
                     android_material_icon_name="ac_unit"
-                    size={24}
-                    color={type === 'refrigerated' ? colors.primary : colors.textSecondary}
+                    size={20}
+                    color={type === 'cold' ? colors.primary : colors.textSecondary}
                   />
                   <Text
                     style={[
                       styles.typeButtonText,
-                      type === 'refrigerated' && styles.typeButtonTextActive,
+                      type === 'cold' && styles.typeButtonTextActive,
                     ]}
                   >
-                    Refrigerated
+                    Cold
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.typeButton,
+                    type === 'frozen' && styles.typeButtonActive,
+                  ]}
+                  onPress={() => setType('frozen')}
+                >
+                  <IconSymbol
+                    ios_icon_name="thermometer.snowflake"
+                    android_material_icon_name="ac_unit"
+                    size={20}
+                    color={type === 'frozen' ? colors.primary : colors.textSecondary}
+                  />
+                  <Text
+                    style={[
+                      styles.typeButtonText,
+                      type === 'frozen' && styles.typeButtonTextActive,
+                    ]}
+                  >
+                    Frozen
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.label}>Total Capacity *</Text>
-              <View style={styles.inputRow}>
-                <TextInput
-                  style={[commonStyles.input, styles.capacityInput]}
-                  placeholder="0"
-                  placeholderTextColor={colors.textSecondary}
-                  value={totalCapacity}
-                  onChangeText={setTotalCapacity}
-                  keyboardType="decimal-pad"
-                />
-                <View style={styles.unitSelector}>
-                  {(['lbs', 'kg', 'cubic_feet', 'cubic_meters'] as const).map((u, idx) => (
-                    <React.Fragment key={idx}>
-                      <TouchableOpacity
-                        style={[
-                          styles.unitOption,
-                          unit === u && styles.unitOptionSelected,
-                        ]}
-                        onPress={() => setUnit(u)}
-                      >
-                        <Text
-                          style={[
-                            styles.unitOptionText,
-                            unit === u && styles.unitOptionTextSelected,
-                          ]}
-                        >
-                          {u === 'cubic_feet' ? 'ft³' : u === 'cubic_meters' ? 'm³' : u}
-                        </Text>
-                      </TouchableOpacity>
-                    </React.Fragment>
-                  ))}
-                </View>
+              <Text style={styles.label}>Capacity Type *</Text>
+              <View style={styles.capacityTypeSelector}>
+                <TouchableOpacity
+                  style={[
+                    styles.capacityTypeButton,
+                    capacityType === 'fixed' && styles.capacityTypeButtonActive,
+                  ]}
+                  onPress={() => {
+                    setCapacityType('fixed');
+                    setUnit('sq_ft');
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.capacityTypeButtonText,
+                      capacityType === 'fixed' && styles.capacityTypeButtonTextActive,
+                    ]}
+                  >
+                    Fixed (sq ft)
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.capacityTypeButton,
+                    capacityType === 'percentage' && styles.capacityTypeButtonActive,
+                  ]}
+                  onPress={() => {
+                    setCapacityType('percentage');
+                    setUnit('percentage');
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.capacityTypeButtonText,
+                      capacityType === 'percentage' && styles.capacityTypeButtonTextActive,
+                    ]}
+                  >
+                    Percentage (%)
+                  </Text>
+                </TouchableOpacity>
               </View>
+
+              <Text style={styles.label}>
+                {capacityType === 'percentage' ? 'Percentage *' : 'Total Capacity (sq ft) *'}
+              </Text>
+              <TextInput
+                style={commonStyles.input}
+                placeholder={capacityType === 'percentage' ? '0-100' : '0'}
+                placeholderTextColor={colors.textSecondary}
+                value={totalCapacity}
+                onChangeText={setTotalCapacity}
+                keyboardType="decimal-pad"
+              />
+              {capacityType === 'percentage' && (
+                <Text style={styles.helpText}>
+                  Enter the percentage of total farm storage capacity
+                </Text>
+              )}
 
               <Text style={styles.label}>Notes</Text>
               <TextInput
@@ -494,14 +664,16 @@ const styles = StyleSheet.create({
   addButton: {
     padding: 8,
   },
+  summaryScroll: {
+    marginBottom: 16,
+  },
   summaryContainer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
     gap: 12,
-    marginBottom: 16,
   },
   summaryCard: {
-    flex: 1,
+    minWidth: 140,
     alignItems: 'center',
     padding: 16,
   },
@@ -631,15 +803,15 @@ const styles = StyleSheet.create({
   },
   typeSelector: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
   },
   typeButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 16,
+    gap: 6,
+    paddingVertical: 12,
     borderRadius: 12,
     backgroundColor: colors.card,
     borderWidth: 2,
@@ -650,7 +822,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary + '10',
   },
   typeButtonText: {
-    fontSize: 14,
+    fontSize: 12,
     color: colors.textSecondary,
     fontWeight: '500',
   },
@@ -658,38 +830,37 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
-  inputRow: {
+  capacityTypeSelector: {
     flexDirection: 'row',
-    alignItems: 'center',
+    gap: 12,
   },
-  capacityInput: {
+  capacityTypeButton: {
     flex: 1,
-    marginRight: 12,
-  },
-  unitSelector: {
-    flexDirection: 'column',
-    backgroundColor: colors.highlight,
-    borderRadius: 8,
-    padding: 2,
-  },
-  unitOption: {
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    borderRadius: 6,
-    minWidth: 60,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: colors.card,
+    borderWidth: 2,
+    borderColor: colors.border,
     alignItems: 'center',
   },
-  unitOptionSelected: {
-    backgroundColor: colors.card,
+  capacityTypeButtonActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary + '10',
   },
-  unitOptionText: {
-    fontSize: 11,
+  capacityTypeButtonText: {
+    fontSize: 14,
     color: colors.textSecondary,
     fontWeight: '500',
   },
-  unitOptionTextSelected: {
+  capacityTypeButtonTextActive: {
     color: colors.primary,
     fontWeight: '600',
+  },
+  helpText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   notesInput: {
     height: 80,

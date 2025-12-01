@@ -26,6 +26,7 @@ export default function SeedsScreen() {
   // Form state
   const [cropName, setCropName] = useState('');
   const [variety, setVariety] = useState('');
+  const [itemType, setItemType] = useState<SeedItem['itemType']>('seed');
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState<SeedItem['unit']>('packets');
   const [lowStockThreshold, setLowStockThreshold] = useState('');
@@ -50,6 +51,7 @@ export default function SeedsScreen() {
     setEditingItem(item);
     setCropName(item.cropName);
     setVariety(item.variety);
+    setItemType(item.itemType || 'seed');
     setQuantity(item.quantity.toString());
     setUnit(item.unit);
     setLowStockThreshold(item.lowStockThreshold.toString());
@@ -60,6 +62,7 @@ export default function SeedsScreen() {
   const resetForm = () => {
     setCropName('');
     setVariety('');
+    setItemType('seed');
     setQuantity('');
     setUnit('packets');
     setLowStockThreshold('');
@@ -76,6 +79,7 @@ export default function SeedsScreen() {
       id: editingItem?.id || Date.now().toString(),
       cropName: cropName.trim(),
       variety: variety.trim(),
+      itemType,
       quantity: parseFloat(quantity),
       unit,
       purchaseDate: editingItem?.purchaseDate || new Date().toISOString(),
@@ -288,6 +292,61 @@ export default function SeedsScreen() {
             </View>
 
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              <Text style={styles.label}>Type *</Text>
+              <View style={styles.typeSelector}>
+                <TouchableOpacity
+                  style={[
+                    styles.typeButton,
+                    itemType === 'seed' && styles.typeButtonActive,
+                  ]}
+                  onPress={() => {
+                    setItemType('seed');
+                    setUnit('packets');
+                  }}
+                >
+                  <IconSymbol
+                    ios_icon_name="leaf.fill"
+                    android_material_icon_name="eco"
+                    size={20}
+                    color={itemType === 'seed' ? colors.primary : colors.textSecondary}
+                  />
+                  <Text
+                    style={[
+                      styles.typeButtonText,
+                      itemType === 'seed' && styles.typeButtonTextActive,
+                    ]}
+                  >
+                    Seeds
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.typeButton,
+                    itemType === 'transplant' && styles.typeButtonActive,
+                  ]}
+                  onPress={() => {
+                    setItemType('transplant');
+                    setUnit('plants');
+                  }}
+                >
+                  <IconSymbol
+                    ios_icon_name="tree.fill"
+                    android_material_icon_name="local_florist"
+                    size={20}
+                    color={itemType === 'transplant' ? colors.primary : colors.textSecondary}
+                  />
+                  <Text
+                    style={[
+                      styles.typeButtonText,
+                      itemType === 'transplant' && styles.typeButtonTextActive,
+                    ]}
+                  >
+                    Transplants
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
               <Text style={styles.label}>Crop Name *</Text>
               <TextInput
                 style={commonStyles.input}
@@ -317,14 +376,17 @@ export default function SeedsScreen() {
                   keyboardType="decimal-pad"
                 />
                 <View style={styles.unitSelector}>
-                  {(['seeds', 'packets', 'lbs', 'kg'] as const).map((u, idx) => (
+                  {(itemType === 'seed' 
+                    ? (['seeds', 'packets', 'lbs', 'kg'] as const)
+                    : (['plants', 'trays', 'lbs', 'kg'] as const)
+                  ).map((u, idx) => (
                     <React.Fragment key={idx}>
                       <TouchableOpacity
                         style={[
                           styles.unitOption,
                           unit === u && styles.unitOptionSelected,
                         ]}
-                        onPress={() => setUnit(u)}
+                        onPress={() => setUnit(u as SeedItem['unit'])}
                       >
                         <Text
                           style={[
@@ -527,6 +589,35 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 8,
     marginTop: 16,
+  },
+  typeSelector: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  typeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: colors.card,
+    borderWidth: 2,
+    borderColor: colors.border,
+  },
+  typeButtonActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary + '10',
+  },
+  typeButtonText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  typeButtonTextActive: {
+    color: colors.primary,
+    fontWeight: '600',
   },
   inputRow: {
     flexDirection: 'row',
