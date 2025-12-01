@@ -15,7 +15,6 @@ import { colors, commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'expo-router';
 
 const OPENAI_API_KEY_STORAGE = '@openai_api_key';
 const AI_SETTINGS_STORAGE = '@ai_settings';
@@ -29,7 +28,6 @@ interface AISettings {
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuth();
-  const router = useRouter();
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [aiSettings, setAiSettings] = useState<AISettings>({
@@ -126,9 +124,14 @@ export default function SettingsScreen() {
               await signOut();
               console.log('✅ Sign out completed successfully');
               // Navigation will happen automatically via _layout.tsx
-            } catch (error) {
+              // The auth state change will trigger the navigation logic
+            } catch (error: any) {
               console.error('❌ Sign out error:', error);
-              Alert.alert('Error', 'Failed to sign out. Please try again.');
+              Alert.alert(
+                'Error', 
+                error?.message || 'Failed to sign out. Please try again.',
+                [{ text: 'OK' }]
+              );
             }
           },
         },

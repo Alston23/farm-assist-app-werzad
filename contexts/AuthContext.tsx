@@ -275,25 +275,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('=== SIGN OUT STARTED ===');
       console.log('Current user before sign out:', user?.email);
       
-      // Clear user state immediately for better UX
-      setUser(null);
-      
+      // Sign out from Supabase first
       const { error } = await supabase.auth.signOut();
       
       if (error) {
         console.error('❌ Sign out error:', error.message);
-        // Still keep user as null even if there's an error
         throw error;
       }
       
-      // Clear any cached session data
-      await AsyncStorage.removeItem('supabase.auth.token');
+      console.log('✅ Supabase sign out successful');
       
-      console.log('✅ SIGN OUT SUCCESS');
+      // Clear any cached session data
+      try {
+        await AsyncStorage.removeItem('supabase.auth.token');
+        console.log('✅ AsyncStorage cleared');
+      } catch (storageError) {
+        console.error('⚠️ Error clearing AsyncStorage:', storageError);
+      }
+      
+      // Clear user state - this will trigger navigation in _layout.tsx
+      setUser(null);
+      console.log('✅ User state cleared');
+      
+      console.log('✅ SIGN OUT COMPLETE');
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error('❌ Sign out error:', error);
       // Ensure user is set to null even if there's an error
       setUser(null);
+      throw error;
     }
   };
 
