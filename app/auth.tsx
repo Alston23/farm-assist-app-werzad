@@ -24,23 +24,17 @@ export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [farmName, setFarmName] = useState('');
-
-  // Password visibility
   const [showPassword, setShowPassword] = useState(false);
 
-  // Redirect if already logged in
   useEffect(() => {
     console.log('Auth screen - authLoading:', authLoading, 'user:', user ? user.email : 'null');
     if (!authLoading && user) {
       console.log('Auth screen - User is logged in, redirecting to crops...');
-      setTimeout(() => {
-        router.replace('/(tabs)/crops');
-      }, 100);
+      router.replace('/(tabs)/crops');
     }
   }, [user, authLoading]);
 
@@ -55,7 +49,6 @@ export default function AuthScreen() {
       return;
     }
 
-    // Basic validation
     if (!email.trim() || !password.trim()) {
       console.log('Validation failed: email or password empty');
       Alert.alert('Error', 'Please enter your email and password');
@@ -85,21 +78,24 @@ export default function AuthScreen() {
 
       if (result && result.success) {
         console.log('=== AUTHENTICATION SUCCESSFUL ===');
-        // Wait a bit for state to update, then navigate
-        setTimeout(() => {
-          console.log('Navigating to crops...');
-          router.replace('/(tabs)/crops');
-        }, 200);
+        Alert.alert('Success', isLogin ? 'Welcome back!' : 'Account created successfully!', [
+          {
+            text: 'OK',
+            onPress: () => {
+              console.log('Navigating to crops...');
+              router.replace('/(tabs)/crops');
+            }
+          }
+        ]);
       } else {
         console.log('=== AUTHENTICATION FAILED ===');
         console.log('Error:', result?.error);
         Alert.alert('Error', result?.error || 'An error occurred');
+        setIsSubmitting(false);
       }
     } catch (error) {
       console.error('=== AUTH ERROR ===', error);
       Alert.alert('Error', 'An unexpected error occurred. Please try again.');
-    } finally {
-      console.log('Setting submitting to false');
       setIsSubmitting(false);
     }
   };
@@ -107,7 +103,6 @@ export default function AuthScreen() {
   const toggleMode = () => {
     console.log('Toggling mode from', isLogin ? 'login' : 'signup', 'to', isLogin ? 'signup' : 'login');
     setIsLogin(!isLogin);
-    // Clear form when switching modes
     setEmail('');
     setPassword('');
     setName('');
@@ -115,7 +110,6 @@ export default function AuthScreen() {
     setShowPassword(false);
   };
 
-  // Show loading while checking auth state
   if (authLoading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -139,7 +133,6 @@ export default function AuthScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
           <View style={styles.header}>
             <IconSymbol
               ios_icon_name="leaf.fill"
@@ -153,13 +146,11 @@ export default function AuthScreen() {
             </Text>
           </View>
 
-          {/* Form Card */}
           <View style={styles.formCard}>
             <Text style={styles.formTitle}>
               {isLogin ? 'Sign In' : 'Create Account'}
             </Text>
 
-            {/* Name field (Sign Up only) */}
             {!isLogin && (
               <View style={styles.inputContainer}>
                 <IconSymbol
@@ -182,7 +173,6 @@ export default function AuthScreen() {
               </View>
             )}
 
-            {/* Farm Name field (Sign Up only) */}
             {!isLogin && (
               <View style={styles.inputContainer}>
                 <IconSymbol
@@ -205,7 +195,6 @@ export default function AuthScreen() {
               </View>
             )}
 
-            {/* Email field */}
             <View style={styles.inputContainer}>
               <IconSymbol
                 ios_icon_name="envelope.fill"
@@ -227,7 +216,6 @@ export default function AuthScreen() {
               />
             </View>
 
-            {/* Password field */}
             <View style={styles.inputContainer}>
               <IconSymbol
                 ios_icon_name="lock.fill"
@@ -261,7 +249,6 @@ export default function AuthScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Submit Button */}
             <TouchableOpacity
               style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
               onPress={handleSubmit}
@@ -277,7 +264,6 @@ export default function AuthScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Toggle Mode */}
             <View style={styles.toggleContainer}>
               <Text style={styles.toggleText}>
                 {isLogin ? "Don't have an account?" : 'Already have an account?'}
@@ -290,7 +276,6 @@ export default function AuthScreen() {
             </View>
           </View>
 
-          {/* Info Text */}
           <Text style={styles.infoText}>
             Your data is stored locally on your device and is secure.
           </Text>

@@ -18,7 +18,6 @@ import { StatusBar } from "expo-status-bar";
 import { WidgetProvider } from "@/contexts/WidgetContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
@@ -50,14 +49,17 @@ function RootLayoutNav() {
     console.log('Root layout - user:', user ? user.email : 'null', 'segments:', segments);
 
     const inAuthGroup = segments[0] === 'auth';
-    const inTabsGroup = segments[0] === '(tabs)';
 
     if (!user && !inAuthGroup) {
       console.log('Root layout - No user and not on auth, redirecting to auth');
-      router.replace('/auth');
+      setTimeout(() => {
+        router.replace('/auth');
+      }, 50);
     } else if (user && inAuthGroup) {
       console.log('Root layout - User exists but on auth screen, redirecting to crops');
-      router.replace('/(tabs)/crops');
+      setTimeout(() => {
+        router.replace('/(tabs)/crops');
+      }, 50);
     } else {
       console.log('Root layout - Navigation state is correct');
     }
