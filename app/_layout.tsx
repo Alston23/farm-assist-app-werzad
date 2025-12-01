@@ -43,7 +43,6 @@ function RootLayoutNav() {
   // Handle authentication-based navigation
   useEffect(() => {
     if (!loaded || isLoading) {
-      console.log('⏳ Still loading...', { loaded, isLoading });
       return;
     }
 
@@ -51,44 +50,28 @@ function RootLayoutNav() {
     const inTestAuth = segments[0] === 'test-auth';
     const inTabs = segments[0] === '(tabs)';
 
-    console.log('=== NAVIGATION CHECK ===');
-    console.log('User:', user ? user.email : 'null');
-    console.log('Current segments:', segments);
-    console.log('In auth group:', inAuthGroup);
-    console.log('In test-auth:', inTestAuth);
-    console.log('In tabs:', inTabs);
-
-    // Don't redirect if we're in test-auth
-    if (inTestAuth) {
-      console.log('✓ In test-auth, allowing access');
+    // Don't redirect if we're in test-auth (development only)
+    if (inTestAuth && __DEV__) {
       return;
     }
 
     // If user is not logged in and not on auth screen, redirect to auth
     if (!user && !inAuthGroup) {
-      console.log('🔒 User not logged in, redirecting to /auth');
       router.replace('/auth');
-      console.log('✓ Navigation to /auth initiated');
       return;
     }
 
     // If user is logged in and on auth screen, redirect to main app
     if (user && inAuthGroup) {
-      console.log('🚀 User logged in, redirecting to main app');
       router.replace('/(tabs)/crops');
-      console.log('✓ Navigation to /(tabs)/crops initiated');
       return;
     }
 
     // If user is logged in and not in tabs, redirect to tabs
     if (user && !inTabs && !inAuthGroup) {
-      console.log('🚀 User logged in but not in tabs, redirecting to main app');
       router.replace('/(tabs)/crops');
-      console.log('✓ Navigation to /(tabs)/crops initiated');
       return;
     }
-
-    console.log('✓ No navigation needed');
   }, [user, segments, loaded, isLoading]);
 
   React.useEffect(() => {
@@ -97,8 +80,9 @@ function RootLayoutNav() {
       networkState.isInternetReachable === false
     ) {
       Alert.alert(
-        "🔌 You are offline",
-        "You can keep using the app! Your changes will be saved locally and synced when you are back online."
+        "Offline Mode",
+        "You're currently offline. Some features may be limited, but you can continue using the app. Your changes will sync when you're back online.",
+        [{ text: "OK" }]
       );
     }
   }, [networkState.isConnected, networkState.isInternetReachable]);
@@ -202,13 +186,15 @@ function RootLayoutNav() {
                 title: "Yields",
               }}
             />
-            <Stack.Screen
-              name="test-auth"
-              options={{
-                presentation: "modal",
-                title: "Auth Testing",
-              }}
-            />
+            {__DEV__ && (
+              <Stack.Screen
+                name="test-auth"
+                options={{
+                  presentation: "modal",
+                  title: "Auth Testing",
+                }}
+              />
+            )}
           </Stack>
           <SystemBars style={"auto"} />
         </GestureHandlerRootView>

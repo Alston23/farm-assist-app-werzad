@@ -11,7 +11,6 @@ import {
   Platform,
   Switch,
   ActivityIndicator,
-  Button,
 } from 'react-native';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
@@ -41,6 +40,7 @@ export default function SettingsScreen() {
     temperature: 0.7,
   });
   const [loading, setLoading] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -64,17 +64,17 @@ export default function SettingsScreen() {
 
   const saveApiKey = async () => {
     if (!apiKey.trim()) {
-      Alert.alert('Error', 'Please enter a valid API key');
+      Alert.alert('Error', 'Please enter a valid API key', [{ text: 'OK' }]);
       return;
     }
 
     setLoading(true);
     try {
       await AsyncStorage.setItem(OPENAI_API_KEY_STORAGE, apiKey.trim());
-      Alert.alert('Success', 'API key saved successfully');
+      Alert.alert('Success', 'API key saved successfully', [{ text: 'OK' }]);
     } catch (error) {
       console.error('Failed to save API key:', error);
-      Alert.alert('Error', 'Failed to save API key');
+      Alert.alert('Error', 'Failed to save API key. Please try again.', [{ text: 'OK' }]);
     } finally {
       setLoading(false);
     }
@@ -93,10 +93,10 @@ export default function SettingsScreen() {
             try {
               await AsyncStorage.removeItem(OPENAI_API_KEY_STORAGE);
               setApiKey('');
-              Alert.alert('Success', 'API key removed');
+              Alert.alert('Success', 'API key removed', [{ text: 'OK' }]);
             } catch (error) {
               console.error('Failed to remove API key:', error);
-              Alert.alert('Error', 'Failed to remove API key');
+              Alert.alert('Error', 'Failed to remove API key. Please try again.', [{ text: 'OK' }]);
             }
           },
         },
@@ -114,8 +114,33 @@ export default function SettingsScreen() {
   };
 
   const handleSignOut = async () => {
-    await logout();
-    router.replace('/auth');
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            setSigningOut(true);
+            try {
+              await logout();
+              router.replace('/auth');
+            } catch (error) {
+              console.error('Sign out error:', error);
+              Alert.alert(
+                'Error',
+                'There was an issue signing out. Please try again.',
+                [{ text: 'OK' }]
+              );
+            } finally {
+              setSigningOut(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -281,8 +306,28 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        <View style={styles.signOutButtonContainer}>
-          <Button title="Sign Out" onPress={handleSignOut} />
+        <View style={styles.signOutSection}>
+          <TouchableOpacity
+            style={[styles.signOutButton, signingOut && styles.signOutButtonDisabled]}
+            onPress={handleSignOut}
+            disabled={signingOut}
+            activeOpacity={0.7}
+          >
+            {signingOut ? (
+              <ActivityIndicator color={colors.card} />
+            ) : (
+              <React.Fragment>
+                <IconSymbol
+                  ios_icon_name="arrow.right.square.fill"
+                  android_material_icon_name="logout"
+                  size={20}
+                  color={colors.card}
+                  style={{ marginRight: 8 }}
+                />
+                <Text style={styles.signOutButtonText}>Sign Out</Text>
+              </React.Fragment>
+            )}
+          </TouchableOpacity>
         </View>
 
         <View style={styles.footer}>
@@ -302,7 +347,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingTop: Platform.OS === 'android' ? 48 : 16,
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   header: {
     alignItems: 'center',
@@ -406,9 +451,6 @@ const styles = StyleSheet.create({
   buttonDanger: {
     backgroundColor: colors.error,
   },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
   buttonText: {
     color: colors.card,
     fontSize: 16,
@@ -450,12 +492,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
   },
-  signOutButtonContainer: {
-    marginTop: 24,
+  signOutSection: {
+    marginTop: 8,
     marginBottom: 16,
   },
+  signOutButton: {
+    backgroundColor: colors.error,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+    elevation: 2,
+  },
+  signOutButtonDisabled: {
+    opacity: 0.6,
+  },
+  signOutButtonText: {
+    color: colors.card,
+    fontSize: 18,
+    fontWeight: '600',
+  },
   footer: {
-    marginTop: 32,
+    marginTop: 16,
     alignItems: 'center',
   },
   footerText: {

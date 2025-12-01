@@ -16,11 +16,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { colors } from '@/styles/commonStyles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { IconSymbol } from '@/components/IconSymbol';
-import { useRouter } from 'expo-router';
 
 export default function AuthScreen() {
   const { signIn, signUp, resendVerificationEmail, isLoading, user } = useAuth();
-  const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -40,11 +38,9 @@ export default function AuthScreen() {
   const [needsVerification, setNeedsVerification] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
 
-  // Debug: Log when user changes
+  // Reset submitting state when user changes
   useEffect(() => {
-    console.log('AuthScreen - user changed:', user ? user.email : 'null');
     if (user) {
-      console.log('✅ User is logged in, navigation should happen automatically');
       setIsSubmitting(false);
     }
   }, [user]);
@@ -96,7 +92,7 @@ export default function AuthScreen() {
     
     if (result.success) {
       Alert.alert(
-        'Email Sent!',
+        'Email Sent',
         'We\'ve sent a new verification link to your email. Please check your inbox and spam folder.',
         [{ text: 'OK' }]
       );
@@ -110,10 +106,7 @@ export default function AuthScreen() {
   };
 
   const handleSubmit = async () => {
-    console.log('=== AUTH SCREEN: SUBMIT PRESSED ===');
-    
     if (isSubmitting) {
-      console.log('Already submitting, ignoring');
       return;
     }
 
@@ -154,57 +147,45 @@ export default function AuthScreen() {
     }
 
     if (hasError) {
-      console.log('Validation errors, not submitting');
       return;
     }
 
     setIsSubmitting(true);
-    console.log('Setting isSubmitting to true');
 
     try {
       let result;
       
       if (isLogin) {
-        console.log('Calling signIn with email:', trimmedEmail);
         result = await signIn(trimmedEmail, trimmedPassword);
       } else {
-        console.log('Calling signUp with name:', trimmedName, 'email:', trimmedEmail);
         result = await signUp(trimmedName, trimmedFarmName, trimmedEmail, trimmedPassword);
       }
 
-      console.log('Auth result:', result);
-
       if (result && result.success) {
         if (result.needsVerification) {
-          // Show verification needed message
-          console.log('⚠️ Email verification required');
           setNeedsVerification(true);
           setVerificationEmail(trimmedEmail);
           setIsSubmitting(false);
           
           Alert.alert(
-            '📧 Verify Your Email',
+            'Verify Your Email',
             'We\'ve sent a verification link to your email address. Please check your inbox (and spam folder) and click the link to activate your account.\n\nOnce verified, you can sign in with your credentials.',
             [{ text: 'OK' }]
           );
         } else {
-          console.log('✅ Authentication successful!');
           Alert.alert(
             'Success',
-            isLogin ? 'Signed in successfully!' : 'Account created successfully!',
+            isLogin ? 'Welcome back!' : 'Account created successfully!',
             [{ text: 'OK' }]
           );
         }
       } else {
-        console.log('❌ Authentication failed:', result?.error);
         setAuthError(result?.error || 'An error occurred');
         setIsSubmitting(false);
         
-        // Show error alert with more helpful message
-        const errorMessage = result?.error || 'An error occurred';
         Alert.alert(
           isLogin ? 'Sign In Failed' : 'Sign Up Failed',
-          errorMessage,
+          result?.error || 'An error occurred',
           [{ text: 'OK' }]
         );
       }
@@ -220,7 +201,6 @@ export default function AuthScreen() {
 
   const toggleMode = () => {
     if (isSubmitting) {
-      console.log('Cannot toggle mode while submitting');
       return;
     }
     
@@ -579,20 +559,9 @@ export default function AuthScreen() {
               style={{ opacity: 0.8 }}
             />
             <Text style={styles.infoText}>
-              Your data is secured with Supabase authentication
+              Your data is secured with industry-standard encryption
             </Text>
           </View>
-
-          {__DEV__ && (
-            <View style={styles.devHint}>
-              <Text style={styles.devHintText}>
-                💡 Dev Tip: Create an account to test, or sign in if you already have one
-              </Text>
-              <Text style={styles.devHintText}>
-                Current user: {user ? user.email : 'None'}
-              </Text>
-            </View>
-          )}
         </ScrollView>
       </LinearGradient>
     </KeyboardAvoidingView>
@@ -765,18 +734,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.card,
     opacity: 0.8,
-  },
-  devHint: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  devHintText: {
-    fontSize: 12,
-    color: colors.card,
-    textAlign: 'center',
-    marginVertical: 2,
   },
   verificationSteps: {
     marginBottom: 24,
