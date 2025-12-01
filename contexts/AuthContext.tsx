@@ -61,12 +61,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('=== SIGN IN STARTED ===');
       console.log('Email:', email);
       
+      // Validate inputs
+      if (!email || !password) {
+        return { success: false, error: 'Please enter your email and password' };
+      }
+
       const usersData = await AsyncStorage.getItem(STORAGE_KEYS.USERS_DB);
       console.log('Users DB raw data:', usersData);
       
       const users = usersData ? JSON.parse(usersData) : [];
       console.log('Total users in DB:', users.length);
-      console.log('All users:', users.map((u: any) => ({ email: u.email, name: u.name })));
 
       const foundUser = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
 
@@ -76,14 +80,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       console.log('User found:', foundUser.email);
-      console.log('Checking password...');
 
       if (foundUser.password !== password) {
         console.log('PASSWORD INCORRECT');
         return { success: false, error: 'Incorrect password. Please try again.' };
       }
 
-      console.log('PASSWORD CORRECT');
+      console.log('PASSWORD CORRECT - Creating user session');
 
       const userToStore: User = {
         id: foundUser.id,
@@ -93,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         createdAt: foundUser.createdAt,
       };
 
-      console.log('Storing user:', userToStore);
+      console.log('Storing user in AsyncStorage:', userToStore);
       await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userToStore));
       
       console.log('Setting user state...');
@@ -168,7 +171,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         createdAt: newUser.createdAt,
       };
 
+      console.log('Storing user in AsyncStorage:', userToStore);
       await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userToStore));
+      
+      console.log('Setting user state...');
       setUser(userToStore);
       
       console.log('=== SIGN UP SUCCESS ===');

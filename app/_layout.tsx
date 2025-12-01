@@ -40,31 +40,27 @@ function RootLayoutNav() {
     }
   }, [loaded, isLoading]);
 
+  // Handle navigation based on auth state
   useEffect(() => {
     if (isLoading || !loaded) {
-      console.log('Root layout waiting - isLoading:', isLoading, 'loaded:', loaded);
       return;
     }
-
-    console.log('=== ROOT LAYOUT NAVIGATION CHECK ===');
-    console.log('User:', user ? user.email : 'null');
-    console.log('Segments:', segments);
 
     const inAuthGroup = segments[0] === 'auth';
     const inTabsGroup = segments[0] === '(tabs)';
 
+    console.log('=== NAVIGATION CHECK ===');
+    console.log('User:', user ? user.email : 'null');
+    console.log('Segments:', segments);
+    console.log('In auth group:', inAuthGroup);
+    console.log('In tabs group:', inTabsGroup);
+
     if (user && !inTabsGroup) {
-      console.log('User logged in, navigating to crops');
-      setTimeout(() => {
-        router.replace('/(tabs)/crops');
-      }, 50);
+      console.log('✅ User logged in, navigating to crops');
+      router.replace('/(tabs)/crops');
     } else if (!user && !inAuthGroup) {
-      console.log('No user, navigating to auth');
-      setTimeout(() => {
-        router.replace('/auth');
-      }, 50);
-    } else {
-      console.log('Navigation state is correct');
+      console.log('❌ No user, navigating to auth');
+      router.replace('/auth');
     }
   }, [user, segments, isLoading, loaded]);
 

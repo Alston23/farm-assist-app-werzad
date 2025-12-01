@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,11 +16,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { colors } from '@/styles/commonStyles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { IconSymbol } from '@/components/IconSymbol';
-import { useRouter } from 'expo-router';
+import { Redirect } from 'expo-router';
 
 export default function AuthScreen() {
-  const { signIn, signUp } = useAuth();
-  const router = useRouter();
+  const { signIn, signUp, user, isLoading } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -30,6 +29,12 @@ export default function AuthScreen() {
   const [farmName, setFarmName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // If user is already logged in, redirect immediately
+  if (!isLoading && user) {
+    console.log('Auth screen: User is logged in, redirecting to crops');
+    return <Redirect href="/(tabs)/crops" />;
+  }
+
   const handleSubmit = async () => {
     console.log('=== SUBMIT PRESSED ===');
     
@@ -38,12 +43,17 @@ export default function AuthScreen() {
       return;
     }
 
-    if (!email.trim() || !password.trim()) {
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+    const trimmedName = name.trim();
+    const trimmedFarmName = farmName.trim();
+
+    if (!trimmedEmail || !trimmedPassword) {
       Alert.alert('Error', 'Please enter your email and password');
       return;
     }
 
-    if (!isLogin && !name.trim()) {
+    if (!isLogin && !trimmedName) {
       Alert.alert('Error', 'Please enter your name');
       return;
     }
@@ -54,24 +64,21 @@ export default function AuthScreen() {
       let result;
       
       if (isLogin) {
-        console.log('Calling signIn...');
-        result = await signIn(email.trim(), password);
+        console.log('Calling signIn with email:', trimmedEmail);
+        result = await signIn(trimmedEmail, trimmedPassword);
       } else {
-        console.log('Calling signUp...');
-        result = await signUp(name.trim(), farmName.trim(), email.trim(), password);
+        console.log('Calling signUp with name:', trimmedName, 'email:', trimmedEmail);
+        result = await signUp(trimmedName, trimmedFarmName, trimmedEmail, trimmedPassword);
       }
 
       console.log('Auth result:', result);
 
       if (result && result.success) {
-        console.log('Authentication successful!');
-        // Wait a bit for state to update, then navigate
-        setTimeout(() => {
-          console.log('Navigating to crops...');
-          router.replace('/(tabs)/crops');
-        }, 200);
+        console.log('✅ Authentication successful!');
+        // Don't manually navigate - the Redirect component will handle it
+        // when the user state updates
       } else {
-        console.log('Authentication failed:', result?.error);
+        console.log('❌ Authentication failed:', result?.error);
         Alert.alert('Error', result?.error || 'An error occurred');
         setIsSubmitting(false);
       }
@@ -90,6 +97,15 @@ export default function AuthScreen() {
     setFarmName('');
     setShowPassword(false);
   };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ marginTop: 16, color: colors.text }}>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
