@@ -10,14 +10,17 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { colors } from '@/styles/commonStyles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { IconSymbol } from '@/components/IconSymbol';
+import { useRouter } from 'expo-router';
 
 export default function AuthScreen() {
   const { signIn, signUp, isLoading, user } = useAuth();
+  const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,7 +40,7 @@ export default function AuthScreen() {
   useEffect(() => {
     console.log('AuthScreen - user changed:', user ? user.email : 'null');
     if (user) {
-      console.log('User is logged in, resetting form state');
+      console.log('✅ User is logged in, navigation should happen automatically');
       setIsSubmitting(false);
     }
   }, [user]);
@@ -147,16 +150,32 @@ export default function AuthScreen() {
 
       if (result && result.success) {
         console.log('✅ Authentication successful!');
-        // Keep the loading state - navigation will happen automatically
+        // Show success message
+        Alert.alert(
+          'Success',
+          isLogin ? 'Signed in successfully!' : 'Account created successfully!',
+          [{ text: 'OK' }]
+        );
+        // Navigation will happen automatically via _layout.tsx
       } else {
         console.log('❌ Authentication failed:', result?.error);
         setAuthError(result?.error || 'An error occurred');
         setIsSubmitting(false);
+        
+        // Show error alert
+        Alert.alert(
+          'Error',
+          result?.error || 'An error occurred',
+          [{ text: 'OK' }]
+        );
       }
     } catch (error) {
       console.error('Auth error:', error);
-      setAuthError('An unexpected error occurred. Please try again.');
+      const errorMessage = 'An unexpected error occurred. Please try again.';
+      setAuthError(errorMessage);
       setIsSubmitting(false);
+      
+      Alert.alert('Error', errorMessage, [{ text: 'OK' }]);
     }
   };
 
