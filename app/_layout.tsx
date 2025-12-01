@@ -67,35 +67,29 @@ function RootLayoutNav() {
     // If user is not logged in and not on auth screen, redirect to auth
     if (!user && !inAuthGroup) {
       console.log('🔒 User not logged in, redirecting to auth');
-      setTimeout(() => {
-        router.replace('/auth');
-        console.log('✓ Navigation to /auth completed');
-      }, 0);
+      router.replace('/auth');
+      console.log('✓ Navigation to /auth initiated');
       return;
     }
 
     // If user is logged in and on auth screen, redirect to main app
     if (user && inAuthGroup) {
       console.log('🚀 User logged in, redirecting to main app');
-      setTimeout(() => {
-        router.replace('/(tabs)/crops');
-        console.log('✓ Navigation to /(tabs)/crops completed');
-      }, 0);
+      router.replace('/(tabs)/crops');
+      console.log('✓ Navigation to /(tabs)/crops initiated');
       return;
     }
 
     // If user is logged in and not in tabs, redirect to tabs
     if (user && !inTabs && !inAuthGroup) {
       console.log('🚀 User logged in but not in tabs, redirecting to main app');
-      setTimeout(() => {
-        router.replace('/(tabs)/crops');
-        console.log('✓ Navigation to /(tabs)/crops completed');
-      }, 0);
+      router.replace('/(tabs)/crops');
+      console.log('✓ Navigation to /(tabs)/crops initiated');
       return;
     }
 
     console.log('✓ No navigation needed');
-  }, [user, segments, loaded, isLoading, router]);
+  }, [user, segments, loaded, isLoading]);
 
   React.useEffect(() => {
     if (
