@@ -7,585 +7,574 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { router } from 'expo-router';
-import { inventoryStorage } from '@/utils/inventoryStorage';
-import {
-  FertilizerItem,
-  SeedItem,
-  PackagingItem,
-  YieldItem,
-  SaleRecord,
-  UsageRecord,
-} from '@/types/inventory';
+import { supabase } from '@/lib/supabase';
 
 type ReportType = 
-  | 'crops'
-  | 'fertilizers'
-  | 'seeds'
-  | 'packaging'
-  | 'yields'
+  | 'inventory'
+  | 'storage'
+  | 'harvests'
   | 'sales'
-  | 'usage'
-  | 'payment_methods';
+  | 'crop_loss';
+
+interface Harvest {
+  id: string;
+  crop_name: string;
+  yield_amount: number;
+  unit: string;
+  planted_amount: number | null;
+  loss: number | null;
+  created_at: string;
+}
+
+interface Sale {
+  id: string;
+  crop_name: string;
+  amount_sold: number;
+  unit: string;
+  price: number | null;
+  payment_method: string | null;
+  customer: string | null;
+  created_at: string;
+}
+
+interface StorageLocation {
+  id: string;
+  type: string;
+  capacity: number;
+  used: number;
+  unit: string;
+}
+
+interface InventoryItem {
+  name: string;
+  quantity: number;
+  unit: string;
+}
 
 export default function ReportsScreen() {
-  const [selectedReport, setSelectedReport] = useState<ReportType>('crops');
-  const [fertilizers, setFertilizers] = useState<FertilizerItem[]>([]);
-  const [seeds, setSeeds] = useState<SeedItem[]>([]);
-  const [packaging, setPackaging] = useState<PackagingItem[]>([]);
-  const [yields, setYields] = useState<YieldItem[]>([]);
-  const [sales, setSales] = useState<SaleRecord[]>([]);
-  const [usageRecords, setUsageRecords] = useState<UsageRecord[]>([]);
+  const [selectedReport, setSelectedReport] = useState<ReportType>('inventory');
+  const [loading, setLoading] = useState(true);
+  
+  // Data states
+  const [fertilizers, setFertilizers] = useState<InventoryItem[]>([]);
+  const [seeds, setSeeds] = useState<InventoryItem[]>([]);
+  const [packaging, setPackaging] = useState<InventoryItem[]>([]);
+  const [storageLocations, setStorageLocations] = useState<StorageLocation[]>([]);
+  const [harvests, setHarvests] = useState<Harvest[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    const [
-      loadedFertilizers,
-      loadedSeeds,
-      loadedPackaging,
-      loadedYields,
-      loadedSales,
-      loadedUsage,
-    ] = await Promise.all([
-      inventoryStorage.getFertilizers(),
-      inventoryStorage.getSeeds(),
-      inventoryStorage.getPackaging(),
-      inventoryStorage.getYields(),
-      inventoryStorage.getSales(),
-      inventoryStorage.getUsageRecords(),
-    ]);
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('No user found');
+        setLoading(false);
+        return;
+      }
 
-    setFertilizers(loadedFertilizers);
-    setSeeds(loadedSeeds);
-    setPackaging(loadedPackaging);
-    setYields(loadedYields);
-    setSales(loadedSales);
-    setUsageRecords(loadedUsage);
+      const [
+        fertilizersRes,
+        seedsRes,
+        packagingRes,
+        storageRes,
+        harvestsRes,
+        salesRes,
+      ] = await Promise.all([
+        supabase.from('fertilizers').select('*').eq('user_id', user.id),
+        supabase.from('seeds').select('*').eq('user_id', user.id),
+        supabase.from('packaging').select('*').eq('user_id', user.id),
+        supabase.from('storage_locations').select('*').eq('user_id', user.id),
+        supabase.from('harvests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('sales').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+      ]);
+
+      if (fertilizersRes.error) console.error('Error loading fertilizers:', fertilizersRes.error);
+      else setFertilizers(fertilizersRes.data || []);
+
+      if (seedsRes.error) console.error('Error loading seeds:', seedsRes.error);
+      else setSeeds(seedsRes.data || []);
+
+      if (packagingRes.error) console.error('Error loading packaging:', packagingRes.error);
+      else setPackaging(packagingRes.data || []);
+
+      if (storageRes.error) console.error('Error loading storage:', storageRes.error);
+      else setStorageLocations(storageRes.data || []);
+
+      if (harvestsRes.error) console.error('Error loading harvests:', harvestsRes.error);
+      else setHarvests(harvestsRes.data || []);
+
+      if (salesRes.error) console.error('Error loading sales:', salesRes.error);
+      else setSales(salesRes.data || []);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      Alert.alert('Error', 'Failed to load report data');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const reportCategories = [
-    { id: 'crops' as const, label: 'By Crop', icon: 'agriculture' },
-    { id: 'fertilizers' as const, label: 'Fertilizers', icon: 'science' },
-    { id: 'seeds' as const, label: 'Seeds', icon: 'eco' },
-    { id: 'packaging' as const, label: 'Packaging', icon: 'inventory_2' },
-    { id: 'yields' as const, label: 'Harvest Yields', icon: 'agriculture' },
+    { id: 'inventory' as const, label: 'Inventory Levels', icon: 'inventory_2' },
+    { id: 'storage' as const, label: 'Storage Usage', icon: 'warehouse' },
+    { id: 'harvests' as const, label: 'Harvests', icon: 'agriculture' },
     { id: 'sales' as const, label: 'Sales', icon: 'sell' },
-    { id: 'usage' as const, label: 'Usage', icon: 'remove_circle' },
-    { id: 'payment_methods' as const, label: 'Payment Methods', icon: 'payment' },
+    { id: 'crop_loss' as const, label: 'Crop Loss', icon: 'warning' },
   ];
 
-  // Crop Report
-  const getCropReport = () => {
-    const cropData: Record<string, {
-      totalYield: number;
-      totalSales: number;
-      revenue: number;
-      yieldPercentage: number;
-    }> = {};
+  const renderInventoryReport = () => {
+    const totalFertilizers = fertilizers.reduce((sum, f) => sum + f.quantity, 0);
+    const totalSeeds = seeds.reduce((sum, s) => sum + s.quantity, 0);
+    const totalPackaging = packaging.reduce((sum, p) => sum + p.quantity, 0);
 
-    yields.forEach(yieldItem => {
-      if (!cropData[yieldItem.cropName]) {
-        cropData[yieldItem.cropName] = {
-          totalYield: 0,
-          totalSales: 0,
-          revenue: 0,
-          yieldPercentage: 0,
-        };
+    return (
+      <View>
+        <Text style={styles.reportTitle}>Inventory Levels Report</Text>
+        <Text style={styles.reportSubtitle}>
+          Current stock of fertilizers, seeds, and packaging
+        </Text>
+
+        {/* Summary Cards */}
+        <View style={styles.summaryRow}>
+          <View style={[commonStyles.card, styles.summaryCard]}>
+            <IconSymbol
+              ios_icon_name="science"
+              android_material_icon_name="science"
+              size={32}
+              color={colors.primary}
+            />
+            <Text style={styles.summaryLabel}>Fertilizers</Text>
+            <Text style={styles.summaryValue}>{fertilizers.length}</Text>
+            <Text style={styles.summarySubtext}>types</Text>
+          </View>
+
+          <View style={[commonStyles.card, styles.summaryCard]}>
+            <IconSymbol
+              ios_icon_name="eco"
+              android_material_icon_name="eco"
+              size={32}
+              color="#8FBC8F"
+            />
+            <Text style={styles.summaryLabel}>Seeds</Text>
+            <Text style={styles.summaryValue}>{seeds.length}</Text>
+            <Text style={styles.summarySubtext}>types</Text>
+          </View>
+
+          <View style={[commonStyles.card, styles.summaryCard]}>
+            <IconSymbol
+              ios_icon_name="inventory_2"
+              android_material_icon_name="inventory_2"
+              size={32}
+              color="#A0826D"
+            />
+            <Text style={styles.summaryLabel}>Packaging</Text>
+            <Text style={styles.summaryValue}>{packaging.length}</Text>
+            <Text style={styles.summarySubtext}>types</Text>
+          </View>
+        </View>
+
+        {/* Fertilizers */}
+        {fertilizers.length > 0 && (
+          <React.Fragment>
+            <Text style={styles.sectionTitle}>Fertilizers</Text>
+            {fertilizers.map((item, index) => (
+              <React.Fragment key={index}>
+                <View style={[commonStyles.card, styles.reportCard]}>
+                  <Text style={styles.reportItemTitle}>{item.name}</Text>
+                  <Text style={styles.reportItemValue}>
+                    {item.quantity} {item.unit}
+                  </Text>
+                </View>
+              </React.Fragment>
+            ))}
+          </React.Fragment>
+        )}
+
+        {/* Seeds */}
+        {seeds.length > 0 && (
+          <React.Fragment>
+            <Text style={styles.sectionTitle}>Seeds</Text>
+            {seeds.map((item, index) => (
+              <React.Fragment key={index}>
+                <View style={[commonStyles.card, styles.reportCard]}>
+                  <Text style={styles.reportItemTitle}>{item.name}</Text>
+                  <Text style={styles.reportItemValue}>
+                    {item.quantity} {item.unit}
+                  </Text>
+                </View>
+              </React.Fragment>
+            ))}
+          </React.Fragment>
+        )}
+
+        {/* Packaging */}
+        {packaging.length > 0 && (
+          <React.Fragment>
+            <Text style={styles.sectionTitle}>Packaging</Text>
+            {packaging.map((item, index) => (
+              <React.Fragment key={index}>
+                <View style={[commonStyles.card, styles.reportCard]}>
+                  <Text style={styles.reportItemTitle}>{item.name}</Text>
+                  <Text style={styles.reportItemValue}>
+                    {item.quantity} {item.unit}
+                  </Text>
+                </View>
+              </React.Fragment>
+            ))}
+          </React.Fragment>
+        )}
+
+        {fertilizers.length === 0 && seeds.length === 0 && packaging.length === 0 && (
+          <Text style={styles.emptyText}>No inventory data available</Text>
+        )}
+      </View>
+    );
+  };
+
+  const renderStorageReport = () => {
+    const totalCapacity = storageLocations.reduce((sum, loc) => sum + loc.capacity, 0);
+    const totalUsed = storageLocations.reduce((sum, loc) => sum + (loc.used || 0), 0);
+    const utilizationRate = totalCapacity > 0 ? (totalUsed / totalCapacity) * 100 : 0;
+
+    return (
+      <View>
+        <Text style={styles.reportTitle}>Storage Usage Report</Text>
+        <Text style={styles.reportSubtitle}>
+          Current storage capacity and utilization
+        </Text>
+
+        {/* Summary */}
+        <View style={[commonStyles.card, styles.storageOverviewCard]}>
+          <View style={styles.storageOverviewRow}>
+            <View style={styles.storageOverviewItem}>
+              <Text style={styles.storageOverviewLabel}>Total Capacity</Text>
+              <Text style={styles.storageOverviewValue}>{totalCapacity.toFixed(0)}</Text>
+            </View>
+            <View style={styles.storageOverviewItem}>
+              <Text style={styles.storageOverviewLabel}>Used</Text>
+              <Text style={[styles.storageOverviewValue, { color: colors.primary }]}>
+                {totalUsed.toFixed(0)}
+              </Text>
+            </View>
+            <View style={styles.storageOverviewItem}>
+              <Text style={styles.storageOverviewLabel}>Utilization</Text>
+              <Text style={[styles.storageOverviewValue, { color: colors.success }]}>
+                {utilizationRate.toFixed(1)}%
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Storage Locations */}
+        {storageLocations.map((location, index) => {
+          const usagePercent = (location.used / location.capacity) * 100;
+          return (
+            <React.Fragment key={index}>
+              <View style={[commonStyles.card, styles.reportCard]}>
+                <View style={styles.storageCardHeader}>
+                  <IconSymbol
+                    ios_icon_name={
+                      location.type === 'dry' ? 'cube.box.fill' :
+                      location.type === 'refrigerated' ? 'snowflake' :
+                      'thermometer.snowflake'
+                    }
+                    android_material_icon_name={
+                      location.type === 'dry' ? 'inventory' : 'ac_unit'
+                    }
+                    size={24}
+                    color={colors.primary}
+                  />
+                  <Text style={styles.reportItemTitle}>
+                    {location.type.charAt(0).toUpperCase() + location.type.slice(1)} Storage
+                  </Text>
+                </View>
+                <View style={styles.storageDetails}>
+                  <Text style={styles.storageDetailText}>
+                    {location.used.toFixed(0)} / {location.capacity.toFixed(0)} {location.unit} used
+                  </Text>
+                  <Text style={styles.storageDetailText}>
+                    {usagePercent.toFixed(1)}% utilized
+                  </Text>
+                </View>
+                <View style={styles.progressBar}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${Math.min(usagePercent, 100)}%`,
+                        backgroundColor:
+                          usagePercent > 90 ? colors.error :
+                          usagePercent > 70 ? colors.warning :
+                          colors.success,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            </React.Fragment>
+          );
+        })}
+
+        {storageLocations.length === 0 && (
+          <Text style={styles.emptyText}>No storage locations configured</Text>
+        )}
+      </View>
+    );
+  };
+
+  const renderHarvestsReport = () => {
+    const totalYield = harvests.reduce((sum, h) => sum + h.yield_amount, 0);
+    const harvestsByCrop: Record<string, { yield: number; count: number; unit: string }> = {};
+
+    harvests.forEach(harvest => {
+      if (!harvestsByCrop[harvest.crop_name]) {
+        harvestsByCrop[harvest.crop_name] = { yield: 0, count: 0, unit: harvest.unit };
       }
-      cropData[yieldItem.cropName].totalYield += yieldItem.quantity;
+      harvestsByCrop[harvest.crop_name].yield += harvest.yield_amount;
+      harvestsByCrop[harvest.crop_name].count += 1;
     });
 
-    sales.forEach(sale => {
-      if (cropData[sale.cropName]) {
-        cropData[sale.cropName].totalSales += sale.quantity;
-        cropData[sale.cropName].revenue += sale.price || 0;
-      }
-    });
+    return (
+      <View>
+        <Text style={styles.reportTitle}>Harvests Report</Text>
+        <Text style={styles.reportSubtitle}>
+          All harvest records and yields by crop
+        </Text>
 
-    Object.keys(cropData).forEach(crop => {
-      if (cropData[crop].totalYield > 0) {
-        cropData[crop].yieldPercentage = 
-          (cropData[crop].totalSales / cropData[crop].totalYield) * 100;
-      }
-    });
+        {/* Summary */}
+        <View style={[commonStyles.card, styles.summaryCard]}>
+          <Text style={styles.summaryLabel}>Total Harvests</Text>
+          <Text style={styles.summaryValue}>{harvests.length}</Text>
+          <Text style={styles.summarySubtext}>records</Text>
+        </View>
 
-    return cropData;
+        {/* By Crop */}
+        {Object.entries(harvestsByCrop).map(([crop, data], index) => (
+          <React.Fragment key={index}>
+            <View style={[commonStyles.card, styles.reportCard]}>
+              <Text style={styles.reportItemTitle}>{crop}</Text>
+              <View style={styles.reportItemDetails}>
+                <View style={styles.reportRow}>
+                  <Text style={styles.reportLabel}>Total Yield:</Text>
+                  <Text style={styles.reportValue}>{data.yield.toFixed(1)} {data.unit}</Text>
+                </View>
+                <View style={styles.reportRow}>
+                  <Text style={styles.reportLabel}>Harvests:</Text>
+                  <Text style={styles.reportValue}>{data.count}</Text>
+                </View>
+              </View>
+            </View>
+          </React.Fragment>
+        ))}
+
+        {harvests.length === 0 && (
+          <Text style={styles.emptyText}>No harvest data available</Text>
+        )}
+      </View>
+    );
   };
 
-  // Fertilizer Report
-  const getFertilizerReport = () => {
-    const fertilizerUsage: Record<string, { used: number; remaining: number; unit: string }> = {};
-
-    fertilizers.forEach(fert => {
-      fertilizerUsage[fert.name] = {
-        used: 0,
-        remaining: fert.quantity,
-        unit: fert.unit,
-      };
-    });
-
-    usageRecords
-      .filter(record => record.itemType === 'fertilizer')
-      .forEach(record => {
-        if (fertilizerUsage[record.itemName]) {
-          fertilizerUsage[record.itemName].used += record.quantity;
-        }
-      });
-
-    return fertilizerUsage;
-  };
-
-  // Seed Report
-  const getSeedReport = () => {
-    const seedUsage: Record<string, { used: number; remaining: number; unit: string; type: string }> = {};
-
-    seeds.forEach(seed => {
-      const key = `${seed.cropName} - ${seed.variety}`;
-      seedUsage[key] = {
-        used: 0,
-        remaining: seed.quantity,
-        unit: seed.unit,
-        type: seed.itemType || 'seed',
-      };
-    });
-
-    usageRecords
-      .filter(record => record.itemType === 'seed')
-      .forEach(record => {
-        if (seedUsage[record.itemName]) {
-          seedUsage[record.itemName].used += record.quantity;
-        }
-      });
-
-    return seedUsage;
-  };
-
-  // Packaging Report
-  const getPackagingReport = () => {
-    const packagingUsage: Record<string, { used: number; remaining: number; type: string }> = {};
-
-    packaging.forEach(pack => {
-      packagingUsage[pack.name] = {
-        used: 0,
-        remaining: pack.quantity,
-        type: pack.type,
-      };
-    });
-
-    usageRecords
-      .filter(record => record.itemType === 'packaging')
-      .forEach(record => {
-        if (packagingUsage[record.itemName]) {
-          packagingUsage[record.itemName].used += record.quantity;
-        }
-      });
-
-    return packagingUsage;
-  };
-
-  // Payment Method Report
-  const getPaymentMethodReport = () => {
-    const paymentData: Record<string, { count: number; revenue: number }> = {
+  const renderSalesReport = () => {
+    const totalRevenue = sales.reduce((sum, s) => sum + (s.price || 0), 0);
+    const totalQuantity = sales.reduce((sum, s) => sum + s.amount_sold, 0);
+    
+    const salesByCrop: Record<string, { quantity: number; revenue: number; count: number; unit: string }> = {};
+    const salesByPayment: Record<string, { count: number; revenue: number }> = {
       cash: { count: 0, revenue: 0 },
       credit_debit: { count: 0, revenue: 0 },
       payment_app: { count: 0, revenue: 0 },
     };
 
     sales.forEach(sale => {
-      const method = sale.paymentMethod || 'cash';
-      paymentData[method].count += 1;
-      paymentData[method].revenue += sale.price || 0;
+      // By crop
+      if (!salesByCrop[sale.crop_name]) {
+        salesByCrop[sale.crop_name] = { quantity: 0, revenue: 0, count: 0, unit: sale.unit };
+      }
+      salesByCrop[sale.crop_name].quantity += sale.amount_sold;
+      salesByCrop[sale.crop_name].revenue += sale.price || 0;
+      salesByCrop[sale.crop_name].count += 1;
+
+      // By payment method
+      const method = sale.payment_method || 'cash';
+      if (salesByPayment[method]) {
+        salesByPayment[method].count += 1;
+        salesByPayment[method].revenue += sale.price || 0;
+      }
     });
 
-    return paymentData;
+    return (
+      <View>
+        <Text style={styles.reportTitle}>Sales Report</Text>
+        <Text style={styles.reportSubtitle}>
+          Sales transactions and revenue breakdown
+        </Text>
+
+        {/* Summary */}
+        <View style={styles.summaryRow}>
+          <View style={[commonStyles.card, styles.summaryCard]}>
+            <Text style={styles.summaryLabel}>Total Sales</Text>
+            <Text style={styles.summaryValue}>{sales.length}</Text>
+            <Text style={styles.summarySubtext}>transactions</Text>
+          </View>
+
+          <View style={[commonStyles.card, styles.summaryCard]}>
+            <Text style={styles.summaryLabel}>Total Revenue</Text>
+            <Text style={[styles.summaryValue, { color: colors.success }]}>
+              ${totalRevenue.toFixed(2)}
+            </Text>
+            <Text style={styles.summarySubtext}>earned</Text>
+          </View>
+        </View>
+
+        {/* By Crop */}
+        <Text style={styles.sectionTitle}>Sales by Crop</Text>
+        {Object.entries(salesByCrop).map(([crop, data], index) => (
+          <React.Fragment key={index}>
+            <View style={[commonStyles.card, styles.reportCard]}>
+              <Text style={styles.reportItemTitle}>{crop}</Text>
+              <View style={styles.reportItemDetails}>
+                <View style={styles.reportRow}>
+                  <Text style={styles.reportLabel}>Quantity Sold:</Text>
+                  <Text style={styles.reportValue}>{data.quantity.toFixed(1)} {data.unit}</Text>
+                </View>
+                <View style={styles.reportRow}>
+                  <Text style={styles.reportLabel}>Revenue:</Text>
+                  <Text style={[styles.reportValue, { color: colors.success }]}>
+                    ${data.revenue.toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.reportRow}>
+                  <Text style={styles.reportLabel}>Transactions:</Text>
+                  <Text style={styles.reportValue}>{data.count}</Text>
+                </View>
+              </View>
+            </View>
+          </React.Fragment>
+        ))}
+
+        {/* By Payment Method */}
+        <Text style={styles.sectionTitle}>Sales by Payment Method</Text>
+        {Object.entries(salesByPayment).map(([method, data], index) => (
+          <React.Fragment key={index}>
+            <View style={[commonStyles.card, styles.reportCard]}>
+              <Text style={styles.reportItemTitle}>
+                {method === 'cash' ? 'Cash' :
+                 method === 'credit_debit' ? 'Credit/Debit Card' :
+                 'Payment App'}
+              </Text>
+              <View style={styles.reportItemDetails}>
+                <View style={styles.reportRow}>
+                  <Text style={styles.reportLabel}>Transactions:</Text>
+                  <Text style={styles.reportValue}>{data.count}</Text>
+                </View>
+                <View style={styles.reportRow}>
+                  <Text style={styles.reportLabel}>Revenue:</Text>
+                  <Text style={[styles.reportValue, { color: colors.success }]}>
+                    ${data.revenue.toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.reportRow}>
+                  <Text style={styles.reportLabel}>Percentage:</Text>
+                  <Text style={styles.reportValue}>
+                    {sales.length > 0 ? ((data.count / sales.length) * 100).toFixed(1) : 0}%
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </React.Fragment>
+        ))}
+
+        {sales.length === 0 && (
+          <Text style={styles.emptyText}>No sales data available</Text>
+        )}
+      </View>
+    );
+  };
+
+  const renderCropLossReport = () => {
+    const harvestsWithLoss = harvests.filter(h => h.planted_amount !== null && h.planted_amount > 0);
+    
+    const lossByCrop: Record<string, { planted: number; yield: number; loss: number; count: number }> = {};
+
+    harvestsWithLoss.forEach(harvest => {
+      if (!lossByCrop[harvest.crop_name]) {
+        lossByCrop[harvest.crop_name] = { planted: 0, yield: 0, loss: 0, count: 0 };
+      }
+      lossByCrop[harvest.crop_name].planted += harvest.planted_amount || 0;
+      lossByCrop[harvest.crop_name].yield += harvest.yield_amount;
+      lossByCrop[harvest.crop_name].loss += harvest.loss || 0;
+      lossByCrop[harvest.crop_name].count += 1;
+    });
+
+    return (
+      <View>
+        <Text style={styles.reportTitle}>Crop Loss Report</Text>
+        <Text style={styles.reportSubtitle}>
+          Harvests vs planted amount analysis
+        </Text>
+
+        {Object.entries(lossByCrop).map(([crop, data], index) => {
+          const lossPercentage = (data.loss / data.planted) * 100;
+          return (
+            <React.Fragment key={index}>
+              <View style={[commonStyles.card, styles.reportCard]}>
+                <Text style={styles.reportItemTitle}>{crop}</Text>
+                <View style={styles.reportItemDetails}>
+                  <View style={styles.reportRow}>
+                    <Text style={styles.reportLabel}>Planted:</Text>
+                    <Text style={styles.reportValue}>{data.planted.toFixed(1)}</Text>
+                  </View>
+                  <View style={styles.reportRow}>
+                    <Text style={styles.reportLabel}>Harvested:</Text>
+                    <Text style={styles.reportValue}>{data.yield.toFixed(1)}</Text>
+                  </View>
+                  <View style={styles.reportRow}>
+                    <Text style={styles.reportLabel}>Loss:</Text>
+                    <Text style={[styles.reportValue, { color: data.loss > 0 ? colors.error : colors.success }]}>
+                      {data.loss.toFixed(1)} ({lossPercentage.toFixed(1)}%)
+                    </Text>
+                  </View>
+                  <View style={styles.reportRow}>
+                    <Text style={styles.reportLabel}>Harvests:</Text>
+                    <Text style={styles.reportValue}>{data.count}</Text>
+                  </View>
+                </View>
+              </View>
+            </React.Fragment>
+          );
+        })}
+
+        {harvestsWithLoss.length === 0 && (
+          <Text style={styles.emptyText}>
+            No crop loss data available. Add planted amounts to your harvests to track loss.
+          </Text>
+        )}
+      </View>
+    );
   };
 
   const renderReport = () => {
     switch (selectedReport) {
-      case 'crops':
-        const cropReport = getCropReport();
-        return (
-          <View>
-            <Text style={styles.reportTitle}>Crop Performance Report</Text>
-            <Text style={styles.reportSubtitle}>
-              Breakdown by crop with yield and sales data
-            </Text>
-            {Object.entries(cropReport).map(([crop, data], index) => (
-              <React.Fragment key={index}>
-                <View style={[commonStyles.card, styles.reportCard]}>
-                  <Text style={styles.reportItemTitle}>{crop}</Text>
-                  <View style={styles.reportItemDetails}>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Total Yield:</Text>
-                      <Text style={styles.reportValue}>{data.totalYield.toFixed(1)} lbs</Text>
-                    </View>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Total Sales:</Text>
-                      <Text style={styles.reportValue}>{data.totalSales.toFixed(1)} lbs</Text>
-                    </View>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Revenue:</Text>
-                      <Text style={[styles.reportValue, styles.revenueText]}>
-                        ${data.revenue.toFixed(2)}
-                      </Text>
-                    </View>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Yield Sold:</Text>
-                      <Text style={styles.reportValue}>{data.yieldPercentage.toFixed(1)}%</Text>
-                    </View>
-                  </View>
-                </View>
-              </React.Fragment>
-            ))}
-            {Object.keys(cropReport).length === 0 && (
-              <Text style={styles.emptyText}>No crop data available</Text>
-            )}
-          </View>
-        );
-
-      case 'fertilizers':
-        const fertilizerReport = getFertilizerReport();
-        return (
-          <View>
-            <Text style={styles.reportTitle}>Fertilizer Usage Report</Text>
-            <Text style={styles.reportSubtitle}>
-              Track fertilizer consumption and remaining inventory
-            </Text>
-            {Object.entries(fertilizerReport).map(([name, data], index) => (
-              <React.Fragment key={index}>
-                <View style={[commonStyles.card, styles.reportCard]}>
-                  <Text style={styles.reportItemTitle}>{name}</Text>
-                  <View style={styles.reportItemDetails}>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Used:</Text>
-                      <Text style={styles.reportValue}>{data.used.toFixed(1)} {data.unit}</Text>
-                    </View>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Remaining:</Text>
-                      <Text style={styles.reportValue}>{data.remaining.toFixed(1)} {data.unit}</Text>
-                    </View>
-                  </View>
-                </View>
-              </React.Fragment>
-            ))}
-            {Object.keys(fertilizerReport).length === 0 && (
-              <Text style={styles.emptyText}>No fertilizer data available</Text>
-            )}
-          </View>
-        );
-
-      case 'seeds':
-        const seedReport = getSeedReport();
-        return (
-          <View>
-            <Text style={styles.reportTitle}>Seed/Transplant Usage Report</Text>
-            <Text style={styles.reportSubtitle}>
-              Track seed and transplant consumption
-            </Text>
-            {Object.entries(seedReport).map(([name, data], index) => (
-              <React.Fragment key={index}>
-                <View style={[commonStyles.card, styles.reportCard]}>
-                  <View style={styles.reportItemHeader}>
-                    <Text style={styles.reportItemTitle}>{name}</Text>
-                    <View style={styles.typeBadge}>
-                      <Text style={styles.typeBadgeText}>
-                        {data.type === 'seed' ? 'Seed' : 'Transplant'}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.reportItemDetails}>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Used:</Text>
-                      <Text style={styles.reportValue}>{data.used.toFixed(1)} {data.unit}</Text>
-                    </View>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Remaining:</Text>
-                      <Text style={styles.reportValue}>{data.remaining.toFixed(1)} {data.unit}</Text>
-                    </View>
-                  </View>
-                </View>
-              </React.Fragment>
-            ))}
-            {Object.keys(seedReport).length === 0 && (
-              <Text style={styles.emptyText}>No seed data available</Text>
-            )}
-          </View>
-        );
-
-      case 'packaging':
-        const packagingReport = getPackagingReport();
-        return (
-          <View>
-            <Text style={styles.reportTitle}>Packaging Usage Report</Text>
-            <Text style={styles.reportSubtitle}>
-              Track packaging material consumption
-            </Text>
-            {Object.entries(packagingReport).map(([name, data], index) => (
-              <React.Fragment key={index}>
-                <View style={[commonStyles.card, styles.reportCard]}>
-                  <View style={styles.reportItemHeader}>
-                    <Text style={styles.reportItemTitle}>{name}</Text>
-                    <View style={styles.typeBadge}>
-                      <Text style={styles.typeBadgeText}>{data.type}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.reportItemDetails}>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Used:</Text>
-                      <Text style={styles.reportValue}>{data.used} units</Text>
-                    </View>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Remaining:</Text>
-                      <Text style={styles.reportValue}>{data.remaining} units</Text>
-                    </View>
-                  </View>
-                </View>
-              </React.Fragment>
-            ))}
-            {Object.keys(packagingReport).length === 0 && (
-              <Text style={styles.emptyText}>No packaging data available</Text>
-            )}
-          </View>
-        );
-
-      case 'yields':
-        return (
-          <View>
-            <Text style={styles.reportTitle}>Harvest Yields Report</Text>
-            <Text style={styles.reportSubtitle}>
-              All harvest yields by crop and date
-            </Text>
-            {yields.map((yieldItem, index) => (
-              <React.Fragment key={index}>
-                <View style={[commonStyles.card, styles.reportCard]}>
-                  <Text style={styles.reportItemTitle}>
-                    {yieldItem.cropName}
-                    {yieldItem.variety && ` - ${yieldItem.variety}`}
-                  </Text>
-                  <View style={styles.reportItemDetails}>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Quantity:</Text>
-                      <Text style={styles.reportValue}>
-                        {yieldItem.quantity} {yieldItem.unit}
-                      </Text>
-                    </View>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Harvest Date:</Text>
-                      <Text style={styles.reportValue}>
-                        {new Date(yieldItem.harvestDate).toLocaleDateString()}
-                      </Text>
-                    </View>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Storage:</Text>
-                      <Text style={styles.reportValue}>
-                        {yieldItem.storageLocation === 'dry' ? 'Dry' : 'Refrigerated'}
-                      </Text>
-                    </View>
-                    {yieldItem.quality && (
-                      <View style={styles.reportRow}>
-                        <Text style={styles.reportLabel}>Quality:</Text>
-                        <Text style={styles.reportValue}>
-                          {yieldItem.quality.charAt(0).toUpperCase() + yieldItem.quality.slice(1)}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </React.Fragment>
-            ))}
-            {yields.length === 0 && (
-              <Text style={styles.emptyText}>No yield data available</Text>
-            )}
-          </View>
-        );
-
+      case 'inventory':
+        return renderInventoryReport();
+      case 'storage':
+        return renderStorageReport();
+      case 'harvests':
+        return renderHarvestsReport();
       case 'sales':
-        const totalRevenue = sales.reduce((sum, sale) => sum + (sale.price || 0), 0);
-        const totalQuantitySold = sales.reduce((sum, sale) => sum + sale.quantity, 0);
-        return (
-          <View>
-            <Text style={styles.reportTitle}>Sales Report</Text>
-            <Text style={styles.reportSubtitle}>
-              All sales transactions and revenue
-            </Text>
-            
-            <View style={[commonStyles.card, styles.summaryCard]}>
-              <View style={styles.summaryRow}>
-                <View style={styles.summaryItem}>
-                  <Text style={styles.summaryLabel}>Total Sales</Text>
-                  <Text style={styles.summaryValue}>{sales.length}</Text>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Text style={styles.summaryLabel}>Total Revenue</Text>
-                  <Text style={[styles.summaryValue, styles.revenueText]}>
-                    ${totalRevenue.toFixed(2)}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {sales.map((sale, index) => (
-              <React.Fragment key={index}>
-                <View style={[commonStyles.card, styles.reportCard]}>
-                  <Text style={styles.reportItemTitle}>{sale.cropName}</Text>
-                  <View style={styles.reportItemDetails}>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Quantity:</Text>
-                      <Text style={styles.reportValue}>
-                        {sale.quantity} {sale.unit}
-                      </Text>
-                    </View>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Sale Date:</Text>
-                      <Text style={styles.reportValue}>
-                        {new Date(sale.saleDate).toLocaleDateString()}
-                      </Text>
-                    </View>
-                    {sale.price && (
-                      <View style={styles.reportRow}>
-                        <Text style={styles.reportLabel}>Price:</Text>
-                        <Text style={[styles.reportValue, styles.revenueText]}>
-                          ${sale.price.toFixed(2)}
-                        </Text>
-                      </View>
-                    )}
-                    {sale.paymentMethod && (
-                      <View style={styles.reportRow}>
-                        <Text style={styles.reportLabel}>Payment:</Text>
-                        <Text style={styles.reportValue}>
-                          {sale.paymentMethod === 'cash' ? 'Cash' :
-                           sale.paymentMethod === 'credit_debit' ? 'Credit/Debit' :
-                           'Payment App'}
-                        </Text>
-                      </View>
-                    )}
-                    {sale.customer && (
-                      <View style={styles.reportRow}>
-                        <Text style={styles.reportLabel}>Customer:</Text>
-                        <Text style={styles.reportValue}>{sale.customer}</Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </React.Fragment>
-            ))}
-            {sales.length === 0 && (
-              <Text style={styles.emptyText}>No sales data available</Text>
-            )}
-          </View>
-        );
-
-      case 'usage':
-        return (
-          <View>
-            <Text style={styles.reportTitle}>Usage Records Report</Text>
-            <Text style={styles.reportSubtitle}>
-              All recorded usage of fertilizers, seeds, and packaging
-            </Text>
-            {usageRecords.map((record, index) => (
-              <React.Fragment key={index}>
-                <View style={[commonStyles.card, styles.reportCard]}>
-                  <View style={styles.reportItemHeader}>
-                    <Text style={styles.reportItemTitle}>{record.itemName}</Text>
-                    <View style={styles.typeBadge}>
-                      <Text style={styles.typeBadgeText}>
-                        {record.itemType.charAt(0).toUpperCase() + record.itemType.slice(1)}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.reportItemDetails}>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Quantity Used:</Text>
-                      <Text style={styles.reportValue}>
-                        {record.quantity} {record.unit}
-                      </Text>
-                    </View>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Date:</Text>
-                      <Text style={styles.reportValue}>
-                        {new Date(record.usageDate).toLocaleDateString()}
-                      </Text>
-                    </View>
-                    {record.usedFor && (
-                      <View style={styles.reportRow}>
-                        <Text style={styles.reportLabel}>Used For:</Text>
-                        <Text style={styles.reportValue}>{record.usedFor}</Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </React.Fragment>
-            ))}
-            {usageRecords.length === 0 && (
-              <Text style={styles.emptyText}>No usage records available</Text>
-            )}
-          </View>
-        );
-
-      case 'payment_methods':
-        const paymentReport = getPaymentMethodReport();
-        const totalSales = Object.values(paymentReport).reduce((sum, data) => sum + data.count, 0);
-        const totalPaymentRevenue = Object.values(paymentReport).reduce((sum, data) => sum + data.revenue, 0);
-        return (
-          <View>
-            <Text style={styles.reportTitle}>Payment Methods Report</Text>
-            <Text style={styles.reportSubtitle}>
-              Breakdown of sales by payment method
-            </Text>
-
-            <View style={[commonStyles.card, styles.summaryCard]}>
-              <View style={styles.summaryRow}>
-                <View style={styles.summaryItem}>
-                  <Text style={styles.summaryLabel}>Total Transactions</Text>
-                  <Text style={styles.summaryValue}>{totalSales}</Text>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Text style={styles.summaryLabel}>Total Revenue</Text>
-                  <Text style={[styles.summaryValue, styles.revenueText]}>
-                    ${totalPaymentRevenue.toFixed(2)}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {Object.entries(paymentReport).map(([method, data], index) => (
-              <React.Fragment key={index}>
-                <View style={[commonStyles.card, styles.reportCard]}>
-                  <Text style={styles.reportItemTitle}>
-                    {method === 'cash' ? 'Cash' :
-                     method === 'credit_debit' ? 'Credit/Debit Card' :
-                     'Payment App'}
-                  </Text>
-                  <View style={styles.reportItemDetails}>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Transactions:</Text>
-                      <Text style={styles.reportValue}>{data.count}</Text>
-                    </View>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Revenue:</Text>
-                      <Text style={[styles.reportValue, styles.revenueText]}>
-                        ${data.revenue.toFixed(2)}
-                      </Text>
-                    </View>
-                    <View style={styles.reportRow}>
-                      <Text style={styles.reportLabel}>Percentage:</Text>
-                      <Text style={styles.reportValue}>
-                        {totalSales > 0 ? ((data.count / totalSales) * 100).toFixed(1) : 0}%
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </React.Fragment>
-            ))}
-          </View>
-        );
-
+        return renderSalesReport();
+      case 'crop_loss':
+        return renderCropLossReport();
       default:
         return null;
     }
@@ -643,14 +632,21 @@ export default function ReportsScreen() {
       </ScrollView>
 
       {/* Report Content */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {renderReport()}
-        <View style={{ height: 100 }} />
-      </ScrollView>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading report data...</Text>
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {renderReport()}
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -709,6 +705,17 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
   scrollView: {
     flex: 1,
   },
@@ -726,21 +733,54 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: 20,
   },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginTop: 20,
+    marginBottom: 12,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  summaryCard: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 16,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  summaryValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.text,
+    marginTop: 4,
+  },
+  summarySubtext: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
   reportCard: {
     marginBottom: 12,
     padding: 16,
-  },
-  reportItemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
   },
   reportItemTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: colors.text,
     marginBottom: 12,
+  },
+  reportItemValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.primary,
   },
   reportItemDetails: {
     gap: 8,
@@ -759,41 +799,51 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
   },
-  revenueText: {
-    color: colors.success,
-  },
-  typeBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    backgroundColor: colors.primary + '20',
-  },
-  typeBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.primary,
-    textTransform: 'capitalize',
-  },
-  summaryCard: {
-    marginBottom: 20,
+  storageOverviewCard: {
     padding: 16,
+    marginBottom: 20,
   },
-  summaryRow: {
+  storageOverviewRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
-  summaryItem: {
+  storageOverviewItem: {
     alignItems: 'center',
   },
-  summaryLabel: {
-    fontSize: 14,
+  storageOverviewLabel: {
+    fontSize: 12,
     color: colors.textSecondary,
     marginBottom: 4,
   },
-  summaryValue: {
+  storageOverviewValue: {
     fontSize: 24,
     fontWeight: '700',
     color: colors.text,
+  },
+  storageCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  storageDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  storageDetailText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: colors.highlight,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
   },
   emptyText: {
     fontSize: 16,
@@ -801,5 +851,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 40,
     fontStyle: 'italic',
+    paddingHorizontal: 32,
   },
 });

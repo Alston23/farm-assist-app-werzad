@@ -7,6 +7,7 @@ export interface FertilizerItem {
   unit: 'lbs' | 'bags' | 'trucks';
   notes?: string;
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface SeedItem {
@@ -16,6 +17,7 @@ export interface SeedItem {
   quantity: number;
   unit: 'lbs' | 'bags' | 'units';
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface PackagingItem {
@@ -25,6 +27,7 @@ export interface PackagingItem {
   quantity: number;
   unit: string;
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface StorageLocation {
@@ -35,6 +38,35 @@ export interface StorageLocation {
   capacity: number;
   used: number;
   created_at?: string;
+  updated_at?: string;
+}
+
+export interface Harvest {
+  id: string;
+  user_id?: string;
+  crop_name: string;
+  yield_amount: number;
+  unit: 'lbs' | 'kg' | 'bushels' | 'boxes' | 'units';
+  planted_amount?: number | null;
+  loss?: number | null;
+  storage_location_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Sale {
+  id: string;
+  user_id?: string;
+  crop_name: string;
+  amount_sold: number;
+  unit: 'lbs' | 'kg' | 'bushels' | 'boxes' | 'units';
+  storage_location_id?: string | null;
+  price?: number | null;
+  payment_method?: 'cash' | 'credit_debit' | 'payment_app' | null;
+  customer?: string | null;
+  notes?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface UsageRecord {

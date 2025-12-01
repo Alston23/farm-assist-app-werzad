@@ -185,7 +185,7 @@ export default function InventoryScreen() {
 
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => router.push('/yields')}
+              onPress={() => router.push('/add-harvest')}
             >
               <IconSymbol
                 ios_icon_name="plus.circle.fill"
@@ -194,6 +194,19 @@ export default function InventoryScreen() {
                 color={colors.accent}
               />
               <Text style={styles.actionText}>Add Harvest</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => router.push('/record-sale')}
+            >
+              <IconSymbol
+                ios_icon_name="dollarsign.circle.fill"
+                android_material_icon_name="sell"
+                size={24}
+                color={colors.success}
+              />
+              <Text style={styles.actionText}>Record Sale</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
