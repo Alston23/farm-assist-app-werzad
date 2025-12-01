@@ -35,12 +35,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUser = async () => {
     try {
+      console.log('Loading user from storage...');
       const userData = await AsyncStorage.getItem(STORAGE_KEYS.USER);
       if (userData) {
-        setUser(JSON.parse(userData));
+        const parsedUser = JSON.parse(userData);
+        console.log('User loaded:', parsedUser.email);
+        setUser(parsedUser);
+      } else {
+        console.log('No user found in storage');
       }
     } catch (error) {
-      console.log('Error loading user:', error);
+      console.error('Error loading user:', error);
     } finally {
       setIsLoading(false);
     }
@@ -48,23 +53,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log('SignIn: Getting users database...');
+      console.log('SignIn: Starting for email:', email);
+      
       // Get users database
       const usersData = await AsyncStorage.getItem(STORAGE_KEYS.USERS_DB);
       const users = usersData ? JSON.parse(usersData) : [];
-      console.log('SignIn: Found users:', users.length);
+      console.log('SignIn: Found', users.length, 'users in database');
 
       // Find user
       const foundUser = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
 
       if (!foundUser) {
         console.log('SignIn: No user found with email:', email);
-        return { success: false, error: 'No account found with this email' };
+        return { success: false, error: 'No account found with this email. Please sign up first.' };
       }
 
       if (foundUser.password !== password) {
         console.log('SignIn: Incorrect password');
-        return { success: false, error: 'Incorrect password' };
+        return { success: false, error: 'Incorrect password. Please try again.' };
       }
 
       // Create user object without password
@@ -79,12 +85,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Save current user
       await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userToStore));
       setUser(userToStore);
-      console.log('SignIn: Success!');
+      console.log('SignIn: Success! User logged in:', userToStore.email);
 
       return { success: true };
     } catch (error) {
-      console.log('Error signing in:', error);
-      return { success: false, error: 'An error occurred during sign in' };
+      console.error('Error signing in:', error);
+      return { success: false, error: 'An error occurred during sign in. Please try again.' };
     }
   };
 
@@ -125,7 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const existingUser = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
       if (existingUser) {
         console.log('SignUp: User already exists');
-        return { success: false, error: 'An account with this email already exists' };
+        return { success: false, error: 'An account with this email already exists. Please sign in instead.' };
       }
 
       // Create new user
@@ -143,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Save to users database
       users.push(newUser);
       await AsyncStorage.setItem(STORAGE_KEYS.USERS_DB, JSON.stringify(users));
-      console.log('SignUp: Saved to users database');
+      console.log('SignUp: Saved to users database, total users:', users.length);
 
       // Create user object without password
       const userToStore: User = {
@@ -157,22 +163,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Save current user
       await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userToStore));
       setUser(userToStore);
-      console.log('SignUp: Success! User logged in');
+      console.log('SignUp: Success! User logged in:', userToStore.email);
 
       return { success: true };
     } catch (error) {
-      console.log('Error signing up:', error);
-      return { success: false, error: 'An error occurred during sign up' };
+      console.error('Error signing up:', error);
+      return { success: false, error: 'An error occurred during sign up. Please try again.' };
     }
   };
 
   const signOut = async () => {
     try {
+      console.log('SignOut: Starting...');
       await AsyncStorage.removeItem(STORAGE_KEYS.USER);
       setUser(null);
       console.log('SignOut: Success');
     } catch (error) {
-      console.log('Error signing out:', error);
+      console.error('Error signing out:', error);
     }
   };
 

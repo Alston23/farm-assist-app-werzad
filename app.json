@@ -1,8 +1,7 @@
-
 {
   "expo": {
-    "name": "SmallFarm Copilot",
-    "slug": "SmallFarm-Copilot",
+    "name": "FarmAssist",
+    "slug": "FarmAssist",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/natively-dark.png",
@@ -45,5 +44,5 @@
       "router": {}
     }
   },
-  "scheme": "SmallFarm-Copilot"
+  "scheme": "FarmAssist"
 }

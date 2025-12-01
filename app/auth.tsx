@@ -16,9 +16,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { colors } from '@/styles/commonStyles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { IconSymbol } from '@/components/IconSymbol';
+import { useRouter } from 'expo-router';
 
 export default function AuthScreen() {
   const { signIn, signUp } = useAuth();
+  const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -50,21 +52,26 @@ export default function AuthScreen() {
     try {
       let result;
       if (isLogin) {
-        console.log('Attempting sign in...');
+        console.log('Attempting sign in with email:', email.trim());
         result = await signIn(email.trim(), password);
       } else {
-        console.log('Attempting sign up...');
+        console.log('Attempting sign up with:', { name: name.trim(), farmName: farmName.trim(), email: email.trim() });
         result = await signUp(name.trim(), farmName.trim(), email.trim(), password);
       }
 
       console.log('Auth result:', result);
 
-      if (!result.success) {
-        Alert.alert('Error', result.error || 'An error occurred');
+      if (result && result.success) {
+        console.log('Authentication successful, navigating to crops...');
+        // Navigate to the main app
+        router.replace('/(tabs)/crops');
+      } else {
+        console.log('Authentication failed:', result?.error);
+        Alert.alert('Error', result?.error || 'An error occurred');
       }
     } catch (error) {
-      console.log('Auth error:', error);
-      Alert.alert('Error', 'An unexpected error occurred');
+      console.error('Auth error:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -132,6 +139,7 @@ export default function AuthScreen() {
                   onChangeText={setName}
                   autoCapitalize="words"
                   autoCorrect={false}
+                  editable={!isLoading}
                 />
               </View>
             )}
@@ -154,6 +162,7 @@ export default function AuthScreen() {
                   onChangeText={setFarmName}
                   autoCapitalize="words"
                   autoCorrect={false}
+                  editable={!isLoading}
                 />
               </View>
             )}
@@ -176,6 +185,7 @@ export default function AuthScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                editable={!isLoading}
               />
             </View>
 
@@ -197,10 +207,12 @@ export default function AuthScreen() {
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
+                editable={!isLoading}
               />
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeIcon}
+                disabled={isLoading}
               >
                 <IconSymbol
                   ios_icon_name={showPassword ? 'eye.slash.fill' : 'eye.fill'}
@@ -231,7 +243,7 @@ export default function AuthScreen() {
               <Text style={styles.toggleText}>
                 {isLogin ? "Don't have an account?" : 'Already have an account?'}
               </Text>
-              <TouchableOpacity onPress={toggleMode}>
+              <TouchableOpacity onPress={toggleMode} disabled={isLoading}>
                 <Text style={styles.toggleButton}>
                   {isLogin ? 'Sign Up' : 'Sign In'}
                 </Text>
