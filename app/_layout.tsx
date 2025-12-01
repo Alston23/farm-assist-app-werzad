@@ -21,13 +21,13 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
-  initialRouteName: "auth",
+  initialRouteName: "(tabs)",
 };
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const networkState = useNetworkState();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, autoSignIn } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const [loaded] = useFonts({
@@ -39,6 +39,14 @@ function RootLayoutNav() {
       SplashScreen.hideAsync();
     }
   }, [loaded, isLoading]);
+
+  // Auto sign in on first load
+  useEffect(() => {
+    if (!isLoading && !user && loaded) {
+      console.log('No user found, auto-signing in...');
+      autoSignIn();
+    }
+  }, [isLoading, user, loaded]);
 
   // Handle navigation based on auth state
   useEffect(() => {
@@ -58,9 +66,6 @@ function RootLayoutNav() {
     if (user && !inTabsGroup) {
       console.log('✅ User logged in, navigating to crops');
       router.replace('/(tabs)/crops');
-    } else if (!user && !inAuthGroup) {
-      console.log('❌ No user, navigating to auth');
-      router.replace('/auth');
     }
   }, [user, segments, isLoading, loaded]);
 

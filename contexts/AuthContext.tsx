@@ -16,6 +16,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUp: (name: string, farmName: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
+  autoSignIn: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -53,6 +54,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
       console.log('=== AuthContext: Finished loading user ===');
+    }
+  };
+
+  const autoSignIn = async () => {
+    try {
+      console.log('=== AUTO SIGN IN - BYPASSING AUTH ===');
+      
+      const guestUser: User = {
+        id: 'guest-user',
+        email: 'guest@smallfarm.app',
+        name: 'Guest User',
+        farmName: 'My Farm',
+        createdAt: new Date().toISOString(),
+      };
+
+      console.log('Creating guest user session:', guestUser);
+      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(guestUser));
+      setUser(guestUser);
+      
+      console.log('=== AUTO SIGN IN SUCCESS ===');
+    } catch (error) {
+      console.error('Auto sign in error:', error);
     }
   };
 
@@ -191,13 +214,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await AsyncStorage.removeItem(STORAGE_KEYS.USER);
       setUser(null);
       console.log('=== SIGN OUT SUCCESS ===');
+      // Auto sign back in as guest
+      await autoSignIn();
     } catch (error) {
       console.error('Sign out error:', error);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, isLoading, signIn, signUp, signOut, autoSignIn }}>
       {children}
     </AuthContext.Provider>
   );
