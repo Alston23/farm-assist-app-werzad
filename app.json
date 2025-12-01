@@ -1,8 +1,8 @@
 
 {
   "expo": {
-    "name": "FarmAssist",
-    "slug": "farmassist",
+    "name": "SmallFarm Copilot",
+    "slug": "smallfarm-copilot",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.farmassist.app",
+      "bundleIdentifier": "com.smallfarmcopilot.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -27,7 +27,7 @@
         "backgroundColor": "#2D5016"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.farmassist.app",
+      "package": "com.smallfarmcopilot.app",
       "icon": "./assets/images/icon.png"
     },
     "web": {
@@ -39,7 +39,7 @@
       "expo-router",
       "expo-web-browser"
     ],
-    "scheme": "farmassist",
+    "scheme": "smallfarm-copilot",
     "experiments": {
       "typedRoutes": true
     },
