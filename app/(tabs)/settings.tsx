@@ -16,6 +16,7 @@ import { colors, commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'expo-router';
 
 const OPENAI_API_KEY_STORAGE = '@openai_api_key';
 const AI_SETTINGS_STORAGE = '@ai_settings';
@@ -28,7 +29,8 @@ interface AISettings {
 }
 
 export default function SettingsScreen() {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
+  const router = useRouter();
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [aiSettings, setAiSettings] = useState<AISettings>({
@@ -125,12 +127,16 @@ export default function SettingsScreen() {
             try {
               console.log('🔓 User confirmed sign out');
               
-              // Call the signOut function from AuthContext
-              await signOut();
+              // Call the logout function from AuthContext
+              await logout();
               
-              console.log('✅ Sign out completed successfully');
-              // Navigation will happen automatically via _layout.tsx
-              // The auth state change will trigger the navigation reset
+              console.log('✅ Logout completed successfully');
+              
+              // Navigate to auth screen using router.replace
+              // This replaces the current route so user can't go back
+              router.replace('/auth');
+              
+              console.log('✅ Navigation to /auth initiated');
             } catch (error: any) {
               console.error('❌ Sign out error:', error);
               setSigningOut(false);

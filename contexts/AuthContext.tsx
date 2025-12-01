@@ -13,9 +13,11 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUp: (name: string, farmName: string, email: string, password: string) => Promise<{ success: boolean; error?: string; needsVerification?: boolean }>;
+  logout: () => Promise<void>;
   signOut: () => Promise<void>;
   resendVerificationEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
 }
@@ -24,6 +26,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -46,8 +49,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         console.log('Setting user from session:', userData);
         setUser(userData);
+        setSession(session);
       } else {
         console.log('No session found, user will need to sign in');
+        setUser(null);
+        setSession(null);
       }
       
       setIsLoading(false);
@@ -68,9 +74,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         console.log('Setting user from auth state change:', userData);
         setUser(userData);
+        setSession(session);
       } else {
         console.log('Clearing user from auth state change');
         setUser(null);
+        setSession(null);
       }
       
       setIsLoading(false);
@@ -136,6 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         console.log('User data:', userData);
         setUser(userData);
+        setSession(data.session);
         
         return { success: true };
       }
@@ -210,6 +219,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           };
           console.log('User automatically signed in:', userData);
           setUser(userData);
+          setSession(data.session);
           return { success: true, needsVerification: false };
         } else {
           // Email confirmation required
@@ -270,12 +280,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signOut = async () => {
+  const logout = async () => {
     try {
-      console.log('=== SIGN OUT STARTED ===');
-      console.log('Current user before sign out:', user?.email);
+      console.log('=== LOGOUT STARTED ===');
+      console.log('Current user before logout:', user?.email);
       
-      // Sign out from Supabase - this will trigger the auth state change listener
+      // Sign out from Supabase
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -285,9 +295,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('✅ Supabase sign out successful');
       
-      // Clear all possible session storage keys
+      // Clear AsyncStorage session keys
       try {
-        // Clear the main Supabase session key
         const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://tbobabbteplxwkltdlki.supabase.co';
         const projectRef = supabaseUrl.split('//')[1]?.split('.')[0];
         const storageKey = `sb-${projectRef}-auth-token`;
@@ -301,27 +310,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('✅ Cleared legacy AsyncStorage keys');
       } catch (storageError) {
         console.error('⚠️ Error clearing AsyncStorage:', storageError);
-        // Don't throw - continue with sign out even if storage clear fails
       }
       
-      // Clear user state - this will trigger navigation in _layout.tsx
+      // Clear user and session state
       setUser(null);
-      console.log('✅ User state cleared');
+      setSession(null);
+      console.log('✅ User and session state cleared');
       
-      console.log('✅ SIGN OUT COMPLETE');
+      console.log('✅ LOGOUT COMPLETE');
     } catch (error: any) {
-      console.error('❌ Sign out error:', error);
+      console.error('❌ Logout error:', error);
       // Ensure user is set to null even if there's an error
       setUser(null);
+      setSession(null);
       throw error;
     }
   };
 
+  // Alias for backward compatibility
+  const signOut = logout;
+
   const value = {
     user,
+    session,
     isLoading,
     signIn,
     signUp,
+    logout,
     signOut,
     resendVerificationEmail,
   };
