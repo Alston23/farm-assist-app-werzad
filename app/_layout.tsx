@@ -43,21 +43,23 @@ function RootLayoutNav() {
 
   useEffect(() => {
     if (isLoading || !loaded) {
-      console.log('Root layout - waiting for loading to complete...');
+      console.log('Root layout - waiting... isLoading:', isLoading, 'loaded:', loaded);
       return;
     }
 
-    console.log('Root layout - user:', user ? 'exists' : 'null', 'segments:', segments);
+    console.log('Root layout - user:', user ? user.email : 'null', 'segments:', segments);
 
     const inAuthGroup = segments[0] === 'auth';
     const inTabsGroup = segments[0] === '(tabs)';
 
     if (!user && !inAuthGroup) {
-      console.log('Root layout - No user, redirecting to auth');
+      console.log('Root layout - No user and not on auth, redirecting to auth');
       router.replace('/auth');
     } else if (user && inAuthGroup) {
       console.log('Root layout - User exists but on auth screen, redirecting to crops');
       router.replace('/(tabs)/crops');
+    } else {
+      console.log('Root layout - Navigation state is correct');
     }
   }, [user, segments, isLoading, loaded]);
 

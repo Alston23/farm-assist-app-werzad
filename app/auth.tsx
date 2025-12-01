@@ -19,10 +19,10 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { useRouter } from 'expo-router';
 
 export default function AuthScreen() {
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form fields
   const [email, setEmail] = useState('');
@@ -35,21 +35,23 @@ export default function AuthScreen() {
 
   // Redirect if already logged in
   useEffect(() => {
-    console.log('Auth screen - user state:', user ? 'logged in' : 'not logged in');
-    if (user) {
-      console.log('User already logged in, redirecting to crops...');
-      router.replace('/(tabs)/crops');
+    console.log('Auth screen - authLoading:', authLoading, 'user:', user ? user.email : 'null');
+    if (!authLoading && user) {
+      console.log('Auth screen - User is logged in, redirecting to crops...');
+      setTimeout(() => {
+        router.replace('/(tabs)/crops');
+      }, 100);
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   const handleSubmit = async () => {
     console.log('=== SUBMIT BUTTON PRESSED ===');
-    console.log('isLoading:', isLoading);
+    console.log('isSubmitting:', isSubmitting);
     console.log('isLogin:', isLogin);
     console.log('Form data:', { email: email.trim(), name: name.trim(), farmName: farmName.trim() });
 
-    if (isLoading) {
-      console.log('Already loading, ignoring submit');
+    if (isSubmitting) {
+      console.log('Already submitting, ignoring...');
       return;
     }
 
@@ -66,28 +68,28 @@ export default function AuthScreen() {
       return;
     }
 
-    console.log('Validation passed, setting loading to true');
-    setIsLoading(true);
+    console.log('Validation passed, setting submitting to true');
+    setIsSubmitting(true);
 
     try {
       let result;
       if (isLogin) {
-        console.log('=== ATTEMPTING SIGN IN ===');
-        console.log('Email:', email.trim());
+        console.log('=== CALLING SIGN IN ===');
         result = await signIn(email.trim(), password);
-        console.log('Sign in result:', result);
+        console.log('=== SIGN IN RESULT ===', result);
       } else {
-        console.log('=== ATTEMPTING SIGN UP ===');
-        console.log('Name:', name.trim());
-        console.log('Farm Name:', farmName.trim());
-        console.log('Email:', email.trim());
+        console.log('=== CALLING SIGN UP ===');
         result = await signUp(name.trim(), farmName.trim(), email.trim(), password);
-        console.log('Sign up result:', result);
+        console.log('=== SIGN UP RESULT ===', result);
       }
 
       if (result && result.success) {
         console.log('=== AUTHENTICATION SUCCESSFUL ===');
-        // The useEffect will handle navigation when user state updates
+        // Wait a bit for state to update, then navigate
+        setTimeout(() => {
+          console.log('Navigating to crops...');
+          router.replace('/(tabs)/crops');
+        }, 200);
       } else {
         console.log('=== AUTHENTICATION FAILED ===');
         console.log('Error:', result?.error);
@@ -97,8 +99,8 @@ export default function AuthScreen() {
       console.error('=== AUTH ERROR ===', error);
       Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     } finally {
-      console.log('Setting loading to false');
-      setIsLoading(false);
+      console.log('Setting submitting to false');
+      setIsSubmitting(false);
     }
   };
 
@@ -112,6 +114,16 @@ export default function AuthScreen() {
     setFarmName('');
     setShowPassword(false);
   };
+
+  // Show loading while checking auth state
+  if (authLoading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ color: colors.text, marginTop: 16 }}>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -165,7 +177,7 @@ export default function AuthScreen() {
                   onChangeText={setName}
                   autoCapitalize="words"
                   autoCorrect={false}
-                  editable={!isLoading}
+                  editable={!isSubmitting}
                 />
               </View>
             )}
@@ -188,7 +200,7 @@ export default function AuthScreen() {
                   onChangeText={setFarmName}
                   autoCapitalize="words"
                   autoCorrect={false}
-                  editable={!isLoading}
+                  editable={!isSubmitting}
                 />
               </View>
             )}
@@ -211,7 +223,7 @@ export default function AuthScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
-                editable={!isLoading}
+                editable={!isSubmitting}
               />
             </View>
 
@@ -233,12 +245,12 @@ export default function AuthScreen() {
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
-                editable={!isLoading}
+                editable={!isSubmitting}
               />
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeIcon}
-                disabled={isLoading}
+                disabled={isSubmitting}
               >
                 <IconSymbol
                   ios_icon_name={showPassword ? 'eye.slash.fill' : 'eye.fill'}
@@ -251,12 +263,12 @@ export default function AuthScreen() {
 
             {/* Submit Button */}
             <TouchableOpacity
-              style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
+              style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
               onPress={handleSubmit}
-              disabled={isLoading}
+              disabled={isSubmitting}
               activeOpacity={0.7}
             >
-              {isLoading ? (
+              {isSubmitting ? (
                 <ActivityIndicator color={colors.card} />
               ) : (
                 <Text style={styles.submitButtonText}>
@@ -270,7 +282,7 @@ export default function AuthScreen() {
               <Text style={styles.toggleText}>
                 {isLogin ? "Don't have an account?" : 'Already have an account?'}
               </Text>
-              <TouchableOpacity onPress={toggleMode} disabled={isLoading}>
+              <TouchableOpacity onPress={toggleMode} disabled={isSubmitting}>
                 <Text style={styles.toggleButton}>
                   {isLogin ? 'Sign Up' : 'Sign In'}
                 </Text>

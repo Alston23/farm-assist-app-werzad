@@ -35,41 +35,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUser = async () => {
     try {
-      console.log('Loading user from storage...');
+      console.log('AuthContext: Loading user from storage...');
       const userData = await AsyncStorage.getItem(STORAGE_KEYS.USER);
       if (userData) {
         const parsedUser = JSON.parse(userData);
-        console.log('User loaded:', parsedUser.email);
+        console.log('AuthContext: User loaded:', parsedUser.email);
         setUser(parsedUser);
       } else {
-        console.log('No user found in storage');
+        console.log('AuthContext: No user found in storage');
       }
     } catch (error) {
-      console.error('Error loading user:', error);
+      console.error('AuthContext: Error loading user:', error);
     } finally {
+      console.log('AuthContext: Setting isLoading to false');
       setIsLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log('SignIn: Starting for email:', email);
+      console.log('AuthContext: SignIn starting for email:', email);
       
       // Get users database
       const usersData = await AsyncStorage.getItem(STORAGE_KEYS.USERS_DB);
+      console.log('AuthContext: Raw users data:', usersData);
+      
       const users = usersData ? JSON.parse(usersData) : [];
-      console.log('SignIn: Found', users.length, 'users in database');
+      console.log('AuthContext: Found', users.length, 'users in database');
 
       // Find user
       const foundUser = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
 
       if (!foundUser) {
-        console.log('SignIn: No user found with email:', email);
+        console.log('AuthContext: No user found with email:', email);
         return { success: false, error: 'No account found with this email. Please sign up first.' };
       }
 
+      console.log('AuthContext: User found, checking password...');
       if (foundUser.password !== password) {
-        console.log('SignIn: Incorrect password');
+        console.log('AuthContext: Incorrect password');
         return { success: false, error: 'Incorrect password. Please try again.' };
       }
 
@@ -82,14 +86,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         createdAt: foundUser.createdAt,
       };
 
+      console.log('AuthContext: Saving user to storage...');
       // Save current user
       await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userToStore));
+      
+      console.log('AuthContext: Setting user state...');
       setUser(userToStore);
-      console.log('SignIn: Success! User logged in:', userToStore.email);
-
+      
+      console.log('AuthContext: SignIn SUCCESS! User logged in:', userToStore.email);
       return { success: true };
     } catch (error) {
-      console.error('Error signing in:', error);
+      console.error('AuthContext: Error signing in:', error);
       return { success: false, error: 'An error occurred during sign in. Please try again.' };
     }
   };
@@ -101,36 +108,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log('SignUp: Starting with:', { name, farmName, email });
+      console.log('AuthContext: SignUp starting with:', { name, farmName, email });
       
       // Validate inputs
       if (!email || !password || !name) {
-        console.log('SignUp: Missing required fields');
+        console.log('AuthContext: Missing required fields');
         return { success: false, error: 'Please fill in all required fields' };
       }
 
       if (password.length < 6) {
-        console.log('SignUp: Password too short');
+        console.log('AuthContext: Password too short');
         return { success: false, error: 'Password must be at least 6 characters' };
       }
 
       // Email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        console.log('SignUp: Invalid email format');
+        console.log('AuthContext: Invalid email format');
         return { success: false, error: 'Please enter a valid email address' };
       }
 
       // Get users database
-      console.log('SignUp: Getting users database...');
+      console.log('AuthContext: Getting users database...');
       const usersData = await AsyncStorage.getItem(STORAGE_KEYS.USERS_DB);
       const users = usersData ? JSON.parse(usersData) : [];
-      console.log('SignUp: Current users count:', users.length);
+      console.log('AuthContext: Current users count:', users.length);
 
       // Check if user already exists
       const existingUser = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
       if (existingUser) {
-        console.log('SignUp: User already exists');
+        console.log('AuthContext: User already exists');
         return { success: false, error: 'An account with this email already exists. Please sign in instead.' };
       }
 
@@ -144,12 +151,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date().toISOString(),
       };
 
-      console.log('SignUp: Creating new user:', { ...newUser, password: '***' });
+      console.log('AuthContext: Creating new user:', { ...newUser, password: '***' });
 
       // Save to users database
       users.push(newUser);
       await AsyncStorage.setItem(STORAGE_KEYS.USERS_DB, JSON.stringify(users));
-      console.log('SignUp: Saved to users database, total users:', users.length);
+      console.log('AuthContext: Saved to users database, total users:', users.length);
 
       // Create user object without password
       const userToStore: User = {
@@ -163,25 +170,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Save current user
       await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userToStore));
       setUser(userToStore);
-      console.log('SignUp: Success! User logged in:', userToStore.email);
+      console.log('AuthContext: SignUp SUCCESS! User logged in:', userToStore.email);
 
       return { success: true };
     } catch (error) {
-      console.error('Error signing up:', error);
+      console.error('AuthContext: Error signing up:', error);
       return { success: false, error: 'An error occurred during sign up. Please try again.' };
     }
   };
 
   const signOut = async () => {
     try {
-      console.log('SignOut: Starting...');
+      console.log('AuthContext: SignOut starting...');
       await AsyncStorage.removeItem(STORAGE_KEYS.USER);
       setUser(null);
-      console.log('SignOut: Success');
+      console.log('AuthContext: SignOut SUCCESS');
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('AuthContext: Error signing out:', error);
     }
   };
+
+  console.log('AuthContext: Rendering with user:', user ? user.email : 'null', 'isLoading:', isLoading);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, signIn, signUp, signOut }}>
