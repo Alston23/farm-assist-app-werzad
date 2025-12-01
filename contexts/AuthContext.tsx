@@ -15,8 +15,9 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (name: string, farmName: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (name: string, farmName: string, email: string, password: string) => Promise<{ success: boolean; error?: string; needsVerification?: boolean }>;
   signOut: () => Promise<void>;
+  resendVerificationEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -104,9 +105,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Provide user-friendly error messages
         if (error.message.includes('Invalid login credentials')) {
-          return { success: false, error: 'Invalid email or password. Please try again.' };
+          return { 
+            success: false, 
+            error: 'Invalid email or password. If you just signed up, please verify your email first by clicking the link we sent you.' 
+          };
         } else if (error.message.includes('Email not confirmed')) {
-          return { success: false, error: 'Please verify your email address before signing in.' };
+          return { 
+            success: false, 
+            error: 'Please verify your email address before signing in. Check your inbox for the verification link.' 
+          };
+        } else if (error.message.includes('Email link is invalid or has expired')) {
+          return { 
+            success: false, 
+            error: 'Your verification link has expired. Please request a new one.' 
+          };
         }
         
         return { success: false, error: error.message };
@@ -141,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     farmName: string,
     email: string,
     password: string
-  ): Promise<{ success: boolean; error?: string }> => {
+  ): Promise<{ success: boolean; error?: string; needsVerification?: boolean }> => {
     try {
       console.log('=== SIGN UP STARTED ===');
       console.log('Name:', name);
@@ -198,13 +210,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           };
           console.log('User automatically signed in:', userData);
           setUser(userData);
-          return { success: true };
+          return { success: true, needsVerification: false };
         } else {
           // Email confirmation required
           console.log('⚠️ Email confirmation required');
           return { 
-            success: false, 
-            error: 'Please check your email to confirm your account before signing in.' 
+            success: true, 
+            needsVerification: true,
+            error: 'Account created! Please check your email and click the verification link to complete your registration.' 
           };
         }
       }
@@ -214,6 +227,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error: any) {
       console.error('=== SIGN UP ERROR ===', error);
       return { success: false, error: error.message || 'An unexpected error occurred during sign up' };
+    }
+  };
+
+  const resendVerificationEmail = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      console.log('=== RESEND VERIFICATION EMAIL ===');
+      console.log('Email:', email);
+      
+      if (!email) {
+        return { success: false, error: 'Please enter your email address' };
+      }
+
+      const trimmedEmail = email.trim().toLowerCase();
+      
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: trimmedEmail,
+        options: {
+          emailRedirectTo: 'https://natively.dev/email-confirmed',
+        },
+      });
+
+      if (error) {
+        console.log('❌ Resend error:', error.message);
+        
+        if (error.message.includes('rate limit')) {
+          return { 
+            success: false, 
+            error: 'Please wait a moment before requesting another verification email.' 
+          };
+        }
+        
+        return { success: false, error: error.message };
+      }
+
+      console.log('✅ Verification email resent');
+      return { success: true };
+    } catch (error: any) {
+      console.error('=== RESEND ERROR ===', error);
+      return { success: false, error: error.message || 'Failed to resend verification email' };
     }
   };
 
@@ -250,6 +303,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signUp,
     signOut,
+    resendVerificationEmail,
   };
 
   console.log('AuthContext rendering - User:', user ? user.email : 'null', 'Loading:', isLoading);

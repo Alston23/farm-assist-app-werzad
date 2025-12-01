@@ -19,7 +19,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { useRouter } from 'expo-router';
 
 export default function AuthScreen() {
-  const { signIn, signUp, isLoading, user } = useAuth();
+  const { signIn, signUp, resendVerificationEmail, isLoading, user } = useAuth();
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,6 +35,10 @@ export default function AuthScreen() {
   const [passwordError, setPasswordError] = useState('');
   const [nameError, setNameError] = useState('');
   const [authError, setAuthError] = useState('');
+  
+  // Email verification state
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
 
   // Debug: Log when user changes
   useEffect(() => {
@@ -49,6 +53,7 @@ export default function AuthScreen() {
   useEffect(() => {
     setIsSubmitting(false);
     setAuthError('');
+    setNeedsVerification(false);
   }, [isLogin]);
 
   const validateEmail = (text: string) => {
@@ -84,6 +89,26 @@ export default function AuthScreen() {
     }
   };
 
+  const handleResendVerification = async () => {
+    setIsSubmitting(true);
+    const result = await resendVerificationEmail(verificationEmail);
+    setIsSubmitting(false);
+    
+    if (result.success) {
+      Alert.alert(
+        'Email Sent!',
+        'We\'ve sent a new verification link to your email. Please check your inbox and spam folder.',
+        [{ text: 'OK' }]
+      );
+    } else {
+      Alert.alert(
+        'Error',
+        result.error || 'Failed to resend verification email',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
   const handleSubmit = async () => {
     console.log('=== AUTH SCREEN: SUBMIT PRESSED ===');
     
@@ -99,6 +124,7 @@ export default function AuthScreen() {
 
     // Clear previous auth error
     setAuthError('');
+    setNeedsVerification(false);
 
     // Validate all fields
     let hasError = false;
@@ -149,23 +175,36 @@ export default function AuthScreen() {
       console.log('Auth result:', result);
 
       if (result && result.success) {
-        console.log('✅ Authentication successful!');
-        // Show success message
-        Alert.alert(
-          'Success',
-          isLogin ? 'Signed in successfully!' : 'Account created successfully!',
-          [{ text: 'OK' }]
-        );
-        // Navigation will happen automatically via _layout.tsx
+        if (result.needsVerification) {
+          // Show verification needed message
+          console.log('⚠️ Email verification required');
+          setNeedsVerification(true);
+          setVerificationEmail(trimmedEmail);
+          setIsSubmitting(false);
+          
+          Alert.alert(
+            '📧 Verify Your Email',
+            'We\'ve sent a verification link to your email address. Please check your inbox (and spam folder) and click the link to activate your account.\n\nOnce verified, you can sign in with your credentials.',
+            [{ text: 'OK' }]
+          );
+        } else {
+          console.log('✅ Authentication successful!');
+          Alert.alert(
+            'Success',
+            isLogin ? 'Signed in successfully!' : 'Account created successfully!',
+            [{ text: 'OK' }]
+          );
+        }
       } else {
         console.log('❌ Authentication failed:', result?.error);
         setAuthError(result?.error || 'An error occurred');
         setIsSubmitting(false);
         
-        // Show error alert
+        // Show error alert with more helpful message
+        const errorMessage = result?.error || 'An error occurred';
         Alert.alert(
-          'Error',
-          result?.error || 'An error occurred',
+          isLogin ? 'Sign In Failed' : 'Sign Up Failed',
+          errorMessage,
           [{ text: 'OK' }]
         );
       }
@@ -195,6 +234,7 @@ export default function AuthScreen() {
     setPasswordError('');
     setNameError('');
     setAuthError('');
+    setNeedsVerification(false);
   };
 
   if (isLoading) {
@@ -203,6 +243,124 @@ export default function AuthScreen() {
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={{ marginTop: 16, color: colors.text }}>Loading...</Text>
       </View>
+    );
+  }
+
+  // Show verification reminder screen
+  if (needsVerification) {
+    return (
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <LinearGradient
+          colors={[colors.primary, colors.accent, colors.background]}
+          style={styles.gradient}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.header}>
+              <IconSymbol
+                ios_icon_name="envelope.badge.fill"
+                android_material_icon_name="mark_email_read"
+                size={80}
+                color={colors.card}
+              />
+              <Text style={styles.title}>Check Your Email</Text>
+              <Text style={styles.subtitle}>
+                We&apos;ve sent a verification link to
+              </Text>
+              <Text style={[styles.subtitle, { fontWeight: '700', marginTop: 8 }]}>
+                {verificationEmail}
+              </Text>
+            </View>
+
+            <View style={styles.formCard}>
+              <View style={styles.verificationSteps}>
+                <View style={styles.stepItem}>
+                  <View style={styles.stepNumber}>
+                    <Text style={styles.stepNumberText}>1</Text>
+                  </View>
+                  <Text style={styles.stepText}>
+                    Check your email inbox (and spam folder)
+                  </Text>
+                </View>
+                
+                <View style={styles.stepItem}>
+                  <View style={styles.stepNumber}>
+                    <Text style={styles.stepNumberText}>2</Text>
+                  </View>
+                  <Text style={styles.stepText}>
+                    Click the verification link in the email
+                  </Text>
+                </View>
+                
+                <View style={styles.stepItem}>
+                  <View style={styles.stepNumber}>
+                    <Text style={styles.stepNumberText}>3</Text>
+                  </View>
+                  <Text style={styles.stepText}>
+                    Return here and sign in with your credentials
+                  </Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+                onPress={handleResendVerification}
+                disabled={isSubmitting}
+                activeOpacity={0.7}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color={colors.card} />
+                ) : (
+                  <React.Fragment>
+                    <IconSymbol
+                      ios_icon_name="arrow.clockwise"
+                      android_material_icon_name="refresh"
+                      size={20}
+                      color={colors.card}
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text style={styles.submitButtonText}>
+                      Resend Verification Email
+                    </Text>
+                  </React.Fragment>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => {
+                  setNeedsVerification(false);
+                  setIsLogin(true);
+                }}
+                disabled={isSubmitting}
+              >
+                <Text style={styles.backButtonText}>
+                  Back to Sign In
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.infoContainer}>
+              <IconSymbol
+                ios_icon_name="info.circle.fill"
+                android_material_icon_name="info"
+                size={16}
+                color={colors.card}
+                style={{ opacity: 0.8 }}
+              />
+              <Text style={styles.infoText}>
+                Verification links expire after 24 hours
+              </Text>
+            </View>
+          </ScrollView>
+        </LinearGradient>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -366,6 +524,20 @@ export default function AuthScreen() {
               </View>
             ) : null}
 
+            {isLogin && (
+              <View style={styles.helpTextContainer}>
+                <IconSymbol
+                  ios_icon_name="info.circle"
+                  android_material_icon_name="info"
+                  size={16}
+                  color={colors.textSecondary}
+                />
+                <Text style={styles.helpText}>
+                  Make sure you&apos;ve verified your email before signing in
+                </Text>
+              </View>
+            )}
+
             <TouchableOpacity
               style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
               onPress={handleSubmit}
@@ -455,6 +627,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.card,
     opacity: 0.9,
+    textAlign: 'center',
   },
   formCard: {
     backgroundColor: colors.card,
@@ -519,6 +692,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
+  helpTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary + '15',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    gap: 8,
+  },
+  helpText: {
+    flex: 1,
+    color: colors.primary,
+    fontSize: 13,
+  },
   submitButton: {
     backgroundColor: colors.primary,
     borderRadius: 12,
@@ -528,6 +715,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 16,
     minHeight: 52,
+    flexDirection: 'row',
   },
   submitButtonDisabled: {
     opacity: 0.6,
@@ -589,5 +777,43 @@ const styles = StyleSheet.create({
     color: colors.card,
     textAlign: 'center',
     marginVertical: 2,
+  },
+  verificationSteps: {
+    marginBottom: 24,
+  },
+  stepItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  stepNumber: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  stepNumberText: {
+    color: colors.card,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  stepText: {
+    flex: 1,
+    fontSize: 15,
+    color: colors.text,
+    lineHeight: 22,
+    paddingTop: 5,
+  },
+  backButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  backButtonText: {
+    color: colors.textSecondary,
+    fontSize: 15,
+    fontWeight: '500',
   },
 });
