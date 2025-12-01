@@ -43,6 +43,11 @@ export default function AuthScreen() {
     }
   }, [user]);
 
+  // Reset submitting state when switching between login/signup
+  useEffect(() => {
+    setIsSubmitting(false);
+  }, [isLogin]);
+
   const validateEmail = (text: string) => {
     setEmail(text);
     setEmailError('');

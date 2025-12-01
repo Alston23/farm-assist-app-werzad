@@ -199,7 +199,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('=== SIGN OUT STARTED ===');
       console.log('Current user before sign out:', user?.email);
       
-      // Remove from storage first
+      // First, set user to null immediately to trigger UI update
+      console.log('Setting user state to null immediately...');
+      setUser(null);
+      
+      // Then remove from storage
       console.log('Removing user from AsyncStorage...');
       await AsyncStorage.removeItem(STORAGE_KEYS.USER);
       
@@ -207,11 +211,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const verifyRemoval = await AsyncStorage.getItem(STORAGE_KEYS.USER);
       console.log('Verification - user in storage after removal:', verifyRemoval);
       
-      // Then set user to null to trigger navigation
-      console.log('Setting user state to null...');
-      setUser(null);
+      // Force a small delay to ensure state propagates
+      await new Promise(resolve => setTimeout(resolve, 100));
       
-      console.log('=== SIGN OUT SUCCESS - User state set to null ===');
+      console.log('=== SIGN OUT SUCCESS ===');
     } catch (error) {
       console.error('Sign out error:', error);
       // Even if there's an error, ensure user is set to null
