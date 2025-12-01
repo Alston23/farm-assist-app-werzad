@@ -27,12 +27,27 @@ interface SeasonData {
   entryCount: number;
 }
 
+interface CropRevenueData {
+  cropId: string;
+  cropName: string;
+  totalRevenue: number;
+  totalCosts: number;
+  totalProfit: number;
+  totalYield: number;
+  averagePrice: number;
+  entryCount: number;
+  profitMargin: number;
+}
+
 export default function RevenueScreen() {
   const [revenueEntries, setRevenueEntries] = useState<RevenueEntry[]>([]);
   const [plantings, setPlantings] = useState<Planting[]>([]);
   const [fields, setFields] = useState<Field[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingEntry, setEditingEntry] = useState<RevenueEntry | null>(null);
+  const [showCropBreakdown, setShowCropBreakdown] = useState(true);
+  const [showCostCalculator, setShowCostCalculator] = useState(false);
+  const [selectedCropForCalculator, setSelectedCropForCalculator] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -143,6 +158,49 @@ export default function RevenueScreen() {
     return seasonMonths[season] || '01';
   };
 
+  // Calculate per-crop revenue breakdown
+  const getCropRevenueData = (): CropRevenueData[] => {
+    const cropMap = new Map<string, CropRevenueData>();
+    
+    revenueEntries.forEach((entry) => {
+      const planting = plantings.find((p) => p.id === entry.plantingId);
+      if (!planting) return;
+      
+      const crop = cropDatabase.find((c) => c.id === planting.cropId);
+      if (!crop) return;
+      
+      if (!cropMap.has(crop.id)) {
+        cropMap.set(crop.id, {
+          cropId: crop.id,
+          cropName: crop.name,
+          totalRevenue: 0,
+          totalCosts: 0,
+          totalProfit: 0,
+          totalYield: 0,
+          averagePrice: 0,
+          entryCount: 0,
+          profitMargin: 0,
+        });
+      }
+      
+      const data = cropMap.get(crop.id)!;
+      data.totalRevenue += entry.totalRevenue;
+      data.totalCosts += entry.costs;
+      data.totalProfit += entry.profit;
+      data.totalYield += entry.harvestAmount;
+      data.entryCount += 1;
+    });
+    
+    // Calculate averages and profit margins
+    cropMap.forEach((data) => {
+      data.averagePrice = data.totalYield > 0 ? data.totalRevenue / data.totalYield : 0;
+      data.profitMargin = data.totalRevenue > 0 ? (data.totalProfit / data.totalRevenue) * 100 : 0;
+    });
+    
+    // Sort by total profit (highest first)
+    return Array.from(cropMap.values()).sort((a, b) => b.totalProfit - a.totalProfit);
+  };
+
   // Calculate percentage change
   const calculatePercentageChange = (current: number, previous: number): number => {
     if (previous === 0) return current > 0 ? 100 : 0;
@@ -173,6 +231,7 @@ export default function RevenueScreen() {
     { fertilizer: 0, fuel: 0, seed: 0, equipment: 0, packaging: 0, miscellaneous: 0 }
   );
 
+  const cropRevenueData = getCropRevenueData();
   const harvestedPlantings = plantings.filter((p) => p.status === 'harvested');
 
   return (
@@ -222,6 +281,218 @@ export default function RevenueScreen() {
               ${totalProfit.toFixed(2)}
             </Text>
           </View>
+        </View>
+
+        {/* Per-Crop Revenue Breakdown */}
+        <View style={styles.summaryCard}>
+          <TouchableOpacity
+            style={styles.sectionHeaderButton}
+            onPress={() => setShowCropBreakdown(!showCropBreakdown)}
+          >
+            <View style={styles.sectionHeaderLeft}>
+              <IconSymbol
+                ios_icon_name="chart.bar.fill"
+                android_material_icon_name="bar-chart"
+                size={24}
+                color={colors.primary}
+              />
+              <Text style={styles.summaryTitle}>Per-Crop Revenue Breakdown</Text>
+            </View>
+            <IconSymbol
+              ios_icon_name={showCropBreakdown ? 'chevron.up' : 'chevron.down'}
+              android_material_icon_name={showCropBreakdown ? 'expand-less' : 'expand-more'}
+              size={24}
+              color={colors.primary}
+            />
+          </TouchableOpacity>
+
+          {showCropBreakdown && (
+            <View style={styles.cropBreakdownContainer}>
+              {cropRevenueData.length === 0 ? (
+                <Text style={styles.emptyText}>No crop data available yet</Text>
+              ) : (
+                cropRevenueData.map((cropData, index) => (
+                  <View key={cropData.cropId} style={styles.cropBreakdownItem}>
+                    <View style={styles.cropBreakdownHeader}>
+                      <Text style={styles.cropBreakdownName}>{cropData.cropName}</Text>
+                      <Text
+                        style={[
+                          styles.cropBreakdownProfit,
+                          { color: cropData.totalProfit >= 0 ? colors.success : colors.error },
+                        ]}
+                      >
+                        ${cropData.totalProfit.toFixed(2)}
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.cropBreakdownStats}>
+                      <View style={styles.cropStat}>
+                        <Text style={styles.cropStatLabel}>Revenue</Text>
+                        <Text style={styles.cropStatValue}>${cropData.totalRevenue.toFixed(2)}</Text>
+                      </View>
+                      <View style={styles.cropStat}>
+                        <Text style={styles.cropStatLabel}>Costs</Text>
+                        <Text style={styles.cropStatValue}>${cropData.totalCosts.toFixed(2)}</Text>
+                      </View>
+                      <View style={styles.cropStat}>
+                        <Text style={styles.cropStatLabel}>Yield</Text>
+                        <Text style={styles.cropStatValue}>{cropData.totalYield.toFixed(1)} lbs</Text>
+                      </View>
+                      <View style={styles.cropStat}>
+                        <Text style={styles.cropStatLabel}>Avg Price</Text>
+                        <Text style={styles.cropStatValue}>${cropData.averagePrice.toFixed(2)}/lb</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.cropBreakdownFooter}>
+                      <View
+                        style={[
+                          styles.profitMarginBadge,
+                          {
+                            backgroundColor:
+                              cropData.profitMargin >= 50
+                                ? colors.success + '20'
+                                : cropData.profitMargin >= 20
+                                ? colors.primary + '20'
+                                : colors.error + '20',
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.profitMarginText,
+                            {
+                              color:
+                                cropData.profitMargin >= 50
+                                  ? colors.success
+                                  : cropData.profitMargin >= 20
+                                  ? colors.primary
+                                  : colors.error,
+                            },
+                          ]}
+                        >
+                          {cropData.profitMargin.toFixed(1)}% margin
+                        </Text>
+                      </View>
+                      <Text style={styles.cropEntryCount}>{cropData.entryCount} entries</Text>
+                    </View>
+                  </View>
+                ))
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* Cost of Production Calculator */}
+        <View style={styles.summaryCard}>
+          <TouchableOpacity
+            style={styles.sectionHeaderButton}
+            onPress={() => setShowCostCalculator(!showCostCalculator)}
+          >
+            <View style={styles.sectionHeaderLeft}>
+              <IconSymbol
+                ios_icon_name="calculator.fill"
+                android_material_icon_name="calculate"
+                size={24}
+                color={colors.primary}
+              />
+              <Text style={styles.summaryTitle}>Cost of Production Calculator</Text>
+            </View>
+            <IconSymbol
+              ios_icon_name={showCostCalculator ? 'chevron.up' : 'chevron.down'}
+              android_material_icon_name={showCostCalculator ? 'expand-less' : 'expand-more'}
+              size={24}
+              color={colors.primary}
+            />
+          </TouchableOpacity>
+
+          {showCostCalculator && (
+            <View style={styles.calculatorContainer}>
+              <Text style={styles.calculatorDescription}>
+                Calculate cost per pound and break-even price for each crop
+              </Text>
+              
+              {cropRevenueData.length === 0 ? (
+                <Text style={styles.emptyText}>Add revenue entries to see calculations</Text>
+              ) : (
+                cropRevenueData.map((cropData) => {
+                  const costPerPound = cropData.totalYield > 0 ? cropData.totalCosts / cropData.totalYield : 0;
+                  const breakEvenPrice = costPerPound;
+                  const targetPrice20 = costPerPound * 1.2; // 20% margin
+                  const targetPrice50 = costPerPound * 1.5; // 50% margin
+                  
+                  return (
+                    <View key={cropData.cropId} style={styles.calculatorItem}>
+                      <Text style={styles.calculatorCropName}>{cropData.cropName}</Text>
+                      
+                      <View style={styles.calculatorMetrics}>
+                        <View style={styles.calculatorMetric}>
+                          <Text style={styles.calculatorMetricLabel}>Cost per lb</Text>
+                          <Text style={styles.calculatorMetricValue}>
+                            ${costPerPound.toFixed(2)}
+                          </Text>
+                        </View>
+                        
+                        <View style={styles.calculatorMetric}>
+                          <Text style={styles.calculatorMetricLabel}>Break-even</Text>
+                          <Text style={styles.calculatorMetricValue}>
+                            ${breakEvenPrice.toFixed(2)}/lb
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.targetPricesContainer}>
+                        <Text style={styles.targetPricesTitle}>Target Prices:</Text>
+                        <View style={styles.targetPriceRow}>
+                          <Text style={styles.targetPriceLabel}>20% margin:</Text>
+                          <Text style={styles.targetPriceValue}>${targetPrice20.toFixed(2)}/lb</Text>
+                        </View>
+                        <View style={styles.targetPriceRow}>
+                          <Text style={styles.targetPriceLabel}>50% margin:</Text>
+                          <Text style={styles.targetPriceValue}>${targetPrice50.toFixed(2)}/lb</Text>
+                        </View>
+                      </View>
+
+                      <View
+                        style={[
+                          styles.currentPriceIndicator,
+                          {
+                            backgroundColor:
+                              cropData.averagePrice >= targetPrice50
+                                ? colors.success + '20'
+                                : cropData.averagePrice >= targetPrice20
+                                ? colors.primary + '20'
+                                : cropData.averagePrice >= breakEvenPrice
+                                ? colors.accent + '20'
+                                : colors.error + '20',
+                          },
+                        ]}
+                      >
+                        <Text style={styles.currentPriceLabel}>Current avg price:</Text>
+                        <Text
+                          style={[
+                            styles.currentPriceValue,
+                            {
+                              color:
+                                cropData.averagePrice >= targetPrice50
+                                  ? colors.success
+                                  : cropData.averagePrice >= targetPrice20
+                                  ? colors.primary
+                                  : cropData.averagePrice >= breakEvenPrice
+                                  ? colors.accent
+                                  : colors.error,
+                            },
+                          ]}
+                        >
+                          ${cropData.averagePrice.toFixed(2)}/lb
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+            </View>
+          )}
         </View>
 
         {currentSeason && previousSeason && (
@@ -1015,7 +1286,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     color: colors.text,
-    marginBottom: 16,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -1044,6 +1314,170 @@ const styles = StyleSheet.create({
   summaryValueTotal: {
     fontSize: 20,
     fontWeight: '700',
+  },
+  sectionHeaderButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  cropBreakdownContainer: {
+    gap: 16,
+  },
+  cropBreakdownItem: {
+    backgroundColor: colors.background,
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cropBreakdownHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  cropBreakdownName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    flex: 1,
+  },
+  cropBreakdownProfit: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  cropBreakdownStats: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 12,
+  },
+  cropStat: {
+    flex: 1,
+    minWidth: '45%',
+  },
+  cropStatLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 2,
+  },
+  cropStatValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  cropBreakdownFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  profitMarginBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  profitMarginText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  cropEntryCount: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  calculatorContainer: {
+    gap: 16,
+  },
+  calculatorDescription: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 8,
+  },
+  calculatorItem: {
+    backgroundColor: colors.background,
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  calculatorCropName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 12,
+  },
+  calculatorMetrics: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 12,
+  },
+  calculatorMetric: {
+    flex: 1,
+  },
+  calculatorMetricLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  calculatorMetricValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  targetPricesContainer: {
+    backgroundColor: colors.highlight,
+    borderRadius: 6,
+    padding: 12,
+    marginBottom: 12,
+  },
+  targetPricesTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  targetPriceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  targetPriceLabel: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  targetPriceValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  currentPriceIndicator: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 6,
+  },
+  currentPriceLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  currentPriceValue: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingVertical: 20,
   },
   seasonComparisonSubtitle: {
     fontSize: 14,
