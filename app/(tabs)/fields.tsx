@@ -281,7 +281,8 @@ function FieldFormModal({
   onDelete?: (id: string) => void;
 }) {
   const [name, setName] = useState('');
-  const [size, setSize] = useState('');
+  const [areaValue, setAreaValue] = useState('');
+  const [areaUnit, setAreaUnit] = useState<'sq ft' | 'acres'>('sq ft');
   const [type, setType] = useState<Field['type']>('bed');
   const [soilType, setSoilType] = useState('');
   const [irrigationType, setIrrigationType] = useState<Field['irrigationType']>('drip');
@@ -293,7 +294,8 @@ function FieldFormModal({
   useEffect(() => {
     if (field) {
       setName(field.name);
-      setSize(field.size.toString());
+      setAreaValue(field.size.toString());
+      setAreaUnit('sq ft');
       setType(field.type);
       setSoilType(field.soilType);
       setIrrigationType(field.irrigationType);
@@ -301,7 +303,8 @@ function FieldFormModal({
       setCurrentPH(field.currentPH?.toString() || '7.0');
     } else {
       setName('');
-      setSize('');
+      setAreaValue('');
+      setAreaUnit('sq ft');
       setType('bed');
       setSoilType('');
       setIrrigationType('drip');
@@ -311,8 +314,14 @@ function FieldFormModal({
   }, [field, visible]);
 
   const handleSave = () => {
-    if (!name || !size) {
+    if (!name || !areaValue) {
       Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    const areaNumber = parseFloat(areaValue);
+    if (isNaN(areaNumber) || areaNumber <= 0) {
+      Alert.alert('Error', 'Please enter a valid area value');
       return;
     }
 
@@ -322,10 +331,13 @@ function FieldFormModal({
       return;
     }
 
+    // Convert to sq ft if acres is selected (1 acre = 43,560 sq ft)
+    const sizeInSqFt = areaUnit === 'acres' ? areaNumber * 43560 : areaNumber;
+
     const fieldData = {
       ...(field || {}),
       name,
-      size: parseFloat(size),
+      size: sizeInSqFt,
       type,
       soilType,
       irrigationType,
@@ -382,15 +394,49 @@ function FieldFormModal({
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={styles.formLabel}>Size (sq ft) *</Text>
-            <TextInput
-              style={styles.formInput}
-              value={size}
-              onChangeText={setSize}
-              placeholder="e.g., 100"
-              placeholderTextColor={colors.textSecondary}
-              keyboardType="numeric"
-            />
+            <Text style={styles.formLabel}>Area *</Text>
+            <View style={styles.areaInputContainer}>
+              <TextInput
+                style={[styles.formInput, styles.areaValueInput]}
+                value={areaValue}
+                onChangeText={setAreaValue}
+                placeholder="e.g., 100"
+                placeholderTextColor={colors.textSecondary}
+                keyboardType="numeric"
+              />
+              <View style={styles.unitSelector}>
+                <TouchableOpacity
+                  style={[
+                    styles.unitOption,
+                    styles.unitOptionLeft,
+                    areaUnit === 'sq ft' && styles.unitOptionActive
+                  ]}
+                  onPress={() => setAreaUnit('sq ft')}
+                >
+                  <Text style={[
+                    styles.unitOptionText,
+                    areaUnit === 'sq ft' && styles.unitOptionTextActive
+                  ]}>
+                    sq ft
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.unitOption,
+                    styles.unitOptionRight,
+                    areaUnit === 'acres' && styles.unitOptionActive
+                  ]}
+                  onPress={() => setAreaUnit('acres')}
+                >
+                  <Text style={[
+                    styles.unitOptionText,
+                    areaUnit === 'acres' && styles.unitOptionTextActive
+                  ]}>
+                    acres
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
 
           <View style={styles.formGroup}>
@@ -908,6 +954,47 @@ const styles = StyleSheet.create({
   formTextArea: {
     height: 100,
     textAlignVertical: 'top',
+  },
+  areaInputContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  areaValueInput: {
+    flex: 1,
+  },
+  unitSelector: {
+    flexDirection: 'row',
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  unitOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: colors.card,
+    minWidth: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unitOptionLeft: {
+    borderRightWidth: 1,
+    borderRightColor: colors.border,
+  },
+  unitOptionRight: {
+    borderLeftWidth: 0,
+  },
+  unitOptionActive: {
+    backgroundColor: colors.primary,
+  },
+  unitOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  unitOptionTextActive: {
+    color: colors.card,
   },
   typeSelector: {
     flexDirection: 'row',
