@@ -50,16 +50,16 @@ export default function TabLayout() {
       label: 'Schedule',
     },
     {
+      name: 'inventory',
+      route: '/(tabs)/inventory',
+      icon: 'inventory',
+      label: 'Inventory',
+    },
+    {
       name: 'revenue',
       route: '/(tabs)/revenue',
       icon: 'attach-money',
       label: 'Revenue',
-    },
-    {
-      name: 'marketplace',
-      route: '/(tabs)/marketplace',
-      icon: 'shopping-cart',
-      label: 'Market',
     },
   ];
 
@@ -80,11 +80,12 @@ export default function TabLayout() {
         <Stack.Screen key="fields" name="fields" />
         <Stack.Screen key="plantings" name="plantings" />
         <Stack.Screen key="schedule" name="schedule" />
+        <Stack.Screen key="inventory" name="inventory" />
         <Stack.Screen key="revenue" name="revenue" />
         <Stack.Screen key="marketplace" name="marketplace" />
         <Stack.Screen key="settings" name="settings" />
       </Stack>
-      <FloatingTabBar tabs={tabs} containerWidth={400} />
+      <FloatingTabBar tabs={tabs} containerWidth={450} />
     </>
   );
 }
