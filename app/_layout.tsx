@@ -33,20 +33,17 @@ function RootLayoutNav() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
-  const [navigationReady, setNavigationReady] = useState(false);
 
   useEffect(() => {
-    if (loaded && !isLoading) {
+    if (loaded) {
       SplashScreen.hideAsync();
-      // Small delay to ensure everything is ready
-      setTimeout(() => setNavigationReady(true), 100);
     }
-  }, [loaded, isLoading]);
+  }, [loaded]);
 
   // Handle navigation based on auth state
   useEffect(() => {
-    if (!navigationReady || isLoading || !loaded) {
-      console.log('Navigation not ready yet');
+    if (!loaded || isLoading) {
+      console.log('Still loading fonts or auth...');
       return;
     }
 
@@ -54,24 +51,21 @@ function RootLayoutNav() {
 
     console.log('=== NAVIGATION CHECK ===');
     console.log('User:', user ? user.email : 'null');
-    console.log('Segments:', segments);
+    console.log('Current segments:', segments);
     console.log('In auth group:', inAuthGroup);
 
-    // Use setTimeout to avoid navigation conflicts
-    setTimeout(() => {
-      if (!user && !inAuthGroup) {
-        // User is not logged in and not on auth screen - redirect to auth
-        console.log('❌ No user, redirecting to auth');
-        router.replace('/auth');
-      } else if (user && inAuthGroup) {
-        // User is logged in but on auth screen - redirect to app
-        console.log('✅ User logged in, redirecting to crops');
-        router.replace('/(tabs)/crops');
-      } else {
-        console.log('✓ Navigation state is correct');
-      }
-    }, 50);
-  }, [user, segments, isLoading, loaded, navigationReady]);
+    if (!user && !inAuthGroup) {
+      // User is not logged in and not on auth screen - redirect to auth
+      console.log('❌ No user found, redirecting to /auth');
+      router.replace('/auth');
+    } else if (user && inAuthGroup) {
+      // User is logged in but still on auth screen - redirect to app
+      console.log('✅ User logged in, redirecting to /(tabs)/crops');
+      router.replace('/(tabs)/crops');
+    } else {
+      console.log('✓ Navigation state is correct, no action needed');
+    }
+  }, [user, segments, isLoading, loaded]);
 
   React.useEffect(() => {
     if (

@@ -51,8 +51,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Error loading user:', error);
       setUser(null);
     } finally {
-      setIsLoading(false);
       console.log('=== AuthContext: Finished loading user ===');
+      setIsLoading(false);
     }
   };
 
@@ -101,9 +101,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('Setting user state...');
       setUser(userToStore);
-      
-      // Longer delay to ensure state propagates and navigation can happen
-      await new Promise(resolve => setTimeout(resolve, 200));
       
       console.log('=== SIGN IN SUCCESS ===');
       return { success: true };
@@ -179,9 +176,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('Setting user state...');
       setUser(userToStore);
-      
-      // Longer delay to ensure state propagates and navigation can happen
-      await new Promise(resolve => setTimeout(resolve, 200));
       
       console.log('=== SIGN UP SUCCESS ===');
       return { success: true };
