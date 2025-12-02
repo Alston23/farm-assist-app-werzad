@@ -1061,7 +1061,7 @@ export const cropDatabase: Crop[] = [
   {
     id: 'lavender',
     name: 'Lavender',
-    category: 'aromatic',
+    category: 'herb',
     description: 'Perennial aromatic, drought-tolerant, attracts pollinators.',
     sunlight: 'full-sun',
     sunlightHours: '6-8 hours',
@@ -2917,7 +2917,7 @@ export const cropDatabase: Crop[] = [
   {
     id: 'ginger',
     name: 'Ginger',
-    category: 'spice',
+    category: 'herb',
     description: 'Tropical rhizome, warm-season spice crop.',
     sunlight: 'partial-shade',
     sunlightHours: '4-6 hours',
@@ -2949,7 +2949,7 @@ export const cropDatabase: Crop[] = [
   {
     id: 'turmeric',
     name: 'Turmeric',
-    category: 'spice',
+    category: 'herb',
     description: 'Tropical rhizome, bright orange spice.',
     sunlight: 'partial-shade',
     sunlightHours: '4-6 hours',

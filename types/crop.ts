@@ -2,7 +2,7 @@
 export interface Crop {
   id: string;
   name: string;
-  category: 'vegetable' | 'fruit' | 'flower' | 'herb' | 'spice' | 'aromatic';
+  category: 'vegetable' | 'fruit' | 'flower' | 'herb';
   description: string;
   
   // Growing conditions
