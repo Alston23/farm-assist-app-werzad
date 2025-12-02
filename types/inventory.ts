@@ -4,7 +4,7 @@ export interface FertilizerItem {
   user_id?: string;
   name: string;
   quantity: number;
-  unit: 'lbs' | 'bags' | 'trucks';
+  unit: 'lbs' | 'bags';
   notes?: string;
   created_at?: string;
   updated_at?: string;

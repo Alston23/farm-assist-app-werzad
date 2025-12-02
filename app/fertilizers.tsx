@@ -18,12 +18,33 @@ import { router } from 'expo-router';
 import { FertilizerItem } from '@/types/inventory';
 import { supabase } from '@/lib/supabase';
 
+const POPULAR_FERTILIZERS = [
+  '10-10-10 NPK',
+  '20-20-20 NPK',
+  '5-10-5 NPK',
+  '15-15-15 NPK',
+  'Urea (46-0-0)',
+  'Ammonium Nitrate (34-0-0)',
+  'Diammonium Phosphate (18-46-0)',
+  'Monoammonium Phosphate (11-52-0)',
+  'Potassium Chloride (0-0-60)',
+  'Calcium Nitrate (15.5-0-0)',
+  'Bone Meal (3-15-0)',
+  'Blood Meal (12-0-0)',
+  'Fish Emulsion (5-1-1)',
+  'Compost',
+  'Manure',
+  'Worm Castings',
+];
+
 export default function FertilizersScreen() {
   const [fertilizers, setFertilizers] = useState<FertilizerItem[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<FertilizerItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [isCustomFertilizer, setIsCustomFertilizer] = useState(false);
 
   // Form state
   const [name, setName] = useState('');
@@ -67,6 +88,8 @@ export default function FertilizersScreen() {
   const openAddModal = () => {
     setEditingItem(null);
     resetForm();
+    setShowDropdown(true);
+    setIsCustomFertilizer(false);
     setModalVisible(true);
   };
 
@@ -76,6 +99,8 @@ export default function FertilizersScreen() {
     setQuantity(item.quantity.toString());
     setUnit(item.unit);
     setNotes(item.notes || '');
+    setShowDropdown(false);
+    setIsCustomFertilizer(false);
     setModalVisible(true);
   };
 
@@ -84,6 +109,18 @@ export default function FertilizersScreen() {
     setQuantity('');
     setUnit('lbs');
     setNotes('');
+  };
+
+  const selectFertilizerFromDropdown = (fertilizerName: string) => {
+    setName(fertilizerName);
+    setShowDropdown(false);
+    setIsCustomFertilizer(false);
+  };
+
+  const handleAddCustomFertilizer = () => {
+    setShowDropdown(false);
+    setIsCustomFertilizer(true);
+    setName('');
   };
 
   const handleSave = async () => {
@@ -195,6 +232,10 @@ export default function FertilizersScreen() {
 
   const filteredFertilizers = fertilizers.filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredPopularFertilizers = POPULAR_FERTILIZERS.filter(fert =>
+    fert.toLowerCase().includes(name.toLowerCase())
   );
 
   return (
@@ -342,68 +383,146 @@ export default function FertilizersScreen() {
             </View>
 
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-              <Text style={styles.label}>Name *</Text>
-              <TextInput
-                style={commonStyles.input}
-                placeholder="e.g., 10-10-10 NPK"
-                placeholderTextColor={colors.textSecondary}
-                value={name}
-                onChangeText={setName}
-              />
-
-              <Text style={styles.label}>Quantity *</Text>
-              <View style={styles.inputRow}>
-                <TextInput
-                  style={[commonStyles.input, styles.quantityInput]}
-                  placeholder="0"
-                  placeholderTextColor={colors.textSecondary}
-                  value={quantity}
-                  onChangeText={setQuantity}
-                  keyboardType="decimal-pad"
-                />
-                <View style={styles.unitSelector}>
-                  {(['lbs', 'bags', 'trucks'] as const).map((u, idx) => (
-                    <React.Fragment key={idx}>
+              {/* Dropdown or Custom Input */}
+              {!editingItem && (
+                <>
+                  {showDropdown && !isCustomFertilizer ? (
+                    <View>
+                      <Text style={styles.label}>Select Popular Fertilizer</Text>
+                      <TextInput
+                        style={commonStyles.input}
+                        placeholder="Search fertilizers..."
+                        placeholderTextColor={colors.textSecondary}
+                        value={name}
+                        onChangeText={setName}
+                      />
+                      <ScrollView style={styles.dropdownList} nestedScrollEnabled>
+                        {filteredPopularFertilizers.map((fert, idx) => (
+                          <React.Fragment key={idx}>
+                            <TouchableOpacity
+                              style={styles.dropdownItem}
+                              onPress={() => selectFertilizerFromDropdown(fert)}
+                            >
+                              <Text style={styles.dropdownItemText}>{fert}</Text>
+                            </TouchableOpacity>
+                          </React.Fragment>
+                        ))}
+                      </ScrollView>
                       <TouchableOpacity
-                        style={[
-                          styles.unitOption,
-                          unit === u && styles.unitOptionSelected,
-                        ]}
-                        onPress={() => setUnit(u)}
+                        style={styles.customButton}
+                        onPress={handleAddCustomFertilizer}
                       >
-                        <Text
-                          style={[
-                            styles.unitOptionText,
-                            unit === u && styles.unitOptionTextSelected,
-                          ]}
-                        >
-                          {u}
+                        <IconSymbol
+                          ios_icon_name="plus.circle.fill"
+                          android_material_icon_name="add_circle"
+                          size={20}
+                          color={colors.primary}
+                        />
+                        <Text style={styles.customButtonText}>
+                          Add Custom Fertilizer
                         </Text>
                       </TouchableOpacity>
-                    </React.Fragment>
-                  ))}
-                </View>
-              </View>
+                    </View>
+                  ) : (
+                    <>
+                      <Text style={styles.label}>Fertilizer Name *</Text>
+                      <TextInput
+                        style={commonStyles.input}
+                        placeholder="e.g., 10-10-10 NPK"
+                        placeholderTextColor={colors.textSecondary}
+                        value={name}
+                        onChangeText={setName}
+                      />
+                      {!editingItem && (
+                        <TouchableOpacity
+                          style={styles.backToDropdownButton}
+                          onPress={() => {
+                            setShowDropdown(true);
+                            setIsCustomFertilizer(false);
+                            setName('');
+                          }}
+                        >
+                          <Text style={styles.backToDropdownText}>
+                            ← Back to popular fertilizers
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
 
-              <Text style={styles.label}>Notes</Text>
-              <TextInput
-                style={[commonStyles.input, styles.notesInput]}
-                placeholder="Additional information..."
-                placeholderTextColor={colors.textSecondary}
-                value={notes}
-                onChangeText={setNotes}
-                multiline
-                numberOfLines={3}
-              />
+              {editingItem && (
+                <>
+                  <Text style={styles.label}>Fertilizer Name *</Text>
+                  <TextInput
+                    style={commonStyles.input}
+                    placeholder="e.g., 10-10-10 NPK"
+                    placeholderTextColor={colors.textSecondary}
+                    value={name}
+                    onChangeText={setName}
+                  />
+                </>
+              )}
 
-              <TouchableOpacity
-                style={[commonStyles.button, styles.saveButton]}
-                onPress={handleSave}
-              >
-                <Text style={commonStyles.buttonText}>
-                  {editingItem ? 'Update' : 'Add'} Fertilizer
-                </Text>
-              </TouchableOpacity>
+              {/* Only show quantity and unit if fertilizer is selected or in edit mode */}
+              {(name.trim() !== '' || editingItem) && (
+                <>
+                  <Text style={styles.label}>Quantity *</Text>
+                  <View style={styles.inputRow}>
+                    <TextInput
+                      style={[commonStyles.input, styles.quantityInput]}
+                      placeholder="0"
+                      placeholderTextColor={colors.textSecondary}
+                      value={quantity}
+                      onChangeText={setQuantity}
+                      keyboardType="decimal-pad"
+                    />
+                    <View style={styles.unitSelector}>
+                      {(['lbs', 'bags'] as const).map((u, idx) => (
+                        <React.Fragment key={idx}>
+                          <TouchableOpacity
+                            style={[
+                              styles.unitOption,
+                              unit === u && styles.unitOptionSelected,
+                            ]}
+                            onPress={() => setUnit(u)}
+                          >
+                            <Text
+                              style={[
+                                styles.unitOptionText,
+                                unit === u && styles.unitOptionTextSelected,
+                              ]}
+                            >
+                              {u}
+                            </Text>
+                          </TouchableOpacity>
+                        </React.Fragment>
+                      ))}
+                    </View>
+                  </View>
+
+                  <Text style={styles.label}>Notes</Text>
+                  <TextInput
+                    style={[commonStyles.input, styles.notesInput]}
+                    placeholder="Additional information..."
+                    placeholderTextColor={colors.textSecondary}
+                    value={notes}
+                    onChangeText={setNotes}
+                    multiline
+                    numberOfLines={3}
+                  />
+
+                  <TouchableOpacity
+                    style={[commonStyles.button, styles.saveButton]}
+                    onPress={handleSave}
+                  >
+                    <Text style={commonStyles.buttonText}>
+                      {editingItem ? 'Update' : 'Add'} Fertilizer
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </ScrollView>
           </View>
         </View>
@@ -561,6 +680,52 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 16,
   },
+  dropdownList: {
+    maxHeight: 250,
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    marginTop: 8,
+    marginBottom: 16,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 3,
+  },
+  dropdownItem: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: colors.text,
+  },
+  customButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.card,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginTop: 8,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+    elevation: 2,
+  },
+  customButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.primary,
+    marginLeft: 8,
+  },
+  backToDropdownButton: {
+    marginTop: 8,
+    paddingVertical: 8,
+  },
+  backToDropdownText: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '500',
+  },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -577,7 +742,7 @@ const styles = StyleSheet.create({
   },
   unitOption: {
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     borderRadius: 6,
   },
   unitOptionSelected: {
