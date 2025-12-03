@@ -195,9 +195,10 @@ export default function Seeds() {
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <IconSymbol
-            ios_icon_name="chevron.left"
+            ios_icon_name="chevron.backward"
             android_material_icon_name="arrow_back"
             size={24}
             color={colors.text}
@@ -207,6 +208,7 @@ export default function Seeds() {
         <TouchableOpacity
           style={styles.addButton}
           onPress={openAddModal}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <IconSymbol
             ios_icon_name="plus"
@@ -269,11 +271,12 @@ export default function Seeds() {
                     <TouchableOpacity
                       style={styles.deleteButton}
                       onPress={() => handleDelete(item)}
+                      hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
                     >
                       <IconSymbol
                         ios_icon_name="trash.fill"
                         android_material_icon_name="delete"
-                        size={20}
+                        size={22}
                         color={colors.error}
                       />
                     </TouchableOpacity>
@@ -476,7 +479,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   deleteButton: {
-    padding: 4,
+    padding: 8,
   },
   itemDetails: {
     marginBottom: 8,

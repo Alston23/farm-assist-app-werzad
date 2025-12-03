@@ -201,6 +201,7 @@ export default function FertilizersScreen() {
             if (error) throw error;
 
             setFertilizers((prev) => prev.filter((f) => f.id !== id));
+            Alert.alert("Success", "Fertilizer deleted successfully");
           } catch (e: any) {
             console.error("deleteFertilizer error", e);
             Alert.alert("Error", "Failed to delete fertilizer");
@@ -220,9 +221,10 @@ export default function FertilizersScreen() {
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.iconButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <IconSymbol
-            ios_icon_name="chevron.left"
+            ios_icon_name="chevron.backward"
             android_material_icon_name="arrow_back"
             size={24}
             color={colors.text}
@@ -234,6 +236,7 @@ export default function FertilizersScreen() {
         <TouchableOpacity
           onPress={() => openEditModal(null)}
           style={styles.iconButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <IconSymbol
             ios_icon_name="plus"
@@ -278,12 +281,12 @@ export default function FertilizersScreen() {
                   style={styles.trashButton}
                   activeOpacity={0.7}
                   onPress={() => deleteFertilizer(item.id)}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
                 >
                   <IconSymbol
-                    ios_icon_name="trash"
+                    ios_icon_name="trash.fill"
                     android_material_icon_name="delete"
-                    size={20}
+                    size={22}
                     color="#ff3b30"
                   />
                 </TouchableOpacity>
@@ -438,7 +441,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   iconButton: {
-    padding: 4,
+    padding: 8,
   },
   title: {
     fontSize: 22,
@@ -473,7 +476,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   trashButton: {
-    padding: 6,
+    padding: 8,
     marginLeft: 8,
   },
   emptyText: {
