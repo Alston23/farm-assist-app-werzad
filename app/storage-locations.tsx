@@ -217,7 +217,7 @@ export default function StorageLocations() {
         >
           <IconSymbol
             ios_icon_name="chevron.left"
-            android_material_icon_name="arrow-back"
+            android_material_icon_name="arrow_back"
             size={24}
             color={colors.text}
           />
@@ -251,7 +251,7 @@ export default function StorageLocations() {
             <View style={styles.emptyState}>
               <IconSymbol
                 ios_icon_name="tray"
-                android_material_icon_name="inventory-2"
+                android_material_icon_name="inventory_2"
                 size={64}
                 color={colors.textSecondary}
               />

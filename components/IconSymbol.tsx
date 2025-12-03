@@ -11,8 +11,8 @@ type IconSymbolProps = {
 
 // Map Material Icons names to Ionicons names
 const materialToIonicons: Record<string, string> = {
-  'arrow_back': 'arrow-back',
-  'arrow_forward': 'arrow-forward',
+  'arrow_back': 'chevron-back',
+  'arrow_forward': 'chevron-forward',
   'add': 'add',
   'close': 'close',
   'delete': 'trash',
@@ -69,6 +69,8 @@ const materialToIonicons: Record<string, string> = {
   'credit_card': 'card',
   'smartphone': 'phone-portrait',
   'tag': 'pricetag',
+  'keyboard_arrow_up': 'chevron-up',
+  'keyboard_arrow_down': 'chevron-down',
 };
 
 export function IconSymbol({
