@@ -18,7 +18,7 @@ import { router } from 'expo-router';
 import { PackagingItem } from '@/types/inventory';
 import { supabase } from '@/lib/supabase';
 
-export default function PackagingScreen() {
+export default function Packaging() {
   const [packaging, setPackaging] = useState<PackagingItem[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<PackagingItem | null>(null);

@@ -26,7 +26,7 @@ interface StorageLocation {
   created_at: string;
 }
 
-export default function StorageLocationsScreen() {
+export default function StorageLocations() {
   const [locations, setLocations] = useState<StorageLocation[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<StorageLocation | null>(null);

@@ -18,14 +18,13 @@ import { router } from 'expo-router';
 import { SeedItem } from '@/types/inventory';
 import { supabase } from '@/lib/supabase';
 
-export default function SeedsScreen() {
+export default function Seeds() {
   const [seeds, setSeeds] = useState<SeedItem[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<SeedItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Form state
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState<SeedItem['unit']>('lbs');
@@ -103,7 +102,6 @@ export default function SeedsScreen() {
       }
 
       if (editingItem) {
-        // Update existing
         const { error } = await supabase
           .from('seeds')
           .update({
@@ -121,7 +119,6 @@ export default function SeedsScreen() {
           return;
         }
       } else {
-        // Insert new
         const { error } = await supabase
           .from('seeds')
           .insert({
@@ -194,7 +191,6 @@ export default function SeedsScreen() {
 
   return (
     <View style={commonStyles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -221,7 +217,6 @@ export default function SeedsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <IconSymbol
           ios_icon_name="magnifyingglass"
@@ -238,7 +233,6 @@ export default function SeedsScreen() {
         />
       </View>
 
-      {/* Seeds List */}
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -307,7 +301,6 @@ export default function SeedsScreen() {
         </ScrollView>
       )}
 
-      {/* Add/Edit Modal */}
       <Modal
         visible={modalVisible}
         animationType="slide"
