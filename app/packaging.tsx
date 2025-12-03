@@ -18,27 +18,16 @@ import { router } from 'expo-router';
 import { PackagingItem } from '@/types/inventory';
 import { supabase } from '@/lib/supabase';
 
-const COMMON_PACKAGING_TYPES = [
-  'Cardboard Boxes',
-  'Bouquet Sleeves',
-  'Rubber Bands',
-  'Crates',
-  'Produce Bags',
-  'Twist Ties',
-  'Clam-shell Containers',
-];
-
 export default function PackagingScreen() {
   const [packaging, setPackaging] = useState<PackagingItem[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<PackagingItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const [showCommonTypes, setShowCommonTypes] = useState(false);
 
-  // Form state
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [unit, setUnit] = useState<PackagingItem['unit']>('units');
 
   useEffect(() => {
     loadPackaging();
@@ -76,7 +65,6 @@ export default function PackagingScreen() {
   const openAddModal = () => {
     setEditingItem(null);
     resetForm();
-    setShowCommonTypes(true);
     setModalVisible(true);
   };
 
@@ -84,18 +72,14 @@ export default function PackagingScreen() {
     setEditingItem(item);
     setName(item.name);
     setQuantity(item.quantity.toString());
-    setShowCommonTypes(false);
+    setUnit(item.unit);
     setModalVisible(true);
   };
 
   const resetForm = () => {
     setName('');
     setQuantity('');
-  };
-
-  const selectCommonType = (type: string) => {
-    setName(type);
-    setShowCommonTypes(false);
+    setUnit('units');
   };
 
   const handleSave = async () => {
@@ -118,12 +102,12 @@ export default function PackagingScreen() {
       }
 
       if (editingItem) {
-        // Update existing
         const { error } = await supabase
           .from('packaging')
           .update({
             name: name.trim(),
             quantity: qty,
+            unit,
             updated_at: new Date().toISOString(),
           })
           .eq('id', editingItem.id)
@@ -135,14 +119,13 @@ export default function PackagingScreen() {
           return;
         }
       } else {
-        // Insert new
         const { error } = await supabase
           .from('packaging')
           .insert({
             user_id: user.id,
             name: name.trim(),
             quantity: qty,
-            unit: 'units',
+            unit,
           });
 
         if (error) {
@@ -208,7 +191,6 @@ export default function PackagingScreen() {
 
   return (
     <View style={commonStyles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -235,7 +217,6 @@ export default function PackagingScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <IconSymbol
           ios_icon_name="magnifyingglass"
@@ -252,7 +233,6 @@ export default function PackagingScreen() {
         />
       </View>
 
-      {/* Packaging List */}
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -274,7 +254,7 @@ export default function PackagingScreen() {
               />
               <Text style={styles.emptyText}>No packaging found</Text>
               <Text style={styles.emptySubtext}>
-                {searchQuery ? 'Try a different search' : 'Add your first packaging item to get started'}
+                {searchQuery ? 'Try a different search' : 'Add your first packaging inventory to get started'}
               </Text>
             </View>
           ) : (
@@ -308,7 +288,7 @@ export default function PackagingScreen() {
                         color={colors.textSecondary}
                       />
                       <Text style={styles.detailText}>
-                        Quantity: {item.quantity} {item.unit}
+                        {item.quantity} {item.unit}
                       </Text>
                     </View>
                   </View>
@@ -321,7 +301,6 @@ export default function PackagingScreen() {
         </ScrollView>
       )}
 
-      {/* Add/Edit Modal */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -345,29 +324,10 @@ export default function PackagingScreen() {
             </View>
 
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-              {showCommonTypes && !editingItem && (
-                <React.Fragment>
-                  <Text style={styles.label}>Common Packaging Types</Text>
-                  <View style={styles.commonTypesContainer}>
-                    {COMMON_PACKAGING_TYPES.map((type, idx) => (
-                      <React.Fragment key={idx}>
-                        <TouchableOpacity
-                          style={styles.commonTypeButton}
-                          onPress={() => selectCommonType(type)}
-                        >
-                          <Text style={styles.commonTypeText}>{type}</Text>
-                        </TouchableOpacity>
-                      </React.Fragment>
-                    ))}
-                  </View>
-                  <Text style={styles.orText}>or enter custom type below</Text>
-                </React.Fragment>
-              )}
-
               <Text style={styles.label}>Name *</Text>
               <TextInput
                 style={commonStyles.input}
-                placeholder="e.g., Small Produce Box"
+                placeholder="e.g., Cardboard Boxes, Plastic Bags"
                 placeholderTextColor={colors.textSecondary}
                 value={name}
                 onChangeText={setName}
@@ -380,7 +340,7 @@ export default function PackagingScreen() {
                 placeholderTextColor={colors.textSecondary}
                 value={quantity}
                 onChangeText={setQuantity}
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
               />
 
               <TouchableOpacity
@@ -541,32 +501,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 8,
     marginTop: 16,
-  },
-  commonTypesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
-  },
-  commonTypeButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: colors.primary + '20',
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  commonTypeText: {
-    fontSize: 14,
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  orText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 8,
-    fontStyle: 'italic',
   },
   saveButton: {
     marginTop: 24,

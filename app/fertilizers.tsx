@@ -1,250 +1,225 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   TextInput,
-  Modal,
-  Platform,
-  Alert,
+  TouchableOpacity,
   ActivityIndicator,
-} from 'react-native';
-import { colors, commonStyles } from '@/styles/commonStyles';
-import { IconSymbol } from '@/components/IconSymbol';
-import { router } from 'expo-router';
-import { FertilizerItem } from '@/types/inventory';
-import { supabase } from '@/lib/supabase';
+  Modal,
+  Alert,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { supabase } from "@/lib/supabase";
+import IconSymbol from "@/components/IconSymbol";
+import { colors } from "@/styles/commonStyles";
 
-const POPULAR_FERTILIZERS = [
-  '10-10-10 NPK',
-  '20-20-20 NPK',
-  '5-10-5 NPK',
-  '15-15-15 NPK',
-  'Urea (46-0-0)',
-  'Ammonium Nitrate (34-0-0)',
-  'Diammonium Phosphate (18-46-0)',
-  'Monoammonium Phosphate (11-52-0)',
-  'Potassium Chloride (0-0-60)',
-  'Calcium Nitrate (15.5-0-0)',
-  'Bone Meal (3-15-0)',
-  'Blood Meal (12-0-0)',
-  'Fish Emulsion (5-1-1)',
-  'Compost',
-  'Manure',
-  'Worm Castings',
+type Unit = "bags" | "lbs";
+
+type Fertilizer = {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: Unit;
+};
+
+const POPULAR_FERTILIZERS: string[] = [
+  "10-10-10 NPK",
+  "20-20-20 NPK",
+  "5-10-5 NPK",
+  "15-15-15 NPK",
+  "Urea (46-0-0)",
+  "Ammonium Nitrate (34-0-0)",
+  "Diammonium Phosphate (18-46-0)",
+  "Monoammonium Phosphate (11-52-0)",
+  "Potassium Chloride (0-0-60)",
+  "Calcium Nitrate (15.5-0-0)",
+  "Bone Meal",
+  "Blood Meal",
+  "Fish Emulsion",
+  "Compost",
+  "Manure",
+  "Worm Castings",
 ];
 
 export default function FertilizersScreen() {
-  const [fertilizers, setFertilizers] = useState<FertilizerItem[]>([]);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingItem, setEditingItem] = useState<FertilizerItem | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [isCustomFertilizer, setIsCustomFertilizer] = useState(false);
+  const router = useRouter();
 
-  // Form state
-  const [name, setName] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [unit, setUnit] = useState<FertilizerItem['unit']>('lbs');
-  const [notes, setNotes] = useState('');
+  const [fertilizers, setFertilizers] = useState<Fertilizer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingItem, setEditingItem] = useState<Fertilizer | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editQuantity, setEditQuantity] = useState("");
+  const [unit, setUnit] = useState<Unit>("bags");
+  const [dropdownVisible, setDropdownVisible] = useState(false);
 
   useEffect(() => {
     loadFertilizers();
   }, []);
 
   const loadFertilizers = async () => {
-    setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      setLoading(true);
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) throw userError;
       if (!user) {
-        console.log('No user found');
+        Alert.alert("Error", "User not found");
         setLoading(false);
         return;
       }
 
       const { data, error } = await supabase
-        .from('fertilizers')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .from("fertilizers")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error('Error loading fertilizers:', error);
-        Alert.alert('Error', 'Failed to load fertilizers');
-      } else {
-        setFertilizers(data || []);
-      }
-    } catch (error) {
-      console.error('Error loading fertilizers:', error);
+      if (error) throw error;
+
+      const mapped: Fertilizer[] = (data || []).map((row: any) => ({
+        id: String(row.id),
+        name: row.name,
+        quantity: row.quantity ?? 0,
+        unit: (row.unit as Unit) || "bags",
+      }));
+
+      setFertilizers(mapped);
+    } catch (e: any) {
+      console.error("loadFertilizers error", e);
+      Alert.alert("Error", "Failed to load fertilizers");
     } finally {
       setLoading(false);
     }
   };
 
-  const openAddModal = () => {
-    setEditingItem(null);
-    resetForm();
-    setShowDropdown(true);
-    setIsCustomFertilizer(false);
+  const openEditModal = (item: Fertilizer | null) => {
+    if (item) {
+      setEditingItem(item);
+      setEditName(item.name);
+      setEditQuantity(String(item.quantity));
+      setUnit(item.unit || "bags");
+    } else {
+      setEditingItem(null);
+      setEditName("");
+      setEditQuantity("");
+      setUnit("bags");
+    }
+    setDropdownVisible(false);
     setModalVisible(true);
   };
 
-  const openEditModal = (item: FertilizerItem) => {
-    setEditingItem(item);
-    setName(item.name);
-    setQuantity(item.quantity.toString());
-    setUnit(item.unit);
-    setNotes(item.notes || '');
-    setShowDropdown(false);
-    setIsCustomFertilizer(false);
-    setModalVisible(true);
-  };
+  const saveFertilizer = async () => {
+    const quantityNumber = Number(editQuantity || 0);
 
-  const resetForm = () => {
-    setName('');
-    setQuantity('');
-    setUnit('lbs');
-    setNotes('');
-  };
-
-  const selectFertilizerFromDropdown = (fertilizerName: string) => {
-    setName(fertilizerName);
-    setShowDropdown(false);
-    setIsCustomFertilizer(false);
-  };
-
-  const handleAddCustomFertilizer = () => {
-    setShowDropdown(false);
-    setIsCustomFertilizer(true);
-    setName('');
-  };
-
-  const handleSave = async () => {
-    if (!name.trim() || !quantity) {
-      Alert.alert('Error', 'Please fill in all required fields');
+    if (!editName.trim()) {
+      Alert.alert("Validation", "Please enter a fertilizer name.");
       return;
     }
-
-    const qty = parseFloat(quantity);
-    if (isNaN(qty) || qty < 0) {
-      Alert.alert('Error', 'Please enter a valid quantity');
+    if (isNaN(quantityNumber) || quantityNumber <= 0) {
+      Alert.alert("Validation", "Please enter a valid quantity.");
       return;
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) throw userError;
       if (!user) {
-        Alert.alert('Error', 'You must be logged in');
+        Alert.alert("Error", "User not found");
         return;
       }
 
       if (editingItem) {
-        // Update existing
         const { error } = await supabase
-          .from('fertilizers')
+          .from("fertilizers")
           .update({
-            name: name.trim(),
-            quantity: qty,
+            name: editName.trim(),
+            quantity: quantityNumber,
             unit,
-            notes: notes.trim(),
-            updated_at: new Date().toISOString(),
           })
-          .eq('id', editingItem.id)
-          .eq('user_id', user.id);
+          .eq("id", editingItem.id)
+          .eq("user_id", user.id);
 
-        if (error) {
-          console.error('Error updating fertilizer:', error);
-          Alert.alert('Error', 'Failed to update fertilizer');
-          return;
-        }
+        if (error) throw error;
       } else {
-        // Insert new
-        const { error } = await supabase
-          .from('fertilizers')
-          .insert({
-            user_id: user.id,
-            name: name.trim(),
-            quantity: qty,
-            unit,
-            notes: notes.trim(),
-          });
+        const { error } = await supabase.from("fertilizers").insert({
+          name: editName.trim(),
+          quantity: quantityNumber,
+          unit,
+          user_id: user.id,
+        });
 
-        if (error) {
-          console.error('Error adding fertilizer:', error);
-          Alert.alert('Error', 'Failed to add fertilizer');
-          return;
-        }
+        if (error) throw error;
       }
 
       setModalVisible(false);
-      resetForm();
-      loadFertilizers();
-      Alert.alert('Success', `Fertilizer ${editingItem ? 'updated' : 'added'} successfully`);
-    } catch (error) {
-      console.error('Error saving fertilizer:', error);
-      Alert.alert('Error', 'An unexpected error occurred');
+      await loadFertilizers();
+    } catch (e: any) {
+      console.error("saveFertilizer error", e);
+      Alert.alert("Error", "Failed to save fertilizer");
     }
   };
 
-  const handleDelete = (item: FertilizerItem) => {
-    Alert.alert(
-      'Delete Fertilizer',
-      `Are you sure you want to delete ${item.name}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { data: { user } } = await supabase.auth.getUser();
-              if (!user) {
-                Alert.alert('Error', 'You must be logged in');
-                return;
-              }
+  const deleteFertilizer = (id: string) => {
+    Alert.alert("Delete fertilizer?", "This cannot be undone.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            const {
+              data: { user },
+              error: userError,
+            } = await supabase.auth.getUser();
 
-              const { error } = await supabase
-                .from('fertilizers')
-                .delete()
-                .eq('id', item.id)
-                .eq('user_id', user.id);
-
-              if (error) {
-                console.error('Error deleting fertilizer:', error);
-                Alert.alert('Error', 'Failed to delete fertilizer');
-              } else {
-                loadFertilizers();
-                Alert.alert('Success', 'Fertilizer deleted successfully');
-              }
-            } catch (error) {
-              console.error('Error deleting fertilizer:', error);
-              Alert.alert('Error', 'An unexpected error occurred');
+            if (userError) throw userError;
+            if (!user) {
+              Alert.alert("Error", "User not found");
+              return;
             }
-          },
+
+            const { error } = await supabase
+              .from("fertilizers")
+              .delete()
+              .eq("id", id)
+              .eq("user_id", user.id);
+
+            if (error) throw error;
+
+            setFertilizers((prev) => prev.filter((f) => f.id !== id));
+          } catch (e: any) {
+            console.error("deleteFertilizer error", e);
+            Alert.alert("Error", "Failed to delete fertilizer");
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
-  const filteredFertilizers = fertilizers.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredPopularFertilizers = POPULAR_FERTILIZERS.filter(fert =>
-    fert.toLowerCase().includes(name.toLowerCase())
+  const filteredFertilizers = fertilizers.filter((f) =>
+    f.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    <View style={commonStyles.container}>
-      {/* Header */}
+    <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton}
           onPress={() => router.back()}
+          style={styles.iconButton}
         >
           <IconSymbol
             ios_icon_name="chevron.left"
@@ -253,277 +228,193 @@ export default function FertilizersScreen() {
             color={colors.text}
           />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Fertilizers</Text>
+
+        <Text style={styles.title}>Fertilizers</Text>
+
         <TouchableOpacity
-          style={styles.addButton}
-          onPress={openAddModal}
+          onPress={() => openEditModal(null)}
+          style={styles.iconButton}
         >
           <IconSymbol
             ios_icon_name="plus"
             android_material_icon_name="add"
             size={24}
-            color={colors.primary}
+            color={colors.text}
           />
         </TouchableOpacity>
       </View>
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <IconSymbol
-          ios_icon_name="magnifyingglass"
-          android_material_icon_name="search"
-          size={20}
-          color={colors.textSecondary}
-        />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search fertilizers..."
-          placeholderTextColor={colors.textSecondary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-      </View>
+      <TextInput
+        placeholder="Search fertilizers..."
+        placeholderTextColor="#999"
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        style={styles.search}
+      />
 
-      {/* Fertilizer List */}
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading fertilizers...</Text>
-        </View>
+        <ActivityIndicator
+          size="large"
+          color={colors.text}
+          style={{ marginTop: 20 }}
+        />
       ) : (
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {filteredFertilizers.length === 0 ? (
-            <View style={styles.emptyState}>
-              <IconSymbol
-                ios_icon_name="tray"
-                android_material_icon_name="inventory_2"
-                size={64}
-                color={colors.textSecondary}
-              />
-              <Text style={styles.emptyText}>No fertilizers found</Text>
-              <Text style={styles.emptySubtext}>
-                {searchQuery ? 'Try a different search' : 'Add your first fertilizer to get started'}
-              </Text>
-            </View>
-          ) : (
-            filteredFertilizers.map((item, index) => (
-              <React.Fragment key={index}>
-                <TouchableOpacity
-                  style={[commonStyles.card, styles.itemCard]}
-                  onPress={() => openEditModal(item)}
-                >
-                  <View style={styles.itemHeader}>
-                    <Text style={styles.itemName}>{item.name}</Text>
-                    <TouchableOpacity
-                      style={styles.deleteButton}
-                      onPress={() => handleDelete(item)}
-                    >
-                      <IconSymbol
-                        ios_icon_name="trash.fill"
-                        android_material_icon_name="delete"
-                        size={20}
-                        color={colors.error}
-                      />
-                    </TouchableOpacity>
-                  </View>
+        <ScrollView>
+          {filteredFertilizers.map((item) => (
+            <View key={item.id} style={styles.card}>
+              <TouchableOpacity
+                style={styles.cardContent}
+                activeOpacity={0.8}
+                onPress={() => openEditModal(item)}
+              >
+                <Text style={styles.cardTitle}>{item.name}</Text>
+                <Text style={styles.cardSubtitle}>
+                  {item.quantity} {item.unit === "lbs" ? "lbs" : "bags"}
+                </Text>
+              </TouchableOpacity>
 
-                  <View style={styles.itemDetails}>
-                    <View style={styles.detailRow}>
-                      <IconSymbol
-                        ios_icon_name="scalemass.fill"
-                        android_material_icon_name="scale"
-                        size={16}
-                        color={colors.textSecondary}
-                      />
-                      <Text style={styles.detailText}>
-                        {item.quantity} {item.unit}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {item.notes && (
-                    <Text style={styles.itemNotes} numberOfLines={2}>
-                      {item.notes}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              </React.Fragment>
-            ))
-          )}
-
-          <View style={{ height: 100 }} />
-        </ScrollView>
-      )}
-
-      {/* Add/Edit Modal */}
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {editingItem ? 'Edit Fertilizer' : 'Add Fertilizer'}
-              </Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
+              <TouchableOpacity
+                style={styles.trashButton}
+                activeOpacity={0.7}
+                onPress={() => deleteFertilizer(item.id)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <IconSymbol
-                  ios_icon_name="xmark"
-                  android_material_icon_name="close"
-                  size={24}
-                  color={colors.text}
+                  ios_icon_name="trash"
+                  android_material_icon_name="delete"
+                  size={20}
+                  color="#ff3b30"
                 />
               </TouchableOpacity>
             </View>
+          ))}
 
-            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-              {/* Dropdown or Custom Input */}
-              {!editingItem && (
-                <>
-                  {showDropdown && !isCustomFertilizer ? (
-                    <View>
-                      <Text style={styles.label}>Select Popular Fertilizer</Text>
-                      <TextInput
-                        style={commonStyles.input}
-                        placeholder="Search fertilizers..."
-                        placeholderTextColor={colors.textSecondary}
-                        value={name}
-                        onChangeText={setName}
-                      />
-                      <ScrollView style={styles.dropdownList} nestedScrollEnabled>
-                        {filteredPopularFertilizers.map((fert, idx) => (
-                          <React.Fragment key={idx}>
-                            <TouchableOpacity
-                              style={styles.dropdownItem}
-                              onPress={() => selectFertilizerFromDropdown(fert)}
-                            >
-                              <Text style={styles.dropdownItemText}>{fert}</Text>
-                            </TouchableOpacity>
-                          </React.Fragment>
-                        ))}
-                      </ScrollView>
-                      <TouchableOpacity
-                        style={styles.customButton}
-                        onPress={handleAddCustomFertilizer}
-                      >
-                        <IconSymbol
-                          ios_icon_name="plus.circle.fill"
-                          android_material_icon_name="add_circle"
-                          size={20}
-                          color={colors.primary}
-                        />
-                        <Text style={styles.customButtonText}>
-                          Add Custom Fertilizer
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  ) : (
-                    <>
-                      <Text style={styles.label}>Fertilizer Name *</Text>
-                      <TextInput
-                        style={commonStyles.input}
-                        placeholder="e.g., 10-10-10 NPK"
-                        placeholderTextColor={colors.textSecondary}
-                        value={name}
-                        onChangeText={setName}
-                      />
-                      {!editingItem && (
-                        <TouchableOpacity
-                          style={styles.backToDropdownButton}
-                          onPress={() => {
-                            setShowDropdown(true);
-                            setIsCustomFertilizer(false);
-                            setName('');
-                          }}
-                        >
-                          <Text style={styles.backToDropdownText}>
-                            ← Back to popular fertilizers
-                          </Text>
-                        </TouchableOpacity>
-                      )}
-                    </>
-                  )}
-                </>
-              )}
+          {filteredFertilizers.length === 0 && !loading && (
+            <Text style={styles.emptyText}>
+              No fertilizers yet. Tap the + button to add one.
+            </Text>
+          )}
+        </ScrollView>
+      )}
 
-              {editingItem && (
-                <>
-                  <Text style={styles.label}>Fertilizer Name *</Text>
-                  <TextInput
-                    style={commonStyles.input}
-                    placeholder="e.g., 10-10-10 NPK"
-                    placeholderTextColor={colors.textSecondary}
-                    value={name}
-                    onChangeText={setName}
-                  />
-                </>
-              )}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {editingItem ? "Edit Fertilizer" : "Add Fertilizer"}
+            </Text>
 
-              {/* Only show quantity and unit if fertilizer is selected or in edit mode */}
-              {(name.trim() !== '' || editingItem) && (
-                <>
-                  <Text style={styles.label}>Quantity *</Text>
-                  <View style={styles.inputRow}>
-                    <TextInput
-                      style={[commonStyles.input, styles.quantityInput]}
-                      placeholder="0"
-                      placeholderTextColor={colors.textSecondary}
-                      value={quantity}
-                      onChangeText={setQuantity}
-                      keyboardType="decimal-pad"
-                    />
-                    <View style={styles.unitSelector}>
-                      {(['lbs', 'bags'] as const).map((u, idx) => (
-                        <React.Fragment key={idx}>
-                          <TouchableOpacity
-                            style={[
-                              styles.unitOption,
-                              unit === u && styles.unitOptionSelected,
-                            ]}
-                            onPress={() => setUnit(u)}
-                          >
-                            <Text
-                              style={[
-                                styles.unitOptionText,
-                                unit === u && styles.unitOptionTextSelected,
-                              ]}
-                            >
-                              {u}
-                            </Text>
-                          </TouchableOpacity>
-                        </React.Fragment>
-                      ))}
-                    </View>
-                  </View>
+            <TouchableOpacity
+              style={styles.dropdown}
+              onPress={() => setDropdownVisible((v) => !v)}
+            >
+              <Text style={styles.dropdownText}>
+                {editName || "Choose common fertilizer..."}
+              </Text>
+              <IconSymbol
+                ios_icon_name={dropdownVisible ? "chevron.up" : "chevron.down"}
+                android_material_icon_name={
+                  dropdownVisible
+                    ? "keyboard_arrow_up"
+                    : "keyboard_arrow_down"
+                }
+                size={18}
+                color={colors.text}
+              />
+            </TouchableOpacity>
 
-                  <Text style={styles.label}>Notes</Text>
-                  <TextInput
-                    style={[commonStyles.input, styles.notesInput]}
-                    placeholder="Additional information..."
-                    placeholderTextColor={colors.textSecondary}
-                    value={notes}
-                    onChangeText={setNotes}
-                    multiline
-                    numberOfLines={3}
-                  />
-
+            {dropdownVisible && (
+              <ScrollView style={styles.dropdownList}>
+                {POPULAR_FERTILIZERS.map((name) => (
                   <TouchableOpacity
-                    style={[commonStyles.button, styles.saveButton]}
-                    onPress={handleSave}
+                    key={name}
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      setEditName(name);
+                      setDropdownVisible(false);
+                    }}
                   >
-                    <Text style={commonStyles.buttonText}>
-                      {editingItem ? 'Update' : 'Add'} Fertilizer
-                    </Text>
+                    <Text>{name}</Text>
                   </TouchableOpacity>
-                </>
-              )}
-            </ScrollView>
+                ))}
+              </ScrollView>
+            )}
+
+            <TextInput
+              placeholder="Name"
+              value={editName}
+              onChangeText={setEditName}
+              style={styles.modalInput}
+            />
+
+            <TextInput
+              placeholder="Quantity"
+              keyboardType="numeric"
+              value={editQuantity}
+              onChangeText={setEditQuantity}
+              style={styles.modalInput}
+            />
+
+            <View style={styles.unitRow}>
+              <Text style={styles.unitLabel}>Unit:</Text>
+              <View style={styles.unitButtonsRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.unitButton,
+                    unit === "bags" && styles.unitButtonActive,
+                  ]}
+                  onPress={() => setUnit("bags")}
+                >
+                  <Text
+                    style={[
+                      styles.unitButtonText,
+                      unit === "bags" && styles.unitButtonTextActive,
+                    ]}
+                  >
+                    bags
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.unitButton,
+                    unit === "lbs" && styles.unitButtonActive,
+                  ]}
+                  onPress={() => setUnit("lbs")}
+                >
+                  <Text
+                    style={[
+                      styles.unitButtonText,
+                      unit === "lbs" && styles.unitButtonTextActive,
+                    ]}
+                  >
+                    lbs
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalCancel]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalSave]}
+                onPress={saveFertilizer}
+              >
+                <Text style={[styles.modalButtonText, { color: "#fff" }]}>
+                  Save
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -532,237 +423,163 @@ export default function FertilizersScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 60 : 60,
-    paddingBottom: 16,
-    backgroundColor: colors.background,
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
+  container: {
     flex: 1,
-    textAlign: 'center',
-  },
-  addButton: {
-    padding: 8,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08)',
-    elevation: 1,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
-    color: colors.text,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
     padding: 16,
-    paddingTop: 0,
+    backgroundColor: "#fff",
   },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginTop: 16,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  itemCard: {
-    marginBottom: 12,
-    position: 'relative',
-  },
-  itemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 12,
   },
-  itemName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    flex: 1,
-  },
-  deleteButton: {
+  iconButton: {
     padding: 4,
   },
-  itemDetails: {
-    marginBottom: 8,
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: colors.text,
   },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
+  search: {
+    backgroundColor: "#f0f0f0",
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 12,
   },
-  detailText: {
-    fontSize: 14,
-    color: colors.textSecondary,
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    backgroundColor: "#f8f8f8",
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  cardContent: {
+    flex: 1,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  cardSubtitle: {
+    fontSize: 13,
+    color: "#666",
+    marginTop: 2,
+  },
+  trashButton: {
+    padding: 6,
     marginLeft: 8,
   },
-  itemNotes: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-    marginTop: 4,
+  emptyText: {
+    textAlign: "center",
+    marginTop: 24,
+    color: "#666",
   },
-  modalOverlay: {
+  modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "center",
+    padding: 16,
   },
   modalContent: {
-    backgroundColor: colors.background,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '90%',
-    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderRadius: 12,
+    padding: 16,
+    backgroundColor: "#fff",
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 12,
     color: colors.text,
   },
-  modalScroll: {
-    padding: 20,
+  modalInput: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 10,
+    marginBottom: 4,
   },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
+  dropdown: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 10,
     marginBottom: 8,
-    marginTop: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  dropdownText: {
+    color: "#555",
   },
   dropdownList: {
-    maxHeight: 250,
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    marginTop: 8,
-    marginBottom: 16,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 3,
+    maxHeight: 160,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: "#fff",
   },
   dropdownItem: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: "#eee",
   },
-  dropdownItemText: {
-    fontSize: 16,
-    color: colors.text,
-  },
-  customButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.card,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 12,
+  unitRow: {
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 8,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
+    marginBottom: 12,
   },
-  customButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
+  unitLabel: {
+    fontSize: 14,
+    marginRight: 8,
+  },
+  unitButtonsRow: {
+    flexDirection: "row",
+  },
+  unitButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    marginRight: 8,
+  },
+  unitButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  unitButtonText: {
+    fontSize: 13,
+    color: "#555",
+  },
+  unitButtonTextActive: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 12,
+  },
+  modalButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
     marginLeft: 8,
   },
-  backToDropdownButton: {
-    marginTop: 8,
-    paddingVertical: 8,
+  modalCancel: {
+    backgroundColor: "#eee",
   },
-  backToDropdownText: {
+  modalSave: {
+    backgroundColor: colors.primary,
+  },
+  modalButtonText: {
     fontSize: 14,
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  quantityInput: {
-    flex: 1,
-    marginRight: 12,
-  },
-  unitSelector: {
-    flexDirection: 'row',
-    backgroundColor: colors.highlight,
-    borderRadius: 8,
-    padding: 2,
-  },
-  unitOption: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-  },
-  unitOptionSelected: {
-    backgroundColor: colors.card,
-  },
-  unitOptionText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  unitOptionTextSelected: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  notesInput: {
-    height: 80,
-    textAlignVertical: 'top',
-  },
-  saveButton: {
-    marginTop: 24,
-    marginBottom: 16,
   },
 });

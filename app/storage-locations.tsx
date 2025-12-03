@@ -15,8 +15,16 @@ import {
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { router } from 'expo-router';
-import { StorageLocation } from '@/types/inventory';
 import { supabase } from '@/lib/supabase';
+
+interface StorageLocation {
+  id: string;
+  type: 'dry' | 'refrigerated' | 'freezer';
+  unit: 'sqft' | 'shelf' | 'lbs';
+  capacity: number;
+  used: number;
+  created_at: string;
+}
 
 export default function StorageLocationsScreen() {
   const [locations, setLocations] = useState<StorageLocation[]>([]);
@@ -24,7 +32,6 @@ export default function StorageLocationsScreen() {
   const [editingItem, setEditingItem] = useState<StorageLocation | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Form state
   const [type, setType] = useState<StorageLocation['type']>('dry');
   const [unit, setUnit] = useState<StorageLocation['unit']>('sqft');
   const [capacity, setCapacity] = useState('');
@@ -102,7 +109,6 @@ export default function StorageLocationsScreen() {
       }
 
       if (editingItem) {
-        // Update existing
         const { error } = await supabase
           .from('storage_locations')
           .update({
@@ -120,7 +126,6 @@ export default function StorageLocationsScreen() {
           return;
         }
       } else {
-        // Insert new
         const { error } = await supabase
           .from('storage_locations')
           .insert({
@@ -188,105 +193,23 @@ export default function StorageLocationsScreen() {
     );
   };
 
-  const getUnitLabel = (unit: StorageLocation['unit']) => {
-    switch (unit) {
-      case 'sqft':
-        return 'sq ft';
-      case 'lbs':
-        return 'lbs';
-      case 'shelf':
-        return 'shelf';
-      default:
-        return unit;
+  const getTypeLabel = (type: StorageLocation['type']) => {
+    return type.charAt(0).toUpperCase() + type.slice(1);
+  };
+
+  const getTypeIcon = (type: StorageLocation['type']) => {
+    switch (type) {
+      case 'dry':
+        return { ios: 'cube.box.fill', android: 'inventory' };
+      case 'refrigerated':
+        return { ios: 'snowflake', android: 'ac_unit' };
+      case 'freezer':
+        return { ios: 'thermometer.snowflake', android: 'ac_unit' };
     }
   };
 
-  const dryLocations = locations.filter(l => l.type === 'dry');
-  const refrigeratedLocations = locations.filter(l => l.type === 'refrigerated');
-  const freezerLocations = locations.filter(l => l.type === 'freezer');
-
-  const getTotalCapacity = (locs: StorageLocation[]) => {
-    return locs.reduce((sum, l) => sum + l.capacity, 0);
-  };
-
-  const getTotalUsed = (locs: StorageLocation[]) => {
-    return locs.reduce((sum, l) => sum + (l.used || 0), 0);
-  };
-
-  const renderLocationCard = (item: StorageLocation, index: number) => (
-    <React.Fragment key={index}>
-      <TouchableOpacity
-        style={[commonStyles.card, styles.locationCard]}
-        onPress={() => openEditModal(item)}
-      >
-        <View style={styles.locationHeader}>
-          <Text style={styles.locationName}>
-            {item.type.charAt(0).toUpperCase() + item.type.slice(1)} Storage
-          </Text>
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => handleDelete(item)}
-          >
-            <IconSymbol
-              ios_icon_name="trash.fill"
-              android_material_icon_name="delete"
-              size={20}
-              color={colors.error}
-            />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.locationDetails}>
-          <View style={styles.detailRow}>
-            <IconSymbol
-              ios_icon_name="scalemass.fill"
-              android_material_icon_name="scale"
-              size={16}
-              color={colors.textSecondary}
-            />
-            <Text style={styles.detailText}>
-              Capacity: {item.capacity} {getUnitLabel(item.unit)}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <IconSymbol
-              ios_icon_name="chart.bar.fill"
-              android_material_icon_name="bar_chart"
-              size={16}
-              color={colors.textSecondary}
-            />
-            <Text style={styles.detailText}>
-              Used: {item.used || 0} {getUnitLabel(item.unit)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Progress Bar */}
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${Math.min(((item.used || 0) / item.capacity) * 100, 100)}%`,
-                  backgroundColor:
-                    ((item.used || 0) / item.capacity) > 0.9
-                      ? colors.error
-                      : ((item.used || 0) / item.capacity) > 0.7
-                      ? colors.warning
-                      : colors.success,
-                },
-              ]}
-            />
-          </View>
-        </View>
-      </TouchableOpacity>
-    </React.Fragment>
-  );
-
   return (
     <View style={commonStyles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -313,57 +236,6 @@ export default function StorageLocationsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Summary Cards */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.summaryScroll}
-        contentContainerStyle={styles.summaryContainer}
-      >
-        <View style={[commonStyles.card, styles.summaryCard]}>
-          <IconSymbol
-            ios_icon_name="cube.box.fill"
-            android_material_icon_name="inventory"
-            size={28}
-            color={colors.primary}
-          />
-          <Text style={styles.summaryTitle}>Dry Storage</Text>
-          <Text style={styles.summaryValue}>{dryLocations.length} locations</Text>
-          <Text style={styles.summaryCapacity}>
-            {getTotalUsed(dryLocations).toFixed(0)} / {getTotalCapacity(dryLocations).toFixed(0)}
-          </Text>
-        </View>
-
-        <View style={[commonStyles.card, styles.summaryCard]}>
-          <IconSymbol
-            ios_icon_name="snowflake"
-            android_material_icon_name="ac_unit"
-            size={28}
-            color="#2196F3"
-          />
-          <Text style={styles.summaryTitle}>Cold Storage</Text>
-          <Text style={styles.summaryValue}>{refrigeratedLocations.length} locations</Text>
-          <Text style={styles.summaryCapacity}>
-            {getTotalUsed(refrigeratedLocations).toFixed(0)} / {getTotalCapacity(refrigeratedLocations).toFixed(0)}
-          </Text>
-        </View>
-
-        <View style={[commonStyles.card, styles.summaryCard]}>
-          <IconSymbol
-            ios_icon_name="thermometer.snowflake"
-            android_material_icon_name="ac_unit"
-            size={28}
-            color="#00BCD4"
-          />
-          <Text style={styles.summaryTitle}>Freezer Storage</Text>
-          <Text style={styles.summaryValue}>{freezerLocations.length} locations</Text>
-          <Text style={styles.summaryCapacity}>
-            {getTotalUsed(freezerLocations).toFixed(0)} / {getTotalCapacity(freezerLocations).toFixed(0)}
-          </Text>
-        </View>
-      </ScrollView>
-
-      {/* Storage Locations List */}
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -378,73 +250,100 @@ export default function StorageLocationsScreen() {
           {locations.length === 0 ? (
             <View style={styles.emptyState}>
               <IconSymbol
-                ios_icon_name="archivebox"
-                android_material_icon_name="warehouse"
+                ios_icon_name="tray"
+                android_material_icon_name="inventory_2"
                 size={64}
                 color={colors.textSecondary}
               />
-              <Text style={styles.emptyText}>No storage locations</Text>
+              <Text style={styles.emptyText}>No storage locations found</Text>
               <Text style={styles.emptySubtext}>
-                Add your first storage location to track capacity
+                Add your first storage location to get started
               </Text>
             </View>
           ) : (
-            <React.Fragment>
-              {/* Dry Storage Section */}
-              {dryLocations.length > 0 && (
-                <React.Fragment>
-                  <View style={styles.sectionHeader}>
-                    <IconSymbol
-                      ios_icon_name="cube.box.fill"
-                      android_material_icon_name="inventory"
-                      size={20}
-                      color={colors.text}
-                    />
-                    <Text style={styles.sectionTitle}>Dry Storage</Text>
-                  </View>
-                  {dryLocations.map((item, index) => renderLocationCard(item, index))}
-                </React.Fragment>
-              )}
+            locations.map((item, index) => {
+              const usagePercent = (item.used / item.capacity) * 100;
+              const icon = getTypeIcon(item.type);
+              
+              return (
+                <React.Fragment key={index}>
+                  <TouchableOpacity
+                    style={[commonStyles.card, styles.itemCard]}
+                    onPress={() => openEditModal(item)}
+                  >
+                    <View style={styles.itemHeader}>
+                      <View style={styles.itemTitleRow}>
+                        <IconSymbol
+                          ios_icon_name={icon.ios}
+                          android_material_icon_name={icon.android}
+                          size={24}
+                          color={colors.primary}
+                        />
+                        <Text style={styles.itemName}>{getTypeLabel(item.type)} Storage</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => handleDelete(item)}
+                      >
+                        <IconSymbol
+                          ios_icon_name="trash.fill"
+                          android_material_icon_name="delete"
+                          size={20}
+                          color={colors.error}
+                        />
+                      </TouchableOpacity>
+                    </View>
 
-              {/* Cold Storage Section */}
-              {refrigeratedLocations.length > 0 && (
-                <React.Fragment>
-                  <View style={[styles.sectionHeader, { marginTop: 24 }]}>
-                    <IconSymbol
-                      ios_icon_name="snowflake"
-                      android_material_icon_name="ac_unit"
-                      size={20}
-                      color={colors.text}
-                    />
-                    <Text style={styles.sectionTitle}>Cold Storage</Text>
-                  </View>
-                  {refrigeratedLocations.map((item, index) => renderLocationCard(item, index))}
-                </React.Fragment>
-              )}
+                    <View style={styles.itemDetails}>
+                      <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>Capacity:</Text>
+                        <Text style={styles.detailValue}>
+                          {item.capacity} {item.unit}
+                        </Text>
+                      </View>
+                      <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>Used:</Text>
+                        <Text style={styles.detailValue}>
+                          {item.used.toFixed(1)} {item.unit}
+                        </Text>
+                      </View>
+                      <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>Available:</Text>
+                        <Text style={[styles.detailValue, { color: colors.success }]}>
+                          {(item.capacity - item.used).toFixed(1)} {item.unit}
+                        </Text>
+                      </View>
+                    </View>
 
-              {/* Freezer Storage Section */}
-              {freezerLocations.length > 0 && (
-                <React.Fragment>
-                  <View style={[styles.sectionHeader, { marginTop: 24 }]}>
-                    <IconSymbol
-                      ios_icon_name="thermometer.snowflake"
-                      android_material_icon_name="ac_unit"
-                      size={20}
-                      color={colors.text}
-                    />
-                    <Text style={styles.sectionTitle}>Freezer Storage</Text>
-                  </View>
-                  {freezerLocations.map((item, index) => renderLocationCard(item, index))}
+                    <View style={styles.progressContainer}>
+                      <View style={styles.progressBar}>
+                        <View
+                          style={[
+                            styles.progressFill,
+                            {
+                              width: `${Math.min(usagePercent, 100)}%`,
+                              backgroundColor:
+                                usagePercent > 90 ? colors.error :
+                                usagePercent > 70 ? colors.warning :
+                                colors.success,
+                            },
+                          ]}
+                        />
+                      </View>
+                      <Text style={styles.progressText}>
+                        {usagePercent.toFixed(1)}% utilized
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
                 </React.Fragment>
-              )}
-            </React.Fragment>
+              );
+            })
           )}
 
           <View style={{ height: 100 }} />
         </ScrollView>
       )}
 
-      {/* Add/Edit Modal */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -485,16 +384,16 @@ export default function StorageLocationsScreen() {
                           type === t && styles.typeButtonTextActive,
                         ]}
                       >
-                        {t === 'refrigerated' ? 'Cold' : t.charAt(0).toUpperCase() + t.slice(1)}
+                        {getTypeLabel(t)}
                       </Text>
                     </TouchableOpacity>
                   </React.Fragment>
                 ))}
               </View>
 
-              <Text style={styles.label}>Unit of Measurement *</Text>
+              <Text style={styles.label}>Unit *</Text>
               <View style={styles.unitSelector}>
-                {(['sqft', 'lbs', 'shelf'] as const).map((u, idx) => (
+                {(['sqft', 'shelf', 'lbs'] as const).map((u, idx) => (
                   <React.Fragment key={idx}>
                     <TouchableOpacity
                       style={[
@@ -509,7 +408,7 @@ export default function StorageLocationsScreen() {
                           unit === u && styles.unitButtonTextActive,
                         ]}
                       >
-                        {u === 'sqft' ? 'Square Feet' : u === 'lbs' ? 'Pounds' : 'Shelf Space'}
+                        {u}
                       </Text>
                     </TouchableOpacity>
                   </React.Fragment>
@@ -519,7 +418,7 @@ export default function StorageLocationsScreen() {
               <Text style={styles.label}>Capacity *</Text>
               <TextInput
                 style={commonStyles.input}
-                placeholder={`Enter capacity in ${getUnitLabel(unit)}`}
+                placeholder="0"
                 placeholderTextColor={colors.textSecondary}
                 value={capacity}
                 onChangeText={setCapacity}
@@ -531,7 +430,7 @@ export default function StorageLocationsScreen() {
                 onPress={handleSave}
               >
                 <Text style={commonStyles.buttonText}>
-                  {editingItem ? 'Update' : 'Add'} Location
+                  {editingItem ? 'Update' : 'Add'} Storage Location
                 </Text>
               </TouchableOpacity>
             </ScrollView>
@@ -565,36 +464,6 @@ const styles = StyleSheet.create({
   addButton: {
     padding: 8,
   },
-  summaryScroll: {
-    marginBottom: 16,
-  },
-  summaryContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  summaryCard: {
-    minWidth: 140,
-    alignItems: 'center',
-    padding: 16,
-  },
-  summaryTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    marginTop: 8,
-  },
-  summaryValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.primary,
-    marginTop: 4,
-  },
-  summaryCapacity: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
@@ -611,18 +480,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingTop: 0,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
   },
   emptyState: {
     alignItems: 'center',
@@ -641,36 +498,46 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
   },
-  locationCard: {
+  itemCard: {
     marginBottom: 12,
   },
-  locationHeader: {
+  itemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
-  locationName: {
+  itemTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  itemName: {
     fontSize: 18,
     fontWeight: '600',
     color: colors.text,
-    flex: 1,
   },
   deleteButton: {
     padding: 4,
   },
-  locationDetails: {
+  itemDetails: {
     marginBottom: 12,
+    gap: 6,
   },
   detailRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
   },
-  detailText: {
+  detailLabel: {
     fontSize: 14,
     color: colors.textSecondary,
-    marginLeft: 8,
+  },
+  detailValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
   },
   progressContainer: {
     marginTop: 8,
@@ -680,10 +547,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.highlight,
     borderRadius: 4,
     overflow: 'hidden',
+    marginBottom: 6,
   },
   progressFill: {
     height: '100%',
     borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'right',
   },
   modalOverlay: {
     flex: 1,
@@ -727,7 +600,8 @@ const styles = StyleSheet.create({
   typeButton: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
     backgroundColor: colors.card,
     borderWidth: 2,
     borderColor: colors.border,
@@ -735,12 +609,12 @@ const styles = StyleSheet.create({
   },
   typeButtonActive: {
     borderColor: colors.primary,
-    backgroundColor: colors.primary + '10',
+    backgroundColor: colors.primary + '20',
   },
   typeButtonText: {
     fontSize: 14,
-    color: colors.textSecondary,
     fontWeight: '500',
+    color: colors.textSecondary,
   },
   typeButtonTextActive: {
     color: colors.primary,
@@ -752,24 +626,22 @@ const styles = StyleSheet.create({
   },
   unitButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: colors.card,
-    borderWidth: 2,
-    borderColor: colors.border,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: colors.highlight,
     alignItems: 'center',
   },
   unitButtonActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary + '10',
+    backgroundColor: colors.primary,
   },
   unitButtonText: {
-    fontSize: 13,
-    color: colors.textSecondary,
+    fontSize: 14,
     fontWeight: '500',
+    color: colors.textSecondary,
   },
   unitButtonTextActive: {
-    color: colors.primary,
+    color: colors.card,
     fontWeight: '600',
   },
   saveButton: {

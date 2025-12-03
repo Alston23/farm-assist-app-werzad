@@ -1,6 +1,6 @@
 
 import "react-native-reanimated";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -33,9 +33,6 @@ function RootLayoutNav() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
-  
-  // Track if this is the initial navigation
-  const hasNavigatedRef = useRef(false);
 
   useEffect(() => {
     if (loaded) {
@@ -51,7 +48,6 @@ function RootLayoutNav() {
 
     const inAuthGroup = segments[0] === 'auth';
     const inTestAuth = segments[0] === 'test-auth';
-    const inTabs = segments[0] === '(tabs)';
 
     // Don't redirect if we're in test-auth (development only)
     if (inTestAuth && __DEV__) {
@@ -68,19 +64,6 @@ function RootLayoutNav() {
     if (user && inAuthGroup) {
       router.replace('/(tabs)/crops');
       return;
-    }
-
-    // Only redirect to crops on initial load if user is logged in and not in any specific route
-    // This prevents redirecting when navigating to inventory-related screens
-    if (user && !inTabs && !inAuthGroup && !hasNavigatedRef.current && segments.length === 0) {
-      hasNavigatedRef.current = true;
-      router.replace('/(tabs)/crops');
-      return;
-    }
-    
-    // Mark that we've completed initial navigation
-    if (user && segments.length > 0) {
-      hasNavigatedRef.current = true;
     }
   }, [user, segments, loaded, isLoading]);
 
