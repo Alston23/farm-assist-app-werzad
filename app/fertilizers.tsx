@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
-import IconSymbol from "@/components/IconSymbol";
+import { IconSymbol } from "@/components/IconSymbol";
 import { colors } from "@/styles/commonStyles";
 
 type Unit = "bags" | "lbs";
@@ -260,33 +260,35 @@ export default function FertilizersScreen() {
         />
       ) : (
         <ScrollView>
-          {filteredFertilizers.map((item) => (
-            <View key={item.id} style={styles.card}>
-              <TouchableOpacity
-                style={styles.cardContent}
-                activeOpacity={0.8}
-                onPress={() => openEditModal(item)}
-              >
-                <Text style={styles.cardTitle}>{item.name}</Text>
-                <Text style={styles.cardSubtitle}>
-                  {item.quantity} {item.unit === "lbs" ? "lbs" : "bags"}
-                </Text>
-              </TouchableOpacity>
+          {filteredFertilizers.map((item, index) => (
+            <React.Fragment key={index}>
+              <View style={styles.card}>
+                <TouchableOpacity
+                  style={styles.cardContent}
+                  activeOpacity={0.8}
+                  onPress={() => openEditModal(item)}
+                >
+                  <Text style={styles.cardTitle}>{item.name}</Text>
+                  <Text style={styles.cardSubtitle}>
+                    {item.quantity} {item.unit === "lbs" ? "lbs" : "bags"}
+                  </Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.trashButton}
-                activeOpacity={0.7}
-                onPress={() => deleteFertilizer(item.id)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <IconSymbol
-                  ios_icon_name="trash"
-                  android_material_icon_name="delete"
-                  size={20}
-                  color="#ff3b30"
-                />
-              </TouchableOpacity>
-            </View>
+                <TouchableOpacity
+                  style={styles.trashButton}
+                  activeOpacity={0.7}
+                  onPress={() => deleteFertilizer(item.id)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <IconSymbol
+                    ios_icon_name="trash"
+                    android_material_icon_name="delete"
+                    size={20}
+                    color="#ff3b30"
+                  />
+                </TouchableOpacity>
+              </View>
+            </React.Fragment>
           ))}
 
           {filteredFertilizers.length === 0 && !loading && (
@@ -330,17 +332,18 @@ export default function FertilizersScreen() {
 
             {dropdownVisible && (
               <ScrollView style={styles.dropdownList}>
-                {POPULAR_FERTILIZERS.map((name) => (
-                  <TouchableOpacity
-                    key={name}
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setEditName(name);
-                      setDropdownVisible(false);
-                    }}
-                  >
-                    <Text>{name}</Text>
-                  </TouchableOpacity>
+                {POPULAR_FERTILIZERS.map((name, idx) => (
+                  <React.Fragment key={idx}>
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setEditName(name);
+                        setDropdownVisible(false);
+                      }}
+                    >
+                      <Text>{name}</Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
                 ))}
               </ScrollView>
             )}

@@ -1,3 +1,4 @@
+
 import { Platform } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 
@@ -8,7 +9,7 @@ type IconSymbolProps = {
   color?: string;
 };
 
-export default function IconSymbol({
+export function IconSymbol({
   ios_icon_name,
   android_material_icon_name,
   size = 24,
@@ -26,3 +27,5 @@ export default function IconSymbol({
     );
   }
 }
+
+export default IconSymbol;
