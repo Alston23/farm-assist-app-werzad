@@ -1,6 +1,6 @@
 
 import "react-native-reanimated";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -33,6 +33,9 @@ function RootLayoutNav() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
+  
+  // Track if this is the initial navigation
+  const hasNavigatedRef = useRef(false);
 
   useEffect(() => {
     if (loaded) {
@@ -67,10 +70,17 @@ function RootLayoutNav() {
       return;
     }
 
-    // If user is logged in and not in tabs, redirect to tabs
-    if (user && !inTabs && !inAuthGroup) {
+    // Only redirect to crops on initial load if user is logged in and not in any specific route
+    // This prevents redirecting when navigating to inventory-related screens
+    if (user && !inTabs && !inAuthGroup && !hasNavigatedRef.current && segments.length === 0) {
+      hasNavigatedRef.current = true;
       router.replace('/(tabs)/crops');
       return;
+    }
+    
+    // Mark that we've completed initial navigation
+    if (user && segments.length > 0) {
+      hasNavigatedRef.current = true;
     }
   }, [user, segments, loaded, isLoading]);
 
@@ -166,6 +176,41 @@ function RootLayoutNav() {
               }}
             />
             <Stack.Screen
+              name="storage-locations"
+              options={{
+                presentation: "card",
+                title: "Storage Locations",
+              }}
+            />
+            <Stack.Screen
+              name="record-usage"
+              options={{
+                presentation: "card",
+                title: "Record Usage",
+              }}
+            />
+            <Stack.Screen
+              name="add-harvest"
+              options={{
+                presentation: "card",
+                title: "Add Harvest",
+              }}
+            />
+            <Stack.Screen
+              name="record-sale"
+              options={{
+                presentation: "card",
+                title: "Record Sale",
+              }}
+            />
+            <Stack.Screen
+              name="reports"
+              options={{
+                presentation: "card",
+                title: "Reports",
+              }}
+            />
+            <Stack.Screen
               name="fertilizers"
               options={{
                 presentation: "modal",
@@ -177,6 +222,13 @@ function RootLayoutNav() {
               options={{
                 presentation: "modal",
                 title: "Seeds",
+              }}
+            />
+            <Stack.Screen
+              name="packaging"
+              options={{
+                presentation: "modal",
+                title: "Packaging",
               }}
             />
             <Stack.Screen
