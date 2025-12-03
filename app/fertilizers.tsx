@@ -181,16 +181,23 @@ export default function FertilizersScreen() {
         style: "destructive",
         onPress: async () => {
           try {
+            console.log("Attempting to delete fertilizer with id:", id);
+            
             const {
               data: { user },
               error: userError,
             } = await supabase.auth.getUser();
 
-            if (userError) throw userError;
+            if (userError) {
+              console.error("User error:", userError);
+              throw userError;
+            }
             if (!user) {
               Alert.alert("Error", "User not found");
               return;
             }
+
+            console.log("User ID:", user.id);
 
             const { error } = await supabase
               .from("fertilizers")
@@ -198,13 +205,17 @@ export default function FertilizersScreen() {
               .eq("id", id)
               .eq("user_id", user.id);
 
-            if (error) throw error;
+            if (error) {
+              console.error("Delete error:", error);
+              throw error;
+            }
 
+            console.log("Delete successful");
             setFertilizers((prev) => prev.filter((f) => f.id !== id));
             Alert.alert("Success", "Fertilizer deleted successfully");
           } catch (e: any) {
             console.error("deleteFertilizer error", e);
-            Alert.alert("Error", "Failed to delete fertilizer");
+            Alert.alert("Error", "Failed to delete fertilizer: " + (e.message || "Unknown error"));
           }
         },
       },
@@ -224,7 +235,7 @@ export default function FertilizersScreen() {
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <IconSymbol
-            ios_icon_name="chevron.backward"
+            ios_icon_name="chevron.left"
             android_material_icon_name="arrow_back"
             size={24}
             color={colors.text}
@@ -280,7 +291,10 @@ export default function FertilizersScreen() {
                 <TouchableOpacity
                   style={styles.trashButton}
                   activeOpacity={0.7}
-                  onPress={() => deleteFertilizer(item.id)}
+                  onPress={() => {
+                    console.log("Delete button pressed for item:", item.id);
+                    deleteFertilizer(item.id);
+                  }}
                   hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
                 >
                   <IconSymbol

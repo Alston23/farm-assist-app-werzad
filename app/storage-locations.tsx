@@ -164,11 +164,15 @@ export default function StorageLocations() {
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log("Attempting to delete storage location with id:", item.id);
+              
               const { data: { user } } = await supabase.auth.getUser();
               if (!user) {
                 Alert.alert('Error', 'You must be logged in');
                 return;
               }
+
+              console.log("User ID:", user.id);
 
               const { error } = await supabase
                 .from('storage_locations')
@@ -178,14 +182,15 @@ export default function StorageLocations() {
 
               if (error) {
                 console.error('Error deleting storage location:', error);
-                Alert.alert('Error', 'Failed to delete storage location');
+                Alert.alert('Error', 'Failed to delete storage location: ' + (error.message || 'Unknown error'));
               } else {
+                console.log("Delete successful");
                 loadLocations();
                 Alert.alert('Success', 'Storage location deleted successfully');
               }
-            } catch (error) {
+            } catch (error: any) {
               console.error('Error deleting storage location:', error);
-              Alert.alert('Error', 'An unexpected error occurred');
+              Alert.alert('Error', 'An unexpected error occurred: ' + (error.message || 'Unknown error'));
             }
           },
         },
@@ -217,7 +222,7 @@ export default function StorageLocations() {
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <IconSymbol
-            ios_icon_name="chevron.backward"
+            ios_icon_name="chevron.left"
             android_material_icon_name="arrow_back"
             size={24}
             color={colors.text}
@@ -285,7 +290,10 @@ export default function StorageLocations() {
                       </View>
                       <TouchableOpacity
                         style={styles.deleteButton}
-                        onPress={() => handleDelete(item)}
+                        onPress={() => {
+                          console.log("Delete button pressed for storage location:", item.id);
+                          handleDelete(item);
+                        }}
                         hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
                       >
                         <IconSymbol

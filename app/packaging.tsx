@@ -156,11 +156,15 @@ export default function Packaging() {
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log("Attempting to delete packaging with id:", item.id);
+              
               const { data: { user } } = await supabase.auth.getUser();
               if (!user) {
                 Alert.alert('Error', 'You must be logged in');
                 return;
               }
+
+              console.log("User ID:", user.id);
 
               const { error } = await supabase
                 .from('packaging')
@@ -170,14 +174,15 @@ export default function Packaging() {
 
               if (error) {
                 console.error('Error deleting packaging:', error);
-                Alert.alert('Error', 'Failed to delete packaging');
+                Alert.alert('Error', 'Failed to delete packaging: ' + (error.message || 'Unknown error'));
               } else {
+                console.log("Delete successful");
                 loadPackaging();
                 Alert.alert('Success', 'Packaging deleted successfully');
               }
-            } catch (error) {
+            } catch (error: any) {
               console.error('Error deleting packaging:', error);
-              Alert.alert('Error', 'An unexpected error occurred');
+              Alert.alert('Error', 'An unexpected error occurred: ' + (error.message || 'Unknown error'));
             }
           },
         },
@@ -198,7 +203,7 @@ export default function Packaging() {
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <IconSymbol
-            ios_icon_name="chevron.backward"
+            ios_icon_name="chevron.left"
             android_material_icon_name="arrow_back"
             size={24}
             color={colors.text}
@@ -270,7 +275,10 @@ export default function Packaging() {
                     <Text style={styles.itemName}>{item.name}</Text>
                     <TouchableOpacity
                       style={styles.deleteButton}
-                      onPress={() => handleDelete(item)}
+                      onPress={() => {
+                        console.log("Delete button pressed for packaging:", item.id);
+                        handleDelete(item);
+                      }}
                       hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
                     >
                       <IconSymbol

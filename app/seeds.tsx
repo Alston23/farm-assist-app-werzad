@@ -156,11 +156,15 @@ export default function Seeds() {
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log("Attempting to delete seed with id:", item.id);
+              
               const { data: { user } } = await supabase.auth.getUser();
               if (!user) {
                 Alert.alert('Error', 'You must be logged in');
                 return;
               }
+
+              console.log("User ID:", user.id);
 
               const { error } = await supabase
                 .from('seeds')
@@ -170,14 +174,15 @@ export default function Seeds() {
 
               if (error) {
                 console.error('Error deleting seed:', error);
-                Alert.alert('Error', 'Failed to delete seed');
+                Alert.alert('Error', 'Failed to delete seed: ' + (error.message || 'Unknown error'));
               } else {
+                console.log("Delete successful");
                 loadSeeds();
                 Alert.alert('Success', 'Seed deleted successfully');
               }
-            } catch (error) {
+            } catch (error: any) {
               console.error('Error deleting seed:', error);
-              Alert.alert('Error', 'An unexpected error occurred');
+              Alert.alert('Error', 'An unexpected error occurred: ' + (error.message || 'Unknown error'));
             }
           },
         },
@@ -198,7 +203,7 @@ export default function Seeds() {
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <IconSymbol
-            ios_icon_name="chevron.backward"
+            ios_icon_name="chevron.left"
             android_material_icon_name="arrow_back"
             size={24}
             color={colors.text}
@@ -270,7 +275,10 @@ export default function Seeds() {
                     <Text style={styles.itemName}>{item.name}</Text>
                     <TouchableOpacity
                       style={styles.deleteButton}
-                      onPress={() => handleDelete(item)}
+                      onPress={() => {
+                        console.log("Delete button pressed for seed:", item.id);
+                        handleDelete(item);
+                      }}
                       hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
                     >
                       <IconSymbol
