@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
 import PageHeader from '../../components/PageHeader';
 import { supabase } from '../../lib/supabase';
 
@@ -9,6 +10,7 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  imageUrl?: string;
   timestamp: Date;
 }
 
@@ -17,6 +19,7 @@ interface QuickAction {
   icon: string;
   title: string;
   prompt: string;
+  requiresImage?: boolean;
 }
 
 const quickActions: QuickAction[] = [
@@ -31,6 +34,13 @@ const quickActions: QuickAction[] = [
     icon: '🔍',
     title: 'Problem Diagnosis',
     prompt: 'I need help diagnosing a problem with my crops. Can you help me identify what might be wrong?',
+  },
+  {
+    id: 'image-identification',
+    icon: '📸',
+    title: 'Identify Plant Issue',
+    prompt: 'Please analyze this image and help me identify any weeds, pest damage, or plant diseases.',
+    requiresImage: true,
   },
   {
     id: 'growing-tips',
@@ -57,10 +67,13 @@ export default function AIAssistantScreen() {
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(true);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     loadConversationHistory();
+    requestPermissions();
   }, []);
 
   useEffect(() => {
@@ -68,6 +81,15 @@ export default function AIAssistantScreen() {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }
   }, [messages]);
+
+  const requestPermissions = async () => {
+    const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+    const { status: mediaStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (cameraStatus !== 'granted' || mediaStatus !== 'granted') {
+      console.log('Camera or media library permissions not granted');
+    }
+  };
 
   const loadConversationHistory = async () => {
     try {
@@ -91,6 +113,7 @@ export default function AIAssistantScreen() {
           id: msg.id,
           role: msg.role,
           content: msg.content,
+          imageUrl: msg.image_url,
           timestamp: new Date(msg.created_at),
         }));
         setMessages(loadedMessages);
@@ -101,7 +124,7 @@ export default function AIAssistantScreen() {
     }
   };
 
-  const saveMessage = async (role: 'user' | 'assistant', content: string) => {
+  const saveMessage = async (role: 'user' | 'assistant', content: string, imageUrl?: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -110,6 +133,7 @@ export default function AIAssistantScreen() {
         user_id: user.id,
         role,
         content,
+        image_url: imageUrl || null,
       });
 
       if (error) {
@@ -117,6 +141,98 @@ export default function AIAssistantScreen() {
       }
     } catch (error) {
       console.error('Error saving message:', error);
+    }
+  };
+
+  const pickImage = async (useCamera: boolean) => {
+    try {
+      let result;
+      
+      if (useCamera) {
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 0.8,
+        });
+      } else {
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 0.8,
+        });
+      }
+
+      if (!result.canceled && result.assets[0]) {
+        setSelectedImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
+
+  const showImagePickerOptions = () => {
+    Alert.alert(
+      'Select Image',
+      'Choose an option to add an image',
+      [
+        {
+          text: 'Take Photo',
+          onPress: () => pickImage(true),
+        },
+        {
+          text: 'Choose from Gallery',
+          onPress: () => pickImage(false),
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
+  };
+
+  const uploadImageToSupabase = async (imageUri: string): Promise<string | null> => {
+    try {
+      setUploadingImage(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      // Fetch the image as a blob
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      
+      // Generate unique filename
+      const fileExt = imageUri.split('.').pop() || 'jpg';
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      const filePath = `ai-assistant-images/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('farm-images')
+        .upload(filePath, blob, {
+          contentType: `image/${fileExt}`,
+          upsert: false,
+        });
+
+      if (error) {
+        console.error('Error uploading image:', error);
+        return null;
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('farm-images')
+        .getPublicUrl(filePath);
+
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -142,34 +258,49 @@ export default function AIAssistantScreen() {
     }
   };
 
-  const sendMessage = async (text: string) => {
-    if (!text.trim() || loading) return;
+  const sendMessage = async (text: string, imageUri?: string) => {
+    if ((!text.trim() && !imageUri) || loading) return;
+
+    let imageUrl: string | null = null;
+
+    // Upload image if present
+    if (imageUri) {
+      imageUrl = await uploadImageToSupabase(imageUri);
+      if (!imageUrl) {
+        Alert.alert('Error', 'Failed to upload image. Please try again.');
+        return;
+      }
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: text.trim(),
+      content: text.trim() || 'Please analyze this image.',
+      imageUrl: imageUrl || undefined,
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInputText('');
+    setSelectedImage(null);
     setLoading(true);
     setShowQuickActions(false);
 
-    await saveMessage('user', text.trim());
+    await saveMessage('user', text.trim() || 'Please analyze this image.', imageUrl || undefined);
 
     try {
       const context = await getUserContext();
 
       const { data, error } = await supabase.functions.invoke('ai-assistant', {
         body: {
-          message: text.trim(),
+          message: text.trim() || 'Please analyze this image and help me identify any weeds, pest damage, or plant diseases.',
           conversationHistory: messages.slice(-10).map((m) => ({
             role: m.role,
             content: m.content,
+            imageUrl: m.imageUrl,
           })),
           userContext: context,
+          imageUrl: imageUrl,
         },
       });
 
@@ -203,7 +334,12 @@ export default function AIAssistantScreen() {
   };
 
   const handleQuickAction = (action: QuickAction) => {
-    sendMessage(action.prompt);
+    if (action.requiresImage) {
+      showImagePickerOptions();
+      setInputText(action.prompt);
+    } else {
+      sendMessage(action.prompt);
+    }
   };
 
   const clearConversation = async () => {
@@ -252,7 +388,7 @@ export default function AIAssistantScreen() {
               <View style={styles.welcomeContainer}>
                 <Text style={styles.welcomeTitle}>Welcome to Your AI Farm Assistant! 👋</Text>
                 <Text style={styles.welcomeText}>
-                  I&apos;m here to help you with crop recommendations, problem diagnosis, growing tips, and personalized farming advice.
+                  I&apos;m here to help you with crop recommendations, problem diagnosis, growing tips, and personalized farming advice. You can also upload images to identify weeds, pests, or diseases!
                 </Text>
                 <Text style={styles.welcomeSubtext}>Choose a quick action below or ask me anything:</Text>
 
@@ -285,6 +421,13 @@ export default function AIAssistantScreen() {
                     message.role === 'user' ? styles.userBubble : styles.assistantBubble,
                   ]}
                 >
+                  {message.imageUrl && (
+                    <Image
+                      source={{ uri: message.imageUrl }}
+                      style={styles.messageImage}
+                      resizeMode="cover"
+                    />
+                  )}
                   <Text
                     style={[
                       styles.messageText,
@@ -301,7 +444,7 @@ export default function AIAssistantScreen() {
               <View style={[styles.messageContainer, styles.assistantMessage]}>
                 <View style={[styles.messageBubble, styles.assistantBubble]}>
                   <ActivityIndicator color="#2D5016" />
-                  <Text style={styles.loadingText}>Thinking...</Text>
+                  <Text style={styles.loadingText}>Analyzing...</Text>
                 </View>
               </View>
             )}
@@ -314,23 +457,54 @@ export default function AIAssistantScreen() {
           </ScrollView>
 
           <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Ask me anything about farming..."
-              placeholderTextColor="#999"
-              value={inputText}
-              onChangeText={setInputText}
-              multiline
-              maxLength={500}
-              editable={!loading}
-            />
-            <TouchableOpacity
-              style={[styles.sendButton, (!inputText.trim() || loading) && styles.sendButtonDisabled]}
-              onPress={() => sendMessage(inputText)}
-              disabled={!inputText.trim() || loading}
-            >
-              <Text style={styles.sendButtonText}>➤</Text>
-            </TouchableOpacity>
+            {selectedImage && (
+              <View style={styles.selectedImageContainer}>
+                <Image
+                  source={{ uri: selectedImage }}
+                  style={styles.selectedImage}
+                  resizeMode="cover"
+                />
+                <TouchableOpacity
+                  style={styles.removeImageButton}
+                  onPress={() => setSelectedImage(null)}
+                >
+                  <Text style={styles.removeImageText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            <View style={styles.inputRow}>
+              <TouchableOpacity
+                style={styles.imageButton}
+                onPress={showImagePickerOptions}
+                disabled={loading || uploadingImage}
+              >
+                <Text style={styles.imageButtonText}>📷</Text>
+              </TouchableOpacity>
+              <TextInput
+                style={styles.input}
+                placeholder="Ask me anything about farming..."
+                placeholderTextColor="#999"
+                value={inputText}
+                onChangeText={setInputText}
+                multiline
+                maxLength={500}
+                editable={!loading && !uploadingImage}
+              />
+              <TouchableOpacity
+                style={[
+                  styles.sendButton,
+                  ((!inputText.trim() && !selectedImage) || loading || uploadingImage) && styles.sendButtonDisabled
+                ]}
+                onPress={() => sendMessage(inputText, selectedImage || undefined)}
+                disabled={(!inputText.trim() && !selectedImage) || loading || uploadingImage}
+              >
+                {uploadingImage ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.sendButtonText}>➤</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </LinearGradient>
@@ -439,6 +613,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderBottomLeftRadius: 4,
   },
+  messageImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
   messageText: {
     fontSize: 15,
     lineHeight: 22,
@@ -468,13 +648,58 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   inputContainer: {
-    flexDirection: 'row',
     padding: 16,
     paddingBottom: 100,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
+  },
+  selectedImageContainer: {
+    position: 'relative',
+    marginBottom: 12,
+    alignSelf: 'flex-start',
+  },
+  selectedImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 12,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#FF5252',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  removeImageText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  inputRow: {
+    flexDirection: 'row',
     gap: 12,
+    alignItems: 'flex-end',
+  },
+  imageButton: {
+    backgroundColor: '#F5F5F5',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageButtonText: {
+    fontSize: 24,
   },
   input: {
     flex: 1,
