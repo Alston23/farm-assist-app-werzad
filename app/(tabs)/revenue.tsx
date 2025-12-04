@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import PageHeader from '../../components/PageHeader';
 import AddIncomeModal from '../../components/AddIncomeModal';
 import AddExpenseModal from '../../components/AddExpenseModal';
+import ReportsModal from '../../components/ReportsModal';
 import { supabase } from '../../lib/supabase';
 
 interface Income {
@@ -38,6 +39,7 @@ interface ExpenseCategoryData {
 export default function RevenueScreen() {
   const [showIncomeModal, setShowIncomeModal] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [showReportsModal, setShowReportsModal] = useState(false);
   const [income, setIncome] = useState<Income[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
@@ -233,6 +235,21 @@ export default function RevenueScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* Run Reports Button */}
+          <TouchableOpacity
+            style={styles.reportsButton}
+            onPress={() => setShowReportsModal(true)}
+          >
+            <Text style={styles.reportsButtonIcon}>📊</Text>
+            <View style={styles.reportsButtonContent}>
+              <Text style={styles.reportsButtonTitle}>Run Reports</Text>
+              <Text style={styles.reportsButtonSubtitle}>
+                Generate insights from your revenue data
+              </Text>
+            </View>
+            <Text style={styles.reportsButtonArrow}>›</Text>
+          </TouchableOpacity>
+
           {/* Sales Channel Comparison */}
           {salesChannelData.length > 0 && (
             <View style={styles.card}>
@@ -357,6 +374,10 @@ export default function RevenueScreen() {
         onClose={() => setShowExpenseModal(false)}
         onSuccess={loadData}
       />
+      <ReportsModal
+        visible={showReportsModal}
+        onClose={() => setShowReportsModal(false)}
+      />
     </View>
   );
 }
@@ -476,6 +497,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+  },
+  reportsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+    borderWidth: 2,
+    borderColor: '#4A7C2C',
+  },
+  reportsButtonIcon: {
+    fontSize: 32,
+    marginRight: 12,
+  },
+  reportsButtonContent: {
+    flex: 1,
+  },
+  reportsButtonTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2D5016',
+    marginBottom: 4,
+  },
+  reportsButtonSubtitle: {
+    fontSize: 14,
+    color: '#666',
+  },
+  reportsButtonArrow: {
+    fontSize: 28,
+    color: '#4A7C2C',
+    marginLeft: 8,
   },
   cardTitle: {
     fontSize: 20,
