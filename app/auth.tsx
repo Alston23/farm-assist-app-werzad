@@ -133,7 +133,7 @@ export default function AuthScreen() {
                 color="#FFFFFF" 
               />
             </View>
-            <Text style={styles.appName}>FarmAssist</Text>
+            <Text style={styles.appName}>SmallFarm Copilot</Text>
             <Text style={styles.tagline}>
               {isLogin ? "Welcome Back" : "Join the Community"}
             </Text>
