@@ -11,11 +11,9 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
-  Image,
 } from "react-native";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { colors } from "@/styles/commonStyles";
 import { LinearGradient } from "expo-linear-gradient";
 import IconSymbol from "@/components/IconSymbol";
 
@@ -86,18 +84,26 @@ export default function AuthScreen() {
         console.log("Sign in result:", result);
         
         if (result?.error) {
-          Alert.alert("Login Failed", result.error.message || "Unable to sign in. Please check your credentials.");
+          const errorMessage = result.error.message || "Unable to sign in. Please check your credentials.";
+          Alert.alert("Login Failed", errorMessage);
         }
       } else {
         const result = await signUp(email, password, name, farmName);
         console.log("Sign up result:", result);
         
         if (result?.error) {
-          Alert.alert("Sign Up Failed", result.error.message || "Unable to create account. Please try again.");
-        } else {
+          const errorMessage = result.error.message || "Unable to create account. Please try again.";
+          Alert.alert("Sign Up Failed", errorMessage);
+        } else if (result?.needsVerification) {
           Alert.alert(
             "Verify Your Email",
             "Please check your email and click the verification link to activate your account.",
+            [{ text: "OK" }]
+          );
+        } else {
+          Alert.alert(
+            "Success",
+            "Your account has been created successfully!",
             [{ text: "OK" }]
           );
         }

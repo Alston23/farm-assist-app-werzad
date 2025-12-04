@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/app/integrations/supabase/client';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
@@ -16,8 +16,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (name: string, farmName: string, email: string, password: string) => Promise<{ success: boolean; error?: string; needsVerification?: boolean }>;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: any }>;
+  signUp: (email: string, password: string, name: string, farmName: string) => Promise<{ success: boolean; error?: any; needsVerification?: boolean }>;
   logout: () => Promise<void>;
   signOut: () => Promise<void>;
   resendVerificationEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
@@ -89,10 +89,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     Alert.alert('Connection Issue', message, [{ text: 'OK' }]);
   };
 
-  const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: any }> => {
     try {
       if (!email || !password) {
-        return { success: false, error: 'Please enter your email and password' };
+        return { success: false, error: { message: 'Please enter your email and password' } };
       }
 
       const trimmedEmail = email.trim().toLowerCase();
@@ -103,25 +103,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
-        // Provide user-friendly error messages
-        if (error.message.includes('Invalid login credentials')) {
-          return { 
-            success: false, 
-            error: 'Invalid email or password. If you just signed up, please verify your email first.' 
-          };
-        } else if (error.message.includes('Email not confirmed')) {
-          return { 
-            success: false, 
-            error: 'Please verify your email address before signing in. Check your inbox for the verification link.' 
-          };
-        } else if (error.message.includes('Email link is invalid or has expired')) {
-          return { 
-            success: false, 
-            error: 'Your verification link has expired. Please request a new one.' 
-          };
-        }
-        
-        return { success: false, error: error.message };
+        console.error('Sign in error:', error);
+        return { success: false, error };
       }
 
       if (data.user && data.session) {
@@ -138,35 +121,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: true };
       }
 
-      return { success: false, error: 'Sign in failed. Please try again.' };
+      return { success: false, error: { message: 'Sign in failed. Please try again.' } };
     } catch (error: any) {
       console.error('Sign in error:', error);
-      
-      // Check for network errors
-      if (error.message?.includes('fetch') || error.message?.includes('network')) {
-        return { 
-          success: false, 
-          error: 'Unable to connect. Please check your internet connection and try again.' 
-        };
-      }
-      
-      return { success: false, error: 'An unexpected error occurred. Please try again.' };
+      return { success: false, error };
     }
   };
 
   const signUp = async (
-    name: string,
-    farmName: string,
     email: string,
-    password: string
-  ): Promise<{ success: boolean; error?: string; needsVerification?: boolean }> => {
+    password: string,
+    name: string,
+    farmName: string
+  ): Promise<{ success: boolean; error?: any; needsVerification?: boolean }> => {
     try {
       if (!email || !password || !name) {
-        return { success: false, error: 'Please fill in all required fields' };
+        return { success: false, error: { message: 'Please fill in all required fields' } };
       }
 
       if (password.length < 6) {
-        return { success: false, error: 'Password must be at least 6 characters' };
+        return { success: false, error: { message: 'Password must be at least 6 characters' } };
       }
 
       const trimmedEmail = email.trim().toLowerCase();
@@ -184,11 +158,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
-        if (error.message.includes('already registered')) {
-          return { success: false, error: 'This email is already registered. Please sign in instead.' };
-        }
-        
-        return { success: false, error: error.message };
+        console.error('Sign up error:', error);
+        return { success: false, error };
       }
 
       if (data.user) {
@@ -209,24 +180,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return { 
             success: true, 
             needsVerification: true,
-            error: 'Account created! Please check your email and click the verification link to complete your registration.' 
           };
         }
       }
 
-      return { success: false, error: 'Sign up failed. Please try again.' };
+      return { success: false, error: { message: 'Sign up failed. Please try again.' } };
     } catch (error: any) {
       console.error('Sign up error:', error);
-      
-      // Check for network errors
-      if (error.message?.includes('fetch') || error.message?.includes('network')) {
-        return { 
-          success: false, 
-          error: 'Unable to connect. Please check your internet connection and try again.' 
-        };
-      }
-      
-      return { success: false, error: 'An unexpected error occurred. Please try again.' };
+      return { success: false, error };
     }
   };
 
