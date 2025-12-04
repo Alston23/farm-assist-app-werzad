@@ -1,10 +1,13 @@
 
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import PageHeader from '../../components/PageHeader';
 
 export default function MarketplaceScreen() {
+  const router = useRouter();
+
   return (
     <View style={styles.container}>
       <PageHeader title="🛒 Marketplace" />
@@ -13,20 +16,44 @@ export default function MarketplaceScreen() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Marketplace</Text>
             <Text style={styles.cardText}>
-              Connect with buyers and manage your sales channels. Whether you&apos;re 
-              selling at roadside stands, to restaurants, through CSA programs, 
-              or at farmer&apos;s markets.
+              Connect with customers and other farmers. Sell your produce directly 
+              to customers or buy and sell farm equipment with the community.
             </Text>
           </View>
 
-          <View style={styles.card}>
-            <Text style={styles.infoTitle}>Coming Soon:</Text>
-            <Text style={styles.infoItem}>• Sales channel management</Text>
-            <Text style={styles.infoItem}>• Customer connections</Text>
-            <Text style={styles.infoItem}>• Order tracking</Text>
-            <Text style={styles.infoItem}>• Pricing tools</Text>
-            <Text style={styles.infoItem}>• Market insights</Text>
-          </View>
+          <TouchableOpacity 
+            style={styles.marketplaceOption}
+            onPress={() => router.push('/marketplace/customer')}
+          >
+            <View style={styles.optionIcon}>
+              <Text style={styles.optionIconText}>🌾</Text>
+            </View>
+            <View style={styles.optionContent}>
+              <Text style={styles.optionTitle}>Customer Marketplace</Text>
+              <Text style={styles.optionDescription}>
+                Sell your produce directly to customers. List products, manage orders, 
+                and connect with buyers.
+              </Text>
+            </View>
+            <Text style={styles.arrow}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.marketplaceOption}
+            onPress={() => router.push('/marketplace/equipment')}
+          >
+            <View style={styles.optionIcon}>
+              <Text style={styles.optionIconText}>🚜</Text>
+            </View>
+            <View style={styles.optionContent}>
+              <Text style={styles.optionTitle}>Equipment Marketplace</Text>
+              <Text style={styles.optionDescription}>
+                Buy and sell farm equipment. List equipment for sale or find what 
+                you need from other farmers.
+              </Text>
+            </View>
+            <Text style={styles.arrow}>›</Text>
+          </TouchableOpacity>
         </ScrollView>
       </LinearGradient>
     </View>
@@ -52,7 +79,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 16,
     padding: 24,
-    marginBottom: 16,
+    marginBottom: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -70,16 +97,48 @@ const styles = StyleSheet.create({
     color: '#333',
     lineHeight: 24,
   },
-  infoTitle: {
+  marketplaceOption: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  optionIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#E8F5E9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  optionIconText: {
+    fontSize: 32,
+  },
+  optionContent: {
+    flex: 1,
+  },
+  optionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#2D5016',
-    marginBottom: 12,
+    marginBottom: 6,
   },
-  infoItem: {
-    fontSize: 15,
+  optionDescription: {
+    fontSize: 14,
     color: '#555',
-    lineHeight: 28,
-    paddingLeft: 8,
+    lineHeight: 20,
+  },
+  arrow: {
+    fontSize: 32,
+    color: '#4A7C2C',
+    marginLeft: 8,
   },
 });
