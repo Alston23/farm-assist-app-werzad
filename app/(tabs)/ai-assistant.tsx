@@ -5,7 +5,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'expo-router';
-import PageHeader from '../../components/PageHeader';
 import { supabase } from '../../lib/supabase';
 
 interface Message {
@@ -204,16 +203,13 @@ export default function AIAssistantScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      // Fetch the image as a blob
       const response = await fetch(imageUri);
       const blob = await response.blob();
       
-      // Generate unique filename
       const fileExt = imageUri.split('.').pop() || 'jpg';
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
       const filePath = `ai-assistant-images/${fileName}`;
 
-      // Upload to Supabase Storage
       const { data, error } = await supabase.storage
         .from('farm-images')
         .upload(filePath, blob, {
@@ -226,7 +222,6 @@ export default function AIAssistantScreen() {
         return null;
       }
 
-      // Get public URL
       const { data: urlData } = supabase.storage
         .from('farm-images')
         .getPublicUrl(filePath);
@@ -267,7 +262,6 @@ export default function AIAssistantScreen() {
 
     let imageUrl: string | null = null;
 
-    // Upload image if present
     if (imageUri) {
       imageUrl = await uploadImageToSupabase(imageUri);
       if (!imageUrl) {
@@ -373,14 +367,9 @@ export default function AIAssistantScreen() {
     );
   };
 
-  const handleBackToQuickActions = () => {
-    setShowQuickActions(true);
-    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-  };
-
   const handleBack = () => {
-    console.log('AI Assistant: Back button pressed');
-    router.back();
+    console.log('AI Assistant: Back button pressed, navigating to crops');
+    router.push('/(tabs)/crops');
   };
 
   const handleSignOut = async () => {
@@ -418,7 +407,7 @@ export default function AIAssistantScreen() {
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
-        <PageHeader title="🤖 AI Assistant" />
+        <Text style={styles.headerTitle}>🤖 AI Assistant</Text>
         <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
           <Text style={styles.signOutButtonText}>Sign Out</Text>
         </TouchableOpacity>
@@ -456,12 +445,6 @@ export default function AIAssistantScreen() {
                   ))}
                 </View>
               </View>
-            )}
-
-            {messages.length > 0 && !showQuickActions && (
-              <TouchableOpacity style={styles.backToQuickActionsButton} onPress={handleBackToQuickActions}>
-                <Text style={styles.backToQuickActionsButtonText}>← Back to Quick Actions</Text>
-              </TouchableOpacity>
             )}
 
             {messages.map((message) => (
@@ -579,7 +562,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 48 : 0,
+    paddingTop: Platform.OS === 'android' ? 48 : 60,
+    paddingBottom: 16,
     backgroundColor: '#2D5016',
   },
   backButton: {
@@ -592,6 +576,11 @@ const styles = StyleSheet.create({
     color: '#2D5016',
     fontWeight: '600',
     fontSize: 14,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
   signOutButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -672,20 +661,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#2D5016',
     textAlign: 'center',
-  },
-  backToQuickActionsButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#4A7C2C',
-  },
-  backToQuickActionsButtonText: {
-    color: '#2D5016',
-    fontSize: 16,
-    fontWeight: '600',
   },
   messageContainer: {
     marginBottom: 12,
