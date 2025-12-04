@@ -24,13 +24,13 @@ export default function HomeScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              console.log('HomeScreen: Calling signOut');
+              console.log('HomeScreen: User confirmed sign out, calling signOut');
               await signOut();
-              console.log('HomeScreen: Sign out completed, redirecting to auth');
-              router.replace('/auth');
+              console.log('HomeScreen: Sign out completed successfully');
+              // Navigation will be handled automatically by _layout.tsx
             } catch (error: any) {
               console.error('HomeScreen: Sign out failed:', error);
-              Alert.alert('Error', 'Failed to sign out. Please try again.');
+              Alert.alert('Error', error?.message || 'Failed to sign out. Please try again.');
             }
           },
         },
@@ -109,6 +109,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   signOutButtonText: {
     color: '#FFFFFF',
