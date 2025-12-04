@@ -6,6 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface Message {
   id: string;
@@ -74,8 +75,22 @@ export default function AIAssistantScreen() {
   const { signOut } = useAuth();
   const router = useRouter();
 
+  // Reset to Quick Actions page whenever the screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('AI Assistant: Screen focused, resetting to Quick Actions');
+      setShowQuickActions(true);
+      setMessages([]);
+      setInputText('');
+      setSelectedImage(null);
+      setLoading(false);
+      return () => {
+        console.log('AI Assistant: Screen unfocused');
+      };
+    }, [])
+  );
+
   useEffect(() => {
-    loadConversationHistory();
     requestPermissions();
   }, []);
 
@@ -370,7 +385,7 @@ export default function AIAssistantScreen() {
   const handleBack = async () => {
     console.log('AI Assistant: Back button pressed');
     
-    // If there are messages, clear the conversation and return to quick actions
+    // Always navigate back to Quick Actions page
     if (messages.length > 0) {
       Alert.alert(
         'Return to Quick Actions',
@@ -398,7 +413,7 @@ export default function AIAssistantScreen() {
         ]
       );
     } else {
-      // If already on quick actions, just ensure the view is correct
+      // Already on quick actions, just ensure the view is correct
       setShowQuickActions(true);
       console.log('AI Assistant: Already on quick actions page');
     }
