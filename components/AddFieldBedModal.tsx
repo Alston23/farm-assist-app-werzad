@@ -57,8 +57,8 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
   const [daysToMaturity, setDaysToMaturity] = useState<number | null>(null);
   const [irrigationType, setIrrigationType] = useState('');
   const [showIrrigationDropdown, setShowIrrigationDropdown] = useState(false);
-  const [plantingDate, setPlantingDate] = useState(new Date());
-  const [harvestDate, setHarvestDate] = useState(new Date());
+  const [plantingDate, setPlantingDate] = useState<Date>(new Date());
+  const [harvestDate, setHarvestDate] = useState<Date>(new Date());
   const [showPlantingDatePicker, setShowPlantingDatePicker] = useState(false);
   const [showHarvestDatePicker, setShowHarvestDatePicker] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -74,6 +74,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
       const newHarvestDate = new Date(plantingDate);
       newHarvestDate.setDate(newHarvestDate.getDate() + daysToMaturity);
       setHarvestDate(newHarvestDate);
+      console.log('Auto-calculated harvest date based on days to maturity:', newHarvestDate);
     }
   }, [plantingDate, daysToMaturity]);
 
@@ -94,36 +95,40 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
   const handlePlantingDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     console.log('Planting date change - event type:', event.type, 'selectedDate:', selectedDate);
     
-    // For Android, the picker closes automatically after selection
+    // On Android, hide the picker after any interaction
     if (Platform.OS === 'android') {
       setShowPlantingDatePicker(false);
     }
     
-    // Update the date if user selected one (not cancelled)
+    // Update the date if user confirmed selection
     if (event.type === 'set' && selectedDate) {
       console.log('Setting planting date to:', selectedDate);
       setPlantingDate(selectedDate);
+      
+      // If harvest date is before the new planting date, adjust it
+      if (harvestDate < selectedDate) {
+        console.log('Adjusting harvest date to match planting date');
+        setHarvestDate(selectedDate);
+      }
     } else if (event.type === 'dismissed') {
-      console.log('Date picker dismissed without selection');
-      setShowPlantingDatePicker(false);
+      console.log('Planting date picker dismissed without selection');
     }
   };
 
   const handleHarvestDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     console.log('Harvest date change - event type:', event.type, 'selectedDate:', selectedDate);
     
-    // For Android, the picker closes automatically after selection
+    // On Android, hide the picker after any interaction
     if (Platform.OS === 'android') {
       setShowHarvestDatePicker(false);
     }
     
-    // Update the date if user selected one (not cancelled)
+    // Update the date if user confirmed selection
     if (event.type === 'set' && selectedDate) {
       console.log('Setting harvest date to:', selectedDate);
       setHarvestDate(selectedDate);
     } else if (event.type === 'dismissed') {
-      console.log('Date picker dismissed without selection');
-      setShowHarvestDatePicker(false);
+      console.log('Harvest date picker dismissed without selection');
     }
   };
 
@@ -139,6 +144,8 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
 
   const handleSave = async () => {
     console.log('Save button pressed');
+    console.log('Planting date:', plantingDate);
+    console.log('Harvest date:', harvestDate);
     
     if (!name.trim()) {
       Alert.alert('Error', 'Please enter a name');
@@ -194,6 +201,11 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
       }
 
       console.log('Field/bed created, creating planting...');
+      const plantingDateStr = plantingDate.toISOString().split('T')[0];
+      const harvestDateStr = harvestDate.toISOString().split('T')[0];
+      console.log('Saving planting_date:', plantingDateStr);
+      console.log('Saving harvest_date:', harvestDateStr);
+
       const { error: plantingError } = await supabase
         .from('plantings')
         .insert({
@@ -202,8 +214,8 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
           crop_id: cropId,
           crop_name: cropName,
           days_to_maturity: daysToMaturity || 0,
-          planting_date: plantingDate.toISOString().split('T')[0],
-          harvest_date: harvestDate.toISOString().split('T')[0],
+          planting_date: plantingDateStr,
+          harvest_date: harvestDateStr,
         });
 
       if (plantingError) {
@@ -481,7 +493,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               <TouchableOpacity
                 style={styles.dateButton}
                 onPress={() => {
-                  console.log('Planting date button pressed, current state:', showPlantingDatePicker);
+                  console.log('Planting date button pressed');
                   setShowPlantingDatePicker(true);
                 }}
                 activeOpacity={0.7}
@@ -528,7 +540,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               <TouchableOpacity
                 style={styles.dateButton}
                 onPress={() => {
-                  console.log('Harvest date button pressed, current state:', showHarvestDatePicker);
+                  console.log('Harvest date button pressed');
                   setShowHarvestDatePicker(true);
                 }}
                 activeOpacity={0.7}
