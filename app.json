@@ -1,7 +1,8 @@
+
 {
   "expo": {
-    "name": "FarmAssist",
-    "slug": "FarmAssist",
+    "name": "SmallFarm Copilot",
+    "slug": "smallfarm-copilot",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -64,6 +65,5 @@
         "projectId": "your-eas-project-id"
       }
     }
-  },
-  "scheme": "FarmAssist"
+  }
 }
