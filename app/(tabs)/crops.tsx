@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import {
   View,
@@ -15,6 +16,7 @@ import { colors, commonStyles } from "@/styles/commonStyles";
 import { cropDatabase } from "@/data/cropDatabase";
 import type { Crop } from "@/types/crop";
 import IconSymbol from "@/components/IconSymbol";
+import { LogoutButton } from "@/components/LogoutButton";
 // These two are kept for future use; they are safe even if unused for now
 import { storage } from "@/utils/storage";
 import { openAIService } from "@/utils/openaiService";
@@ -61,7 +63,7 @@ export default function CropsScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Crops</Text>
-          {/* Optional: future AI button or add button could go here */}
+          <LogoutButton />
         </View>
 
         {/* Search */}

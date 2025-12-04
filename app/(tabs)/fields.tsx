@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { Field, SoilHealthRecord, PestDiseaseRecord } from '@/types/crop';
 import { IconSymbol } from '@/components/IconSymbol';
+import { LogoutButton } from '@/components/LogoutButton';
 import { storage } from '@/utils/storage';
 import { PlantingRecommendationEngine } from '@/utils/plantingRecommendations';
 import { cropDatabase } from '@/data/cropDatabase';
@@ -121,17 +122,20 @@ export default function FieldsScreen() {
             {fields.length} fields • {totalArea.toLocaleString()} sq ft total
           </Text>
         </View>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => setShowAddModal(true)}
-        >
-          <IconSymbol
-            ios_icon_name="plus.circle.fill"
-            android_material_icon_name="add-circle"
-            size={32}
-            color={colors.primary}
-          />
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => setShowAddModal(true)}
+          >
+            <IconSymbol
+              ios_icon_name="plus.circle.fill"
+              android_material_icon_name="add-circle"
+              size={32}
+              color={colors.primary}
+            />
+          </TouchableOpacity>
+          <LogoutButton />
+        </View>
       </View>
 
       <ScrollView
@@ -772,6 +776,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   headerTitle: {
     fontSize: 32,
