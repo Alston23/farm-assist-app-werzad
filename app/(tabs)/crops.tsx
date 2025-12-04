@@ -2,12 +2,14 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import PageHeader from '../../components/PageHeader';
 import { vegetables, fruits, flowers, herbs, searchCrops, Crop } from '../../data/crops';
 
 export default function CropsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const router = useRouter();
 
   const filteredCrops = searchQuery.trim() 
     ? searchCrops(searchQuery)
@@ -17,14 +19,28 @@ export default function CropsScreen() {
     setExpandedCategory(expandedCategory === category ? null : category);
   };
 
+  const handleCropPress = (crop: Crop) => {
+    console.log('Navigating to crop detail:', crop.id);
+    router.push({
+      pathname: '/crop/[id]',
+      params: { id: crop.id }
+    });
+  };
+
   const renderCropList = (crops: Crop[]) => {
     return crops.map((crop, index) => (
-      <View key={index} style={styles.cropItem}>
+      <TouchableOpacity 
+        key={index} 
+        style={styles.cropItem}
+        onPress={() => handleCropPress(crop)}
+        activeOpacity={0.7}
+      >
         <Text style={styles.cropName}>{crop.name}</Text>
         {crop.scientificName && (
           <Text style={styles.scientificName}>{crop.scientificName}</Text>
         )}
-      </View>
+        <Text style={styles.viewDetails}>Tap to view details →</Text>
+      </TouchableOpacity>
     ));
   };
 
@@ -243,6 +259,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontStyle: 'italic',
     color: '#777',
+    marginBottom: 4,
+  },
+  viewDetails: {
+    fontSize: 12,
+    color: '#4A7C2C',
+    fontWeight: '500',
+    marginTop: 4,
   },
   searchResultsCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
