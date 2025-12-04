@@ -272,12 +272,12 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
   };
 
   const handlePlantingDatePress = () => {
-    console.log('Planting date button pressed');
+    console.log('Planting date button pressed - setting showPlantingDatePicker to true');
     setShowPlantingDatePicker(true);
   };
 
   const handleHarvestDatePress = () => {
-    console.log('Harvest date button pressed');
+    console.log('Harvest date button pressed - setting showHarvestDatePicker to true');
     setShowHarvestDatePicker(true);
   };
 
@@ -294,8 +294,8 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
           activeOpacity={1} 
           onPress={handleClose}
         />
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
+        <View style={styles.modalContent} pointerEvents="box-none">
+          <View style={styles.modalHeader} pointerEvents="auto">
             <Text style={styles.modalTitle}>Add Field/Bed</Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>✕</Text>
@@ -307,6 +307,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="always"
             nestedScrollEnabled={true}
+            pointerEvents="auto"
           >
             <View style={styles.section}>
               <Text style={styles.label}>Type</Text>
@@ -607,6 +608,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    zIndex: 0,
   },
   modalContent: {
     backgroundColor: '#fff',
@@ -614,6 +616,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     maxHeight: '90%',
     paddingBottom: 20,
+    zIndex: 1,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -622,6 +625,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+    backgroundColor: '#fff',
   },
   modalTitle: {
     fontSize: 22,
