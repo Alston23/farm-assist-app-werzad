@@ -378,6 +378,11 @@ export default function AIAssistantScreen() {
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   };
 
+  const handleBack = () => {
+    console.log('AI Assistant: Back button pressed');
+    router.back();
+  };
+
   const handleSignOut = async () => {
     console.log('AI Assistant: Sign out button pressed');
     Alert.alert(
@@ -410,6 +415,9 @@ export default function AIAssistantScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
         <PageHeader title="🤖 AI Assistant" />
         <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
           <Text style={styles.signOutButtonText}>Sign Out</Text>
@@ -451,8 +459,8 @@ export default function AIAssistantScreen() {
             )}
 
             {messages.length > 0 && !showQuickActions && (
-              <TouchableOpacity style={styles.backButton} onPress={handleBackToQuickActions}>
-                <Text style={styles.backButtonText}>← Back to Quick Actions</Text>
+              <TouchableOpacity style={styles.backToQuickActionsButton} onPress={handleBackToQuickActions}>
+                <Text style={styles.backToQuickActionsButtonText}>← Back to Quick Actions</Text>
               </TouchableOpacity>
             )}
 
@@ -570,15 +578,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingRight: 16,
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'android' ? 48 : 0,
     backgroundColor: '#2D5016',
+  },
+  backButton: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  backButtonText: {
+    color: '#2D5016',
+    fontWeight: '600',
+    fontSize: 14,
   },
   signOutButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    marginTop: Platform.OS === 'android' ? 48 : 0,
   },
   signOutButtonText: {
     color: '#FFFFFF',
@@ -654,7 +673,7 @@ const styles = StyleSheet.create({
     color: '#2D5016',
     textAlign: 'center',
   },
-  backButton: {
+  backToQuickActionsButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 12,
     padding: 12,
@@ -663,7 +682,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#4A7C2C',
   },
-  backButtonText: {
+  backToQuickActionsButtonText: {
     color: '#2D5016',
     fontSize: 16,
     fontWeight: '600',
