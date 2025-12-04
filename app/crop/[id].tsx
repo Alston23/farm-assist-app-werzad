@@ -1,17 +1,92 @@
 
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { allCrops } from '../../data/crops';
+import { supabase } from '../../lib/supabase';
+
+type CustomCropDetail = {
+  id: string;
+  name: string;
+  category: 'vegetable' | 'fruit' | 'flower' | 'herb';
+  scientific_name?: string;
+  sunlight?: string;
+  water?: string;
+  soil_type?: string;
+  soil_ph?: string;
+  plant_spacing?: string;
+  row_spacing?: string;
+  days_to_maturity?: string;
+  planting_depth?: string;
+  temperature?: string;
+  hardiness?: string;
+  companions?: string;
+  avoid?: string;
+  pests?: string;
+  diseases?: string;
+  harvest?: string;
+  storage?: string;
+  notes?: string;
+};
 
 export default function CropDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const [customCrop, setCustomCrop] = useState<CustomCropDetail | null>(null);
+  const [loading, setLoading] = useState(false);
   
-  const crop = allCrops.find(c => c.id === id);
+  const isCustomCrop = typeof id === 'string' && id.startsWith('custom-');
+  const crop = !isCustomCrop ? allCrops.find(c => c.id === id) : null;
 
-  if (!crop) {
+  useEffect(() => {
+    if (isCustomCrop) {
+      loadCustomCrop();
+    }
+  }, [id, isCustomCrop]);
+
+  const loadCustomCrop = async () => {
+    if (!id || typeof id !== 'string') return;
+    
+    const cropId = id.replace('custom-', '');
+    setLoading(true);
+    
+    try {
+      console.log('Loading custom crop:', cropId);
+      const { data, error } = await supabase
+        .from('crops')
+        .select('*')
+        .eq('id', cropId)
+        .single();
+
+      if (error) {
+        console.error('Error loading custom crop:', error);
+        return;
+      }
+
+      console.log('Loaded custom crop:', data);
+      setCustomCrop(data);
+    } catch (e) {
+      console.error('Exception loading custom crop:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <LinearGradient colors={['#2D5016', '#4A7C2C', '#6BA542']} style={styles.gradient}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FFFFFF" />
+            <Text style={styles.loadingText}>Loading crop details...</Text>
+          </View>
+        </LinearGradient>
+      </View>
+    );
+  }
+
+  if (!crop && !customCrop) {
     return (
       <View style={styles.container}>
         <LinearGradient colors={['#2D5016', '#4A7C2C', '#6BA542']} style={styles.gradient}>
@@ -26,8 +101,13 @@ export default function CropDetailScreen() {
     );
   }
 
-  const getCategoryEmoji = (category: string) => {
-    switch (category) {
+  const displayCrop = customCrop || crop;
+  const cropName = customCrop?.name || crop?.name || '';
+  const category = customCrop?.category || crop?.category || 'vegetable';
+  const scientificName = customCrop?.scientific_name || crop?.scientificName;
+
+  const getCategoryEmoji = (cat: string) => {
+    switch (cat) {
       case 'vegetable': return '🥕';
       case 'fruit': return '🍎';
       case 'flower': return '🌸';
@@ -36,8 +116,8 @@ export default function CropDetailScreen() {
     }
   };
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
+  const getCategoryColor = (cat: string) => {
+    switch (cat) {
       case 'vegetable': return '#4A7C2C';
       case 'fruit': return '#D84315';
       case 'flower': return '#E91E63';
@@ -46,8 +126,26 @@ export default function CropDetailScreen() {
     }
   };
 
-  // Mock data for crop requirements - in a real app, this would come from a database
-  const cropDetails = {
+  // For custom crops, use database values; for default crops, use mock data
+  const cropDetails = customCrop ? {
+    sunlight: customCrop.sunlight || 'Not specified',
+    water: customCrop.water || 'Not specified',
+    soilType: customCrop.soil_type || 'Not specified',
+    soilPH: customCrop.soil_ph || 'Not specified',
+    plantSpacing: customCrop.plant_spacing || 'Not specified',
+    rowSpacing: customCrop.row_spacing || 'Not specified',
+    daysToMaturity: customCrop.days_to_maturity || 'Not specified',
+    plantingDepth: customCrop.planting_depth || 'Not specified',
+    temperature: customCrop.temperature || 'Not specified',
+    hardiness: customCrop.hardiness || 'Not specified',
+    companions: customCrop.companions || 'Not specified',
+    avoid: customCrop.avoid || 'Not specified',
+    pests: customCrop.pests || 'Not specified',
+    diseases: customCrop.diseases || 'Not specified',
+    harvest: customCrop.harvest || 'Not specified',
+    storage: customCrop.storage || 'Not specified',
+    notes: customCrop.notes || 'No additional notes',
+  } : {
     sunlight: 'Full sun (6-8 hours daily)',
     water: 'Regular watering, keep soil consistently moist',
     soilType: 'Well-draining, rich in organic matter',
@@ -76,15 +174,22 @@ export default function CropDetailScreen() {
           </TouchableOpacity>
 
           <View style={styles.headerCard}>
-            <Text style={styles.emoji}>{getCategoryEmoji(crop.category)}</Text>
-            <Text style={styles.cropName}>{crop.name}</Text>
-            {crop.scientificName && (
-              <Text style={styles.scientificName}>{crop.scientificName}</Text>
+            <Text style={styles.emoji}>{getCategoryEmoji(category)}</Text>
+            <Text style={styles.cropName}>{cropName}</Text>
+            {scientificName && (
+              <Text style={styles.scientificName}>{scientificName}</Text>
             )}
-            <View style={[styles.categoryBadge, { backgroundColor: getCategoryColor(crop.category) }]}>
-              <Text style={styles.categoryBadgeText}>
-                {crop.category.charAt(0).toUpperCase() + crop.category.slice(1)}
-              </Text>
+            <View style={styles.badgeRow}>
+              <View style={[styles.categoryBadge, { backgroundColor: getCategoryColor(category) }]}>
+                <Text style={styles.categoryBadgeText}>
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </Text>
+              </View>
+              {customCrop && (
+                <View style={styles.customBadge}>
+                  <Text style={styles.customBadgeText}>Custom</Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -202,6 +307,17 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 40,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#FFFFFF',
+    marginTop: 16,
+  },
   backButtonTop: {
     marginBottom: 20,
     alignSelf: 'flex-start',
@@ -241,6 +357,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 16,
   },
+  badgeRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   categoryBadge: {
     paddingHorizontal: 20,
     paddingVertical: 8,
@@ -251,6 +371,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     textTransform: 'uppercase',
+  },
+  customBadge: {
+    backgroundColor: '#6BA542',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  customBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   sectionCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
@@ -304,7 +435,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     lineHeight: 20,
-    fontStyle: 'italic',
   },
   errorContainer: {
     flex: 1,

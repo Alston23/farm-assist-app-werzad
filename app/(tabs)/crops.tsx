@@ -1,25 +1,89 @@
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import PageHeader from '../../components/PageHeader';
+import AddCustomCropModal from '../../components/AddCustomCropModal';
 import { vegetables, fruits, flowers, herbs, searchCrops, Crop } from '../../data/crops';
+import { supabase } from '../../lib/supabase';
+
+type CustomCrop = {
+  id: string;
+  name: string;
+  category: 'vegetable' | 'fruit' | 'flower' | 'herb';
+  scientific_name?: string;
+};
 
 export default function CropsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [customCrops, setCustomCrops] = useState<CustomCrop[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
 
+  const loadCustomCrops = useCallback(async () => {
+    try {
+      console.log('Loading custom crops from database');
+      const { data, error } = await supabase
+        .from('crops')
+        .select('id, name, category, scientific_name')
+        .order('name');
+
+      if (error) {
+        console.error('Error loading custom crops:', error);
+        return;
+      }
+
+      console.log('Loaded custom crops:', data?.length || 0);
+      setCustomCrops(data || []);
+    } catch (e) {
+      console.error('Exception loading custom crops:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCustomCrops();
+  }, [loadCustomCrops]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadCustomCrops();
+    setRefreshing(false);
+  }, [loadCustomCrops]);
+
+  const handleAddSuccess = () => {
+    console.log('Crop added successfully, reloading list');
+    loadCustomCrops();
+  };
+
+  const allCropsWithCustom = [
+    ...vegetables,
+    ...fruits,
+    ...flowers,
+    ...herbs,
+    ...customCrops.map(c => ({
+      id: `custom-${c.id}`,
+      name: c.name,
+      category: c.category,
+      scientificName: c.scientific_name,
+      isCustom: true,
+    })),
+  ];
+
   const filteredCrops = searchQuery.trim() 
-    ? searchCrops(searchQuery)
+    ? allCropsWithCustom.filter(crop => 
+        crop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (crop.scientificName && crop.scientificName.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
     : null;
 
   const toggleCategory = (category: string) => {
     setExpandedCategory(expandedCategory === category ? null : category);
   };
 
-  const handleCropPress = (crop: Crop) => {
+  const handleCropPress = (crop: Crop & { isCustom?: boolean }) => {
     console.log('Navigating to crop detail:', crop.id);
     router.push({
       pathname: '/crop/[id]',
@@ -27,7 +91,7 @@ export default function CropsScreen() {
     });
   };
 
-  const renderCropList = (crops: Crop[]) => {
+  const renderCropList = (crops: (Crop & { isCustom?: boolean })[]) => {
     return crops.map((crop, index) => (
       <TouchableOpacity 
         key={index} 
@@ -35,7 +99,14 @@ export default function CropsScreen() {
         onPress={() => handleCropPress(crop)}
         activeOpacity={0.7}
       >
-        <Text style={styles.cropName}>{crop.name}</Text>
+        <View style={styles.cropItemHeader}>
+          <Text style={styles.cropName}>{crop.name}</Text>
+          {crop.isCustom && (
+            <View style={styles.customBadge}>
+              <Text style={styles.customBadgeText}>Custom</Text>
+            </View>
+          )}
+        </View>
         {crop.scientificName && (
           <Text style={styles.scientificName}>{crop.scientificName}</Text>
         )}
@@ -44,12 +115,33 @@ export default function CropsScreen() {
     ));
   };
 
+  const getCategoryWithCustom = (category: 'vegetable' | 'fruit' | 'flower' | 'herb') => {
+    const baseCrops = {
+      vegetable: vegetables,
+      fruit: fruits,
+      flower: flowers,
+      herb: herbs,
+    }[category];
+
+    const customInCategory = customCrops
+      .filter(c => c.category === category)
+      .map(c => ({
+        id: `custom-${c.id}`,
+        name: c.name,
+        category: c.category,
+        scientificName: c.scientific_name,
+        isCustom: true,
+      }));
+
+    return [...baseCrops, ...customInCategory];
+  };
+
   const renderCategory = (
     title: string,
     emoji: string,
-    crops: Crop[],
-    categoryKey: string
+    categoryKey: 'vegetable' | 'fruit' | 'flower' | 'herb'
   ) => {
+    const crops = getCategoryWithCustom(categoryKey);
     const isExpanded = expandedCategory === categoryKey;
     
     return (
@@ -96,6 +188,8 @@ export default function CropsScreen() {
     );
   };
 
+  const totalCrops = vegetables.length + fruits.length + flowers.length + herbs.length + customCrops.length;
+
   return (
     <View style={styles.container}>
       <PageHeader title="🌾 Crops" />
@@ -104,7 +198,18 @@ export default function CropsScreen() {
           style={styles.scrollView} 
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" />
+          }
         >
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => setShowAddModal(true)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.addButtonText}>✨ Add Custom Crop with AI</Text>
+          </TouchableOpacity>
+
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
@@ -122,19 +227,26 @@ export default function CropsScreen() {
               <View style={styles.summaryCard}>
                 <Text style={styles.summaryTitle}>Crop Database</Text>
                 <Text style={styles.summaryText}>
-                  Browse our comprehensive collection of {vegetables.length + fruits.length + flowers.length + herbs.length} crops 
-                  organized into four categories. Tap any category to expand and view the full list.
+                  Browse our comprehensive collection of {totalCrops} crops 
+                  {customCrops.length > 0 && ` (including ${customCrops.length} custom)`} organized into four categories. 
+                  Tap any category to expand and view the full list.
                 </Text>
               </View>
 
-              {renderCategory('Vegetables', '🥕', vegetables, 'vegetables')}
-              {renderCategory('Fruits', '🍎', fruits, 'fruits')}
-              {renderCategory('Flowers', '🌸', flowers, 'flowers')}
-              {renderCategory('Herbs & Spices', '🌿', herbs, 'herbs')}
+              {renderCategory('Vegetables', '🥕', 'vegetable')}
+              {renderCategory('Fruits', '🍎', 'fruit')}
+              {renderCategory('Flowers', '🌸', 'flower')}
+              {renderCategory('Herbs & Spices', '🌿', 'herb')}
             </>
           )}
         </ScrollView>
       </LinearGradient>
+
+      <AddCustomCropModal
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={handleAddSuccess}
+      />
     </View>
   );
 }
@@ -153,6 +265,23 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
     paddingBottom: 120,
+  },
+  addButton: {
+    backgroundColor: '#6BA542',
+    borderRadius: 16,
+    padding: 18,
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  addButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   searchContainer: {
     marginBottom: 20,
@@ -249,11 +378,29 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
+  cropItemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
   cropName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 4,
+    flex: 1,
+  },
+  customBadge: {
+    backgroundColor: '#6BA542',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginLeft: 8,
+  },
+  customBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '600',
   },
   scientificName: {
     fontSize: 13,
