@@ -92,30 +92,34 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
   const handlePlantingDateChange = (event: any, selectedDate?: Date) => {
     console.log('Planting date change event:', event.type, selectedDate);
     
+    // On Android, the picker is dismissed automatically after selection
     if (Platform.OS === 'android') {
       setShowPlantingDatePicker(false);
-      if (event.type === 'set' && selectedDate) {
-        setPlantingDate(selectedDate);
-      }
-    } else {
-      if (selectedDate) {
-        setPlantingDate(selectedDate);
-      }
+    }
+    
+    // Update the date if user confirmed (not cancelled)
+    if (event.type === 'set' && selectedDate) {
+      setPlantingDate(selectedDate);
+    } else if (event.type === 'dismissed') {
+      // User cancelled, just close the picker
+      setShowPlantingDatePicker(false);
     }
   };
 
   const handleHarvestDateChange = (event: any, selectedDate?: Date) => {
     console.log('Harvest date change event:', event.type, selectedDate);
     
+    // On Android, the picker is dismissed automatically after selection
     if (Platform.OS === 'android') {
       setShowHarvestDatePicker(false);
-      if (event.type === 'set' && selectedDate) {
-        setHarvestDate(selectedDate);
-      }
-    } else {
-      if (selectedDate) {
-        setHarvestDate(selectedDate);
-      }
+    }
+    
+    // Update the date if user confirmed (not cancelled)
+    if (event.type === 'set' && selectedDate) {
+      setHarvestDate(selectedDate);
+    } else if (event.type === 'dismissed') {
+      // User cancelled, just close the picker
+      setShowHarvestDatePicker(false);
     }
   };
 
@@ -423,23 +427,32 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                 </Text>
               </TouchableOpacity>
               {showPlantingDatePicker && (
-                <View style={styles.datePickerWrapper}>
-                  <DateTimePicker
-                    value={plantingDate}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={handlePlantingDateChange}
-                    themeVariant="light"
-                  />
-                  {Platform.OS === 'ios' && (
-                    <TouchableOpacity
-                      style={styles.datePickerDoneButton}
-                      onPress={() => setShowPlantingDatePicker(false)}
-                    >
-                      <Text style={styles.datePickerDoneText}>Done</Text>
-                    </TouchableOpacity>
+                <>
+                  {Platform.OS === 'ios' ? (
+                    <View style={styles.datePickerWrapper}>
+                      <DateTimePicker
+                        value={plantingDate}
+                        mode="date"
+                        display="spinner"
+                        onChange={handlePlantingDateChange}
+                        themeVariant="light"
+                      />
+                      <TouchableOpacity
+                        style={styles.datePickerDoneButton}
+                        onPress={() => setShowPlantingDatePicker(false)}
+                      >
+                        <Text style={styles.datePickerDoneText}>Done</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <DateTimePicker
+                      value={plantingDate}
+                      mode="date"
+                      display="default"
+                      onChange={handlePlantingDateChange}
+                    />
                   )}
-                </View>
+                </>
               )}
             </View>
 
@@ -457,24 +470,34 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                 </Text>
               </TouchableOpacity>
               {showHarvestDatePicker && (
-                <View style={styles.datePickerWrapper}>
-                  <DateTimePicker
-                    value={harvestDate}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={handleHarvestDateChange}
-                    minimumDate={plantingDate}
-                    themeVariant="light"
-                  />
-                  {Platform.OS === 'ios' && (
-                    <TouchableOpacity
-                      style={styles.datePickerDoneButton}
-                      onPress={() => setShowHarvestDatePicker(false)}
-                    >
-                      <Text style={styles.datePickerDoneText}>Done</Text>
-                    </TouchableOpacity>
+                <>
+                  {Platform.OS === 'ios' ? (
+                    <View style={styles.datePickerWrapper}>
+                      <DateTimePicker
+                        value={harvestDate}
+                        mode="date"
+                        display="spinner"
+                        onChange={handleHarvestDateChange}
+                        minimumDate={plantingDate}
+                        themeVariant="light"
+                      />
+                      <TouchableOpacity
+                        style={styles.datePickerDoneButton}
+                        onPress={() => setShowHarvestDatePicker(false)}
+                      >
+                        <Text style={styles.datePickerDoneText}>Done</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <DateTimePicker
+                      value={harvestDate}
+                      mode="date"
+                      display="default"
+                      onChange={handleHarvestDateChange}
+                      minimumDate={plantingDate}
+                    />
                   )}
-                </View>
+                </>
               )}
             </View>
 
