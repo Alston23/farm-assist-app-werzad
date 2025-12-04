@@ -22,6 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     console.log('AuthContext: Initializing auth state');
     
+    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('AuthContext: Initial session:', session ? 'exists' : 'none');
       setSession(session);
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log('AuthContext: Auth state changed:', _event, session ? 'session exists' : 'no session');
       setSession(session);
@@ -94,6 +96,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('AuthContext: Starting sign out process');
     try {
       console.log('AuthContext: Calling Supabase signOut()');
+      
+      // Sign out from Supabase
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -105,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       console.log('AuthContext: Sign out successful, clearing local state');
+      // Clear local state
       setUser(null);
       setSession(null);
       

@@ -105,6 +105,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
       setPlantingDate(selectedDate);
     } else if (event.type === 'dismissed') {
       console.log('Date picker dismissed without selection');
+      setShowPlantingDatePicker(false);
     }
   };
 
@@ -122,6 +123,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
       setHarvestDate(selectedDate);
     } else if (event.type === 'dismissed') {
       console.log('Date picker dismissed without selection');
+      setShowHarvestDatePicker(false);
     }
   };
 
@@ -262,9 +264,22 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent={true}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+    <Modal 
+      visible={visible} 
+      animationType="slide" 
+      transparent={true}
+      onRequestClose={handleClose}
+    >
+      <TouchableOpacity 
+        style={styles.modalOverlay} 
+        activeOpacity={1} 
+        onPress={handleClose}
+      >
+        <TouchableOpacity 
+          style={styles.modalContent} 
+          activeOpacity={1}
+          onPress={(e) => e.stopPropagation()}
+        >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Add Field/Bed</Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
@@ -272,13 +287,21 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          <ScrollView 
+            style={styles.scrollView} 
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled={true}
+          >
             <View style={styles.section}>
               <Text style={styles.label}>Type</Text>
               <View style={styles.toggleContainer}>
                 <TouchableOpacity
                   style={[styles.toggleButton, type === 'field' && styles.toggleButtonActive]}
-                  onPress={() => setType('field')}
+                  onPress={() => {
+                    console.log('Field type selected');
+                    setType('field');
+                  }}
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.toggleText, type === 'field' && styles.toggleTextActive]}>
@@ -287,7 +310,10 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.toggleButton, type === 'bed' && styles.toggleButtonActive]}
-                  onPress={() => setType('bed')}
+                  onPress={() => {
+                    console.log('Bed type selected');
+                    setType('bed');
+                  }}
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.toggleText, type === 'bed' && styles.toggleTextActive]}>
@@ -346,7 +372,10 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               <Text style={styles.label}>Soil Type</Text>
               <TouchableOpacity
                 style={styles.dropdown}
-                onPress={() => setShowSoilDropdown(!showSoilDropdown)}
+                onPress={() => {
+                  console.log('Soil dropdown toggled');
+                  setShowSoilDropdown(!showSoilDropdown);
+                }}
                 activeOpacity={0.7}
               >
                 <Text style={soilType ? styles.dropdownText : styles.dropdownPlaceholder}>
@@ -360,6 +389,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                       key={index}
                       style={styles.dropdownItem}
                       onPress={() => {
+                        console.log('Soil type selected:', soil);
                         setSoilType(soil);
                         setShowSoilDropdown(false);
                       }}
@@ -416,7 +446,10 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               <Text style={styles.label}>Irrigation Type</Text>
               <TouchableOpacity
                 style={styles.dropdown}
-                onPress={() => setShowIrrigationDropdown(!showIrrigationDropdown)}
+                onPress={() => {
+                  console.log('Irrigation dropdown toggled');
+                  setShowIrrigationDropdown(!showIrrigationDropdown);
+                }}
                 activeOpacity={0.7}
               >
                 <Text style={irrigationType ? styles.dropdownText : styles.dropdownPlaceholder}>
@@ -430,6 +463,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                       key={index}
                       style={styles.dropdownItem}
                       onPress={() => {
+                        console.log('Irrigation type selected:', irrigation);
                         setIrrigationType(irrigation);
                         setShowIrrigationDropdown(false);
                       }}
@@ -447,7 +481,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               <TouchableOpacity
                 style={styles.dateButton}
                 onPress={() => {
-                  console.log('Planting date button pressed, showing picker');
+                  console.log('Planting date button pressed, current state:', showPlantingDatePicker);
                   setShowPlantingDatePicker(true);
                 }}
                 activeOpacity={0.7}
@@ -494,7 +528,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               <TouchableOpacity
                 style={styles.dateButton}
                 onPress={() => {
-                  console.log('Harvest date button pressed, showing picker');
+                  console.log('Harvest date button pressed, current state:', showHarvestDatePicker);
                   setShowHarvestDatePicker(true);
                 }}
                 activeOpacity={0.7}
@@ -549,8 +583,8 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               </Text>
             </TouchableOpacity>
           </ScrollView>
-        </View>
-      </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
     </Modal>
   );
 }
