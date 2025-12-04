@@ -347,10 +347,14 @@ export default function AIAssistantScreen() {
   };
 
   const handleQuickAction = (action: QuickAction) => {
+    console.log('AI Assistant: Quick action pressed:', action.title);
     if (action.requiresImage) {
+      // For image-based actions, show image picker and set the prompt
       showImagePickerOptions();
       setInputText(action.prompt);
+      // Don't send message yet - wait for user to select image and press send
     } else {
+      // For non-image actions, send the message immediately
       sendMessage(action.prompt);
     }
   };
@@ -372,6 +376,7 @@ export default function AIAssistantScreen() {
               await supabase.from('ai_conversations').delete().eq('user_id', user.id);
               setMessages([]);
               setShowQuickActions(true);
+              console.log('AI Assistant: Conversation cleared, returned to quick actions');
             } catch (error) {
               console.error('Error clearing conversation:', error);
               Alert.alert('Error', 'Failed to clear conversation');
@@ -382,40 +387,17 @@ export default function AIAssistantScreen() {
     );
   };
 
-  const handleBack = async () => {
+  const handleBack = () => {
     console.log('AI Assistant: Back button pressed');
     
-    // Always navigate back to Quick Actions page
-    if (messages.length > 0) {
-      Alert.alert(
-        'Return to Quick Actions',
-        'Do you want to clear the conversation and return to quick actions?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Clear & Return',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) return;
-
-                await supabase.from('ai_conversations').delete().eq('user_id', user.id);
-                setMessages([]);
-                setShowQuickActions(true);
-                console.log('AI Assistant: Returned to quick actions');
-              } catch (error) {
-                console.error('Error clearing conversation:', error);
-                Alert.alert('Error', 'Failed to clear conversation');
-              }
-            },
-          },
-        ]
-      );
-    } else {
-      // Already on quick actions, just ensure the view is correct
+    // If we're in a chat conversation, go back to Quick Actions
+    if (!showQuickActions && messages.length > 0) {
+      console.log('AI Assistant: Navigating back to Quick Actions from chat');
       setShowQuickActions(true);
-      console.log('AI Assistant: Already on quick actions page');
+      // Don't clear messages - just show the Quick Actions overlay
+    } else {
+      // Already on Quick Actions page
+      console.log('AI Assistant: Already on Quick Actions page');
     }
   };
 
@@ -471,7 +453,7 @@ export default function AIAssistantScreen() {
             contentContainerStyle={styles.content}
             onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
           >
-            {messages.length === 0 && showQuickActions && (
+            {showQuickActions && (
               <View style={styles.welcomeContainer}>
                 <Text style={styles.welcomeTitle}>Welcome to Your AI Farm Assistant! 👋</Text>
                 <Text style={styles.welcomeText}>
@@ -494,7 +476,7 @@ export default function AIAssistantScreen() {
               </View>
             )}
 
-            {messages.map((message) => (
+            {!showQuickActions && messages.map((message) => (
               <View
                 key={message.id}
                 style={[
@@ -527,7 +509,7 @@ export default function AIAssistantScreen() {
               </View>
             ))}
 
-            {loading && (
+            {!showQuickActions && loading && (
               <View style={[styles.messageContainer, styles.assistantMessage]}>
                 <View style={[styles.messageBubble, styles.assistantBubble]}>
                   <ActivityIndicator color="#2D5016" />
@@ -536,7 +518,7 @@ export default function AIAssistantScreen() {
               </View>
             )}
 
-            {messages.length > 0 && !showQuickActions && (
+            {!showQuickActions && messages.length > 0 && (
               <TouchableOpacity style={styles.clearButton} onPress={clearConversation}>
                 <Text style={styles.clearButtonText}>🗑️ Clear Conversation</Text>
               </TouchableOpacity>
