@@ -66,9 +66,9 @@ export default function AuthScreen() {
           console.error('AuthScreen: Sign in error:', error);
           Alert.alert('Login Failed', error.message || 'An error occurred during login');
         } else if (data.user) {
-          console.log('AuthScreen: Sign in successful, redirecting to home');
+          console.log('AuthScreen: Sign in successful, redirecting to tabs');
           Alert.alert('Success', 'Login successful!');
-          router.replace('/home');
+          router.replace('/(tabs)/crops');
         }
       } else {
         // Sign Up

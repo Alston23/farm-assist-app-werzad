@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Index() {
@@ -13,10 +13,10 @@ export default function Index() {
     
     if (!loading) {
       if (user) {
-        console.log('Index: Redirecting to home');
-        router.replace('/home');
+        console.log('Index: User authenticated, redirecting to tabs');
+        router.replace('/(tabs)/crops');
       } else {
-        console.log('Index: Redirecting to auth');
+        console.log('Index: No user, redirecting to auth');
         router.replace('/auth');
       }
     }
