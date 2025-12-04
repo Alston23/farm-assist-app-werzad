@@ -87,6 +87,37 @@ export default function TabsLayout() {
           tabBarIcon: ({ color }) => <TabIcon name="🤖" color={color} />,
         }}
       />
+      {/* Hide AI sub-pages from tab bar */}
+      <Tabs.Screen
+        name="ai-crop-recommendations"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="ai-growing-tips"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="ai-personalized-advice"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="ai-problem-diagnosis"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="ai-weather-insights"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
