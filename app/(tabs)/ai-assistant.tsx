@@ -417,10 +417,10 @@ export default function AIAssistantScreen() {
               console.log('AI Assistant: Sign out completed successfully');
               // Navigation will be handled automatically by _layout.tsx
             } catch (error: any) {
-              console.error('AI Assistant: Sign out failed:', error);
-              // Even if there's an error, the local state is cleared
-              // So we can just show a warning but the user is effectively signed out
-              Alert.alert('Notice', 'You have been signed out locally. If you experience issues, please restart the app.');
+              console.error('AI Assistant: Sign out error:', error);
+              // The local state is already cleared in AuthContext
+              // Just show a notice to the user
+              Alert.alert('Signed Out', 'You have been signed out successfully.');
             }
           },
         },
@@ -431,11 +431,11 @@ export default function AIAssistantScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>🤖 AI Assistant</Text>
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.7}>
           <Text style={styles.signOutButtonText}>Sign Out</Text>
         </TouchableOpacity>
       </View>
@@ -465,6 +465,7 @@ export default function AIAssistantScreen() {
                       key={action.id}
                       style={styles.quickActionCard}
                       onPress={() => handleQuickAction(action)}
+                      activeOpacity={0.7}
                     >
                       <Text style={styles.quickActionIcon}>{action.icon}</Text>
                       <Text style={styles.quickActionTitle}>{action.title}</Text>
@@ -517,7 +518,7 @@ export default function AIAssistantScreen() {
             )}
 
             {!showQuickActions && messages.length > 0 && (
-              <TouchableOpacity style={styles.clearButton} onPress={clearConversation}>
+              <TouchableOpacity style={styles.clearButton} onPress={clearConversation} activeOpacity={0.7}>
                 <Text style={styles.clearButtonText}>🗑️ Clear Conversation</Text>
               </TouchableOpacity>
             )}
@@ -534,6 +535,7 @@ export default function AIAssistantScreen() {
                 <TouchableOpacity
                   style={styles.removeImageButton}
                   onPress={() => setSelectedImage(null)}
+                  activeOpacity={0.7}
                 >
                   <Text style={styles.removeImageText}>✕</Text>
                 </TouchableOpacity>
@@ -544,6 +546,7 @@ export default function AIAssistantScreen() {
                 style={styles.imageButton}
                 onPress={showImagePickerOptions}
                 disabled={loading || uploadingImage}
+                activeOpacity={0.7}
               >
                 <Text style={styles.imageButtonText}>📷</Text>
               </TouchableOpacity>
@@ -564,6 +567,7 @@ export default function AIAssistantScreen() {
                 ]}
                 onPress={() => sendMessage(inputText, selectedImage || undefined)}
                 disabled={(!inputText.trim() && !selectedImage) || loading || uploadingImage}
+                activeOpacity={0.7}
               >
                 {uploadingImage ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />

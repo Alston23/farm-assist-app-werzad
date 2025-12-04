@@ -92,40 +92,36 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
   };
 
   const handlePlantingDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-    console.log('Planting date change event:', event.type, 'selectedDate:', selectedDate);
+    console.log('Planting date change - event type:', event.type, 'selectedDate:', selectedDate);
     
+    // For Android, the picker closes automatically after selection
     if (Platform.OS === 'android') {
       setShowPlantingDatePicker(false);
-      if (event.type === 'set' && selectedDate) {
-        console.log('Android: Setting planting date to:', selectedDate);
-        setPlantingDate(selectedDate);
-      } else {
-        console.log('Android: Date picker dismissed without selection');
-      }
-    } else {
-      if (selectedDate) {
-        console.log('iOS: Setting planting date to:', selectedDate);
-        setPlantingDate(selectedDate);
-      }
+    }
+    
+    // Update the date if user selected one (not cancelled)
+    if (event.type === 'set' && selectedDate) {
+      console.log('Setting planting date to:', selectedDate);
+      setPlantingDate(selectedDate);
+    } else if (event.type === 'dismissed') {
+      console.log('Date picker dismissed without selection');
     }
   };
 
   const handleHarvestDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-    console.log('Harvest date change event:', event.type, 'selectedDate:', selectedDate);
+    console.log('Harvest date change - event type:', event.type, 'selectedDate:', selectedDate);
     
+    // For Android, the picker closes automatically after selection
     if (Platform.OS === 'android') {
       setShowHarvestDatePicker(false);
-      if (event.type === 'set' && selectedDate) {
-        console.log('Android: Setting harvest date to:', selectedDate);
-        setHarvestDate(selectedDate);
-      } else {
-        console.log('Android: Date picker dismissed without selection');
-      }
-    } else {
-      if (selectedDate) {
-        console.log('iOS: Setting harvest date to:', selectedDate);
-        setHarvestDate(selectedDate);
-      }
+    }
+    
+    // Update the date if user selected one (not cancelled)
+    if (event.type === 'set' && selectedDate) {
+      console.log('Setting harvest date to:', selectedDate);
+      setHarvestDate(selectedDate);
+    } else if (event.type === 'dismissed') {
+      console.log('Date picker dismissed without selection');
     }
   };
 
@@ -283,6 +279,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                 <TouchableOpacity
                   style={[styles.toggleButton, type === 'field' && styles.toggleButtonActive]}
                   onPress={() => setType('field')}
+                  activeOpacity={0.7}
                 >
                   <Text style={[styles.toggleText, type === 'field' && styles.toggleTextActive]}>
                     Field
@@ -291,6 +288,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                 <TouchableOpacity
                   style={[styles.toggleButton, type === 'bed' && styles.toggleButtonActive]}
                   onPress={() => setType('bed')}
+                  activeOpacity={0.7}
                 >
                   <Text style={[styles.toggleText, type === 'bed' && styles.toggleTextActive]}>
                     Bed
@@ -325,6 +323,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                   <TouchableOpacity
                     style={[styles.unitButton, areaUnit === 'acres' && styles.unitButtonActive]}
                     onPress={() => setAreaUnit('acres')}
+                    activeOpacity={0.7}
                   >
                     <Text style={[styles.unitText, areaUnit === 'acres' && styles.unitTextActive]}>
                       Acres
@@ -333,6 +332,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                   <TouchableOpacity
                     style={[styles.unitButton, areaUnit === 'sqft' && styles.unitButtonActive]}
                     onPress={() => setAreaUnit('sqft')}
+                    activeOpacity={0.7}
                   >
                     <Text style={[styles.unitText, areaUnit === 'sqft' && styles.unitTextActive]}>
                       Sq Ft
@@ -347,6 +347,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               <TouchableOpacity
                 style={styles.dropdown}
                 onPress={() => setShowSoilDropdown(!showSoilDropdown)}
+                activeOpacity={0.7}
               >
                 <Text style={soilType ? styles.dropdownText : styles.dropdownPlaceholder}>
                   {soilType || 'Select soil type'}
@@ -362,6 +363,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                         setSoilType(soil);
                         setShowSoilDropdown(false);
                       }}
+                      activeOpacity={0.7}
                     >
                       <Text style={styles.dropdownItemText}>{soil}</Text>
                     </TouchableOpacity>
@@ -391,6 +393,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                         key={crop.id}
                         style={styles.dropdownItem}
                         onPress={() => handleCropSelect(crop)}
+                        activeOpacity={0.7}
                       >
                         <Text style={styles.dropdownItemText}>{crop.name}</Text>
                         <Text style={styles.dropdownItemSubtext}>{crop.category}</Text>
@@ -414,6 +417,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               <TouchableOpacity
                 style={styles.dropdown}
                 onPress={() => setShowIrrigationDropdown(!showIrrigationDropdown)}
+                activeOpacity={0.7}
               >
                 <Text style={irrigationType ? styles.dropdownText : styles.dropdownPlaceholder}>
                   {irrigationType || 'Select irrigation type'}
@@ -429,6 +433,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                         setIrrigationType(irrigation);
                         setShowIrrigationDropdown(false);
                       }}
+                      activeOpacity={0.7}
                     >
                       <Text style={styles.dropdownItemText}>{irrigation}</Text>
                     </TouchableOpacity>
@@ -453,7 +458,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               </TouchableOpacity>
               
               {showPlantingDatePicker && (
-                <View style={styles.datePickerWrapper}>
+                <>
                   {Platform.OS === 'ios' ? (
                     <View style={styles.datePickerContainer}>
                       <DateTimePicker
@@ -467,6 +472,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                       <TouchableOpacity
                         style={styles.datePickerDoneButton}
                         onPress={closePlantingDatePicker}
+                        activeOpacity={0.7}
                       >
                         <Text style={styles.datePickerDoneText}>Done</Text>
                       </TouchableOpacity>
@@ -479,7 +485,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                       onChange={handlePlantingDateChange}
                     />
                   )}
-                </View>
+                </>
               )}
             </View>
 
@@ -499,7 +505,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               </TouchableOpacity>
               
               {showHarvestDatePicker && (
-                <View style={styles.datePickerWrapper}>
+                <>
                   {Platform.OS === 'ios' ? (
                     <View style={styles.datePickerContainer}>
                       <DateTimePicker
@@ -514,6 +520,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                       <TouchableOpacity
                         style={styles.datePickerDoneButton}
                         onPress={closeHarvestDatePicker}
+                        activeOpacity={0.7}
                       >
                         <Text style={styles.datePickerDoneText}>Done</Text>
                       </TouchableOpacity>
@@ -527,7 +534,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                       minimumDate={plantingDate}
                     />
                   )}
-                </View>
+                </>
               )}
             </View>
 
@@ -535,6 +542,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               style={[styles.saveButton, saving && styles.saveButtonDisabled]}
               onPress={handleSave}
               disabled={saving}
+              activeOpacity={0.7}
             >
               <Text style={styles.saveButtonText}>
                 {saving ? 'Saving...' : 'Save'}
@@ -725,15 +733,13 @@ const styles = StyleSheet.create({
     color: '#2D5016',
     fontWeight: '600',
   },
-  datePickerWrapper: {
-    marginTop: 12,
-  },
   datePickerContainer: {
     backgroundColor: '#F5F5F5',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
     borderColor: '#4A7C2C',
+    marginTop: 12,
   },
   datePicker: {
     width: '100%',

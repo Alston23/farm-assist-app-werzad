@@ -27,6 +27,7 @@ function RootLayoutNav() {
       if (!user && !inAuthGroup) {
         // Redirect to auth if not authenticated
         console.log('RootLayoutNav: No user, redirecting to /auth');
+        // Use replace to prevent going back to protected routes
         router.replace('/auth');
       } else if (user && inAuthGroup) {
         // Redirect to tabs if authenticated and on auth screen
@@ -38,7 +39,7 @@ function RootLayoutNav() {
         router.replace('/(tabs)/crops');
       }
     }
-  }, [user, loading, segments]);
+  }, [user, loading, segments, router]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

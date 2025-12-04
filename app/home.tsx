@@ -26,9 +26,12 @@ export default function HomeScreen() {
               console.log('HomeScreen: User confirmed sign out, calling signOut');
               await signOut();
               console.log('HomeScreen: Sign out completed successfully');
+              // Navigation will be handled automatically by _layout.tsx
             } catch (error: any) {
-              console.error('HomeScreen: Sign out failed:', error);
-              Alert.alert('Notice', 'You have been signed out. If you experience issues, please restart the app.');
+              console.error('HomeScreen: Sign out error:', error);
+              // The local state is already cleared in AuthContext
+              // Just show a notice to the user
+              Alert.alert('Signed Out', 'You have been signed out successfully.');
             }
           },
         },
