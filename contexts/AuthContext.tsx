@@ -28,6 +28,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+    }).catch((error) => {
+      console.error('AuthContext: Error getting initial session:', error);
+      setLoading(false);
     });
 
     // Listen for auth changes
@@ -39,48 +42,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
+      console.log('AuthContext: Cleaning up auth subscription');
       subscription.unsubscribe();
     };
   }, []);
 
   const signUp = async (email: string, password: string) => {
     console.log('AuthContext: Signing up user:', email);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: 'https://natively.dev/email-confirmed',
-      },
-    });
-    
-    if (error) {
-      console.error('AuthContext: Sign up error:', error);
-    } else {
-      console.log('AuthContext: Sign up successful:', data);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: 'https://natively.dev/email-confirmed',
+        },
+      });
+      
+      if (error) {
+        console.error('AuthContext: Sign up error:', error);
+      } else {
+        console.log('AuthContext: Sign up successful:', data);
+      }
+      
+      return { data, error };
+    } catch (error) {
+      console.error('AuthContext: Sign up exception:', error);
+      return { data: null, error };
     }
-    
-    return { data, error };
   };
 
   const signIn = async (email: string, password: string) => {
     console.log('AuthContext: Signing in user:', email);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    if (error) {
-      console.error('AuthContext: Sign in error:', error);
-    } else {
-      console.log('AuthContext: Sign in successful:', data);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        console.error('AuthContext: Sign in error:', error);
+      } else {
+        console.log('AuthContext: Sign in successful:', data);
+      }
+      
+      return { data, error };
+    } catch (error) {
+      console.error('AuthContext: Sign in exception:', error);
+      return { data: null, error };
     }
-    
-    return { data, error };
   };
 
   const signOut = async () => {
     console.log('AuthContext: Starting sign out process');
     try {
+      // First, clear local state immediately for better UX
+      console.log('AuthContext: Clearing local state');
+      setUser(null);
+      setSession(null);
+      
+      // Then call Supabase signOut
       console.log('AuthContext: Calling Supabase signOut');
       const { error } = await supabase.auth.signOut();
       
@@ -89,12 +109,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
       
-      console.log('AuthContext: Sign out successful - state will be cleared by onAuthStateChange');
+      console.log('AuthContext: Sign out successful');
     } catch (error) {
       console.error('AuthContext: Sign out exception:', error);
-      // Even if there's an error, try to clear local state
-      setUser(null);
-      setSession(null);
+      // State is already cleared, so we can still consider this a success from UX perspective
+      // But we'll throw the error so the caller can show an alert if needed
       throw error;
     }
   };

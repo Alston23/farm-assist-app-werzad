@@ -30,7 +30,9 @@ export default function HomeScreen() {
               // Navigation will be handled automatically by _layout.tsx
             } catch (error: any) {
               console.error('HomeScreen: Sign out failed:', error);
-              Alert.alert('Error', error?.message || 'Failed to sign out. Please try again.');
+              // Even if there's an error, the local state is cleared
+              // So we can just show a warning but the user is effectively signed out
+              Alert.alert('Notice', 'You have been signed out locally. If you experience issues, please restart the app.');
             }
           },
         },
