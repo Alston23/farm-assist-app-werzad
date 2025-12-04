@@ -90,26 +90,32 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
   };
 
   const handlePlantingDateChange = (event: any, selectedDate?: Date) => {
+    console.log('Planting date change event:', event.type, selectedDate);
+    
     if (Platform.OS === 'android') {
       setShowPlantingDatePicker(false);
     }
     
-    if (event.type === 'set' && selectedDate) {
+    if (selectedDate && event.type === 'set') {
       setPlantingDate(selectedDate);
-    } else if (event.type === 'dismissed') {
-      setShowPlantingDatePicker(false);
+      if (Platform.OS === 'ios') {
+        setShowPlantingDatePicker(false);
+      }
     }
   };
 
   const handleHarvestDateChange = (event: any, selectedDate?: Date) => {
+    console.log('Harvest date change event:', event.type, selectedDate);
+    
     if (Platform.OS === 'android') {
       setShowHarvestDatePicker(false);
     }
     
-    if (event.type === 'set' && selectedDate) {
+    if (selectedDate && event.type === 'set') {
       setHarvestDate(selectedDate);
-    } else if (event.type === 'dismissed') {
-      setShowHarvestDatePicker(false);
+      if (Platform.OS === 'ios') {
+        setShowHarvestDatePicker(false);
+      }
     }
   };
 
@@ -407,24 +413,69 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               <Text style={styles.label}>Planting Date</Text>
               <TouchableOpacity
                 style={styles.dateButton}
-                onPress={() => setShowPlantingDatePicker(true)}
+                onPress={() => {
+                  console.log('Opening planting date picker');
+                  setShowPlantingDatePicker(true);
+                }}
               >
                 <Text style={styles.dateText}>
                   📅 {formatDate(plantingDate)}
                 </Text>
               </TouchableOpacity>
+              {showPlantingDatePicker && (
+                <View style={styles.datePickerWrapper}>
+                  <DateTimePicker
+                    value={plantingDate}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={handlePlantingDateChange}
+                    style={styles.datePicker}
+                  />
+                  {Platform.OS === 'ios' && (
+                    <TouchableOpacity
+                      style={styles.datePickerDoneButton}
+                      onPress={() => setShowPlantingDatePicker(false)}
+                    >
+                      <Text style={styles.datePickerDoneText}>Done</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
             </View>
 
             <View style={styles.section}>
               <Text style={styles.label}>Harvest Date</Text>
               <TouchableOpacity
                 style={styles.dateButton}
-                onPress={() => setShowHarvestDatePicker(true)}
+                onPress={() => {
+                  console.log('Opening harvest date picker');
+                  setShowHarvestDatePicker(true);
+                }}
               >
                 <Text style={styles.dateText}>
                   📅 {formatDate(harvestDate)}
                 </Text>
               </TouchableOpacity>
+              {showHarvestDatePicker && (
+                <View style={styles.datePickerWrapper}>
+                  <DateTimePicker
+                    value={harvestDate}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={handleHarvestDateChange}
+                    minimumDate={plantingDate}
+                    style={styles.datePicker}
+                  />
+                  {Platform.OS === 'ios' && (
+                    <TouchableOpacity
+                      style={styles.datePickerDoneButton}
+                      onPress={() => setShowHarvestDatePicker(false)}
+                    >
+                      <Text style={styles.datePickerDoneText}>Done</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
             </View>
 
             <TouchableOpacity
@@ -439,74 +490,6 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
           </ScrollView>
         </View>
       </View>
-
-      {showPlantingDatePicker && (
-        <Modal
-          transparent={true}
-          animationType="fade"
-          visible={showPlantingDatePicker}
-          onRequestClose={() => setShowPlantingDatePicker(false)}
-        >
-          <TouchableOpacity
-            style={styles.datePickerOverlay}
-            activeOpacity={1}
-            onPress={() => setShowPlantingDatePicker(false)}
-          >
-            <View style={styles.datePickerContainer}>
-              <View style={styles.datePickerHeader}>
-                <Text style={styles.datePickerTitle}>Select Planting Date</Text>
-                <TouchableOpacity
-                  onPress={() => setShowPlantingDatePicker(false)}
-                  style={styles.datePickerCloseButton}
-                >
-                  <Text style={styles.datePickerCloseText}>Done</Text>
-                </TouchableOpacity>
-              </View>
-              <DateTimePicker
-                value={plantingDate}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
-                onChange={handlePlantingDateChange}
-                style={styles.datePicker}
-              />
-            </View>
-          </TouchableOpacity>
-        </Modal>
-      )}
-
-      {showHarvestDatePicker && (
-        <Modal
-          transparent={true}
-          animationType="fade"
-          visible={showHarvestDatePicker}
-          onRequestClose={() => setShowHarvestDatePicker(false)}
-        >
-          <TouchableOpacity
-            style={styles.datePickerOverlay}
-            activeOpacity={1}
-            onPress={() => setShowHarvestDatePicker(false)}
-          >
-            <View style={styles.datePickerContainer}>
-              <View style={styles.datePickerHeader}>
-                <Text style={styles.datePickerTitle}>Select Harvest Date</Text>
-                <TouchableOpacity
-                  onPress={() => setShowHarvestDatePicker(false)}
-                  style={styles.datePickerCloseButton}
-                >
-                  <Text style={styles.datePickerCloseText}>Done</Text>
-                </TouchableOpacity>
-              </View>
-              <DateTimePicker
-                value={harvestDate}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
-                onChange={handleHarvestDateChange}
-                style={styles.datePicker}
-              />
-            </View>
-          </TouchableOpacity>
-        </Modal>
-      )}
     </Modal>
   );
 }
@@ -689,6 +672,29 @@ const styles = StyleSheet.create({
     color: '#2D5016',
     fontWeight: '600',
   },
+  datePickerWrapper: {
+    marginTop: 12,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  datePicker: {
+    width: '100%',
+    height: 200,
+  },
+  datePickerDoneButton: {
+    marginTop: 12,
+    backgroundColor: '#4A7C2C',
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  datePickerDoneText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   saveButton: {
     backgroundColor: '#4A7C2C',
     padding: 16,
@@ -704,58 +710,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  datePickerOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  datePickerContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    width: '90%',
-    maxWidth: 400,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 5,
-      },
-    }),
-  },
-  datePickerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  datePickerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2D5016',
-  },
-  datePickerCloseButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#4A7C2C',
-    borderRadius: 8,
-  },
-  datePickerCloseText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  datePicker: {
-    width: '100%',
-    height: 200,
   },
 });

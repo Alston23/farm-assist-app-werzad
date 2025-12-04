@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import { useAuth } from '../../contexts/AuthContext';
+import { useRouter } from 'expo-router';
 import PageHeader from '../../components/PageHeader';
 import { supabase } from '../../lib/supabase';
 
@@ -70,6 +72,8 @@ export default function AIAssistantScreen() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  const { signOut } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     loadConversationHistory();
@@ -369,9 +373,48 @@ export default function AIAssistantScreen() {
     );
   };
 
+  const handleBackToQuickActions = () => {
+    setShowQuickActions(true);
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  const handleSignOut = async () => {
+    console.log('AI Assistant: Sign out button pressed');
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              console.log('AI Assistant: Calling signOut');
+              await signOut();
+              console.log('AI Assistant: Sign out completed, redirecting to auth');
+              router.replace('/auth');
+            } catch (error: any) {
+              console.error('AI Assistant: Sign out failed:', error);
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <PageHeader title="🤖 AI Assistant" />
+      <View style={styles.headerContainer}>
+        <PageHeader title="🤖 AI Assistant" />
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <Text style={styles.signOutButtonText}>Sign Out</Text>
+        </TouchableOpacity>
+      </View>
       <LinearGradient colors={['#2D5016', '#4A7C2C', '#6BA542']} style={styles.gradient}>
         <KeyboardAvoidingView
           style={styles.keyboardView}
@@ -405,6 +448,12 @@ export default function AIAssistantScreen() {
                   ))}
                 </View>
               </View>
+            )}
+
+            {messages.length > 0 && !showQuickActions && (
+              <TouchableOpacity style={styles.backButton} onPress={handleBackToQuickActions}>
+                <Text style={styles.backButtonText}>← Back to Quick Actions</Text>
+              </TouchableOpacity>
             )}
 
             {messages.map((message) => (
@@ -517,6 +566,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#2D5016',
   },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingRight: 16,
+    backgroundColor: '#2D5016',
+  },
+  signOutButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: Platform.OS === 'android' ? 48 : 0,
+  },
+  signOutButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
   gradient: {
     flex: 1,
   },
@@ -585,6 +653,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#2D5016',
     textAlign: 'center',
+  },
+  backButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#4A7C2C',
+  },
+  backButtonText: {
+    color: '#2D5016',
+    fontSize: 16,
+    fontWeight: '600',
   },
   messageContainer: {
     marginBottom: 12,
