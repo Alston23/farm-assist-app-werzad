@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, Alert, ActivityIndicator, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -20,12 +20,11 @@ export default function AIProblemDiagnosisScreen() {
   const [loading, setLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
   const router = useRouter();
 
-  React.useEffect(() => {
+  useEffect(() => {
     requestPermissions();
-    const initialPrompt = 'I need help diagnosing a problem with my crops. Can you help me identify what might be wrong? You can describe the issue or upload a photo for analysis.';
-    sendMessage(initialPrompt);
   }, []);
 
   const requestPermissions = async () => {
@@ -171,6 +170,8 @@ export default function AIProblemDiagnosisScreen() {
   const sendMessage = async (text: string, imageUri?: string) => {
     if ((!text.trim() && !imageUri) || loading) return;
 
+    setShowWelcome(false);
+
     let imageUrl: string | null = null;
 
     if (imageUri) {
@@ -227,8 +228,7 @@ export default function AIProblemDiagnosisScreen() {
       await saveMessage('assistant', data.response);
     } catch (error: any) {
       console.error('Error sending message:', error);
-      Alert.alert('Error', 'Failed to get response from AI assistant. Please try again.');
-
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -239,6 +239,10 @@ export default function AIProblemDiagnosisScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleQuickQuestion = (question: string) => {
+    sendMessage(question);
   };
 
   const handleBack = () => {
@@ -257,6 +261,43 @@ export default function AIProblemDiagnosisScreen() {
       </View>
       <LinearGradient colors={['#2D5016', '#4A7C2C', '#6BA542']} style={styles.gradient}>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+          {showWelcome && messages.length === 0 && (
+            <View style={styles.welcomeContainer}>
+              <Text style={styles.welcomeTitle}>Identify Plant Problems 🔍</Text>
+              <Text style={styles.welcomeText}>
+                I can help you diagnose issues with your crops including diseases, pests, nutrient deficiencies, and more. Upload a photo or describe the problem!
+              </Text>
+              <TouchableOpacity 
+                style={styles.uploadButton}
+                onPress={showImagePickerOptions}
+              >
+                <Text style={styles.uploadButtonIcon}>📷</Text>
+                <Text style={styles.uploadButtonText}>Upload Photo for Analysis</Text>
+              </TouchableOpacity>
+              <Text style={styles.orText}>or ask about:</Text>
+              <View style={styles.quickQuestionsContainer}>
+                <TouchableOpacity 
+                  style={styles.quickQuestionButton}
+                  onPress={() => handleQuickQuestion('My tomato leaves are turning yellow. What could be causing this?')}
+                >
+                  <Text style={styles.quickQuestionText}>🍅 Yellowing Leaves</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.quickQuestionButton}
+                  onPress={() => handleQuickQuestion('I see small holes in my plant leaves. What pest might be causing this?')}
+                >
+                  <Text style={styles.quickQuestionText}>🐛 Leaf Damage</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.quickQuestionButton}
+                  onPress={() => handleQuickQuestion('My plants are wilting even though I water them regularly. What\'s wrong?')}
+                >
+                  <Text style={styles.quickQuestionText}>💧 Wilting Plants</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
           {messages.map((message) => (
             <View
               key={message.id}
@@ -397,6 +438,66 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingBottom: 20,
+  },
+  welcomeContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 16,
+  },
+  welcomeTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#2D5016',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  welcomeText: {
+    fontSize: 16,
+    color: '#333',
+    lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  uploadButton: {
+    backgroundColor: '#4A7C2C',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  uploadButtonIcon: {
+    fontSize: 24,
+    marginRight: 8,
+  },
+  uploadButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  orText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4A7C2C',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  quickQuestionsContainer: {
+    gap: 10,
+  },
+  quickQuestionButton: {
+    backgroundColor: '#F0F8F0',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#4A7C2C',
+  },
+  quickQuestionText: {
+    fontSize: 14,
+    color: '#2D5016',
+    fontWeight: '500',
   },
   messageContainer: {
     marginBottom: 12,

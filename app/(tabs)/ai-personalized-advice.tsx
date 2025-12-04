@@ -16,12 +16,8 @@ export default function AIPersonalizedAdviceScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
   const router = useRouter();
-
-  React.useEffect(() => {
-    const initialPrompt = 'Can you provide personalized advice for my farm based on my current crops and fields?';
-    sendMessage(initialPrompt);
-  }, []);
 
   const getUserContext = async () => {
     try {
@@ -68,6 +64,8 @@ export default function AIPersonalizedAdviceScreen() {
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
 
+    setShowWelcome(false);
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -110,8 +108,7 @@ export default function AIPersonalizedAdviceScreen() {
       await saveMessage('assistant', data.response);
     } catch (error: any) {
       console.error('Error sending message:', error);
-      Alert.alert('Error', 'Failed to get response from AI assistant. Please try again.');
-
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -122,6 +119,10 @@ export default function AIPersonalizedAdviceScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleQuickQuestion = (question: string) => {
+    sendMessage(question);
   };
 
   const handleBack = () => {
@@ -140,6 +141,42 @@ export default function AIPersonalizedAdviceScreen() {
       </View>
       <LinearGradient colors={['#2D5016', '#4A7C2C', '#6BA542']} style={styles.gradient}>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+          {showWelcome && messages.length === 0 && (
+            <View style={styles.welcomeContainer}>
+              <Text style={styles.welcomeTitle}>Get Personalized Farming Advice 🌾</Text>
+              <Text style={styles.welcomeText}>
+                I can provide customized recommendations based on your specific farm setup, crops, and growing conditions. Ask me anything!
+              </Text>
+              <Text style={styles.welcomeSubtext}>Try asking about:</Text>
+              <View style={styles.quickQuestionsContainer}>
+                <TouchableOpacity 
+                  style={styles.quickQuestionButton}
+                  onPress={() => handleQuickQuestion('Can you provide personalized advice for my farm based on my current crops and fields?')}
+                >
+                  <Text style={styles.quickQuestionText}>📊 Overall Farm Analysis</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.quickQuestionButton}
+                  onPress={() => handleQuickQuestion('What crops should I rotate next season based on what I\'m currently growing?')}
+                >
+                  <Text style={styles.quickQuestionText}>🔄 Crop Rotation Plan</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.quickQuestionButton}
+                  onPress={() => handleQuickQuestion('How can I improve my soil health and fertility?')}
+                >
+                  <Text style={styles.quickQuestionText}>🌱 Soil Improvement</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.quickQuestionButton}
+                  onPress={() => handleQuickQuestion('What are the best irrigation practices for my farm setup?')}
+                >
+                  <Text style={styles.quickQuestionText}>💧 Irrigation Tips</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
           {messages.map((message) => (
             <View
               key={message.id}
@@ -170,7 +207,7 @@ export default function AIPersonalizedAdviceScreen() {
             <View style={[styles.messageContainer, styles.assistantMessage]}>
               <View style={[styles.messageBubble, styles.assistantBubble]}>
                 <ActivityIndicator color="#2D5016" />
-                <Text style={styles.loadingText}>Analyzing...</Text>
+                <Text style={styles.loadingText}>Analyzing your farm data...</Text>
               </View>
             </View>
           )}
@@ -247,6 +284,47 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingBottom: 20,
+  },
+  welcomeContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 16,
+  },
+  welcomeTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#2D5016',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  welcomeText: {
+    fontSize: 16,
+    color: '#333',
+    lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  welcomeSubtext: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4A7C2C',
+    marginBottom: 12,
+  },
+  quickQuestionsContainer: {
+    gap: 10,
+  },
+  quickQuestionButton: {
+    backgroundColor: '#F0F8F0',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#4A7C2C',
+  },
+  quickQuestionText: {
+    fontSize: 14,
+    color: '#2D5016',
+    fontWeight: '500',
   },
   messageContainer: {
     marginBottom: 12,

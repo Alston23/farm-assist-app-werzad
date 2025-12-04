@@ -20,7 +20,8 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "This app uses the camera to take photos of your crops for AI-powered plant health analysis.",
         "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select crop images for analysis.",
-        "NSPhotoLibraryAddUsageDescription": "This app needs permission to save crop photos to your photo library."
+        "NSPhotoLibraryAddUsageDescription": "This app needs permission to save crop photos to your photo library.",
+        "NSLocationWhenInUseUsageDescription": "This app needs your location to provide accurate weather forecasts and farming recommendations for your area."
       },
       "icon": "./assets/images/icon.png"
     },
@@ -35,7 +36,9 @@
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
       ],
       "icon": "./assets/images/icon.png"
     },
@@ -51,6 +54,12 @@
         {
           "photosPermission": "This app uses your photos to analyze crop health and conditions.",
           "cameraPermission": "This app uses the camera to take photos of your crops for AI-powered analysis."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow FarmAssist to use your location to provide accurate weather forecasts and farming recommendations for your area."
         }
       ]
     ],
