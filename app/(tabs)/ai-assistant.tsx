@@ -367,9 +367,41 @@ export default function AIAssistantScreen() {
     );
   };
 
-  const handleBack = () => {
-    console.log('AI Assistant: Back button pressed, navigating to crops');
-    router.push('/(tabs)/crops');
+  const handleBack = async () => {
+    console.log('AI Assistant: Back button pressed');
+    
+    // If there are messages, clear the conversation and return to quick actions
+    if (messages.length > 0) {
+      Alert.alert(
+        'Return to Quick Actions',
+        'Do you want to clear the conversation and return to quick actions?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Clear & Return',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+
+                await supabase.from('ai_conversations').delete().eq('user_id', user.id);
+                setMessages([]);
+                setShowQuickActions(true);
+                console.log('AI Assistant: Returned to quick actions');
+              } catch (error) {
+                console.error('Error clearing conversation:', error);
+                Alert.alert('Error', 'Failed to clear conversation');
+              }
+            },
+          },
+        ]
+      );
+    } else {
+      // If already on quick actions, just ensure the view is correct
+      setShowQuickActions(true);
+      console.log('AI Assistant: Already on quick actions page');
+    }
   };
 
   const handleSignOut = async () => {
