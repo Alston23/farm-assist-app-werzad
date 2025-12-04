@@ -24,7 +24,7 @@ interface AddEquipmentListingModalProps {
 export default function AddEquipmentListingModal({ visible, onClose, onSuccess }: AddEquipmentListingModalProps) {
   const [listingType, setListingType] = useState<'for_sale' | 'wanted'>('for_sale');
   const [equipmentName, setEquipmentName] = useState('');
-  const [equipmentType, setEquipmentType] = useState('tractor');
+  const [equipmentType, setEquipmentType] = useState('');
   const [manufacturer, setManufacturer] = useState('');
   const [model, setModel] = useState('');
   const [year, setYear] = useState('');
@@ -36,7 +36,6 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const equipmentTypes = ['tractor', 'plow', 'harvester', 'seeder', 'sprayer', 'cultivator', 'mower', 'trailer', 'irrigation', 'hand_tools', 'other'];
   const conditions = ['new', 'excellent', 'good', 'fair', 'poor', 'parts_only'];
 
   const pickImage = async () => {
@@ -63,7 +62,7 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
   };
 
   const handleSubmit = async () => {
-    if (!equipmentName.trim() || !description.trim()) {
+    if (!equipmentName.trim() || !equipmentType.trim() || !description.trim()) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -95,7 +94,7 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
           user_id: user.id,
           listing_type: listingType,
           equipment_name: equipmentName.trim(),
-          equipment_type: equipmentType,
+          equipment_type: equipmentType.trim(),
           manufacturer: manufacturer.trim() || null,
           model: model.trim() || null,
           year: yearNum,
@@ -124,7 +123,7 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
   const resetForm = () => {
     setListingType('for_sale');
     setEquipmentName('');
-    setEquipmentType('tractor');
+    setEquipmentType('');
     setManufacturer('');
     setModel('');
     setYear('');
@@ -134,10 +133,6 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
     setLocation('');
     setHoursUsed('');
     setImages([]);
-  };
-
-  const formatEquipmentType = (type: string) => {
-    return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
   return (
@@ -182,19 +177,13 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
             />
 
             <Text style={styles.label}>Equipment Type *</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
-              {equipmentTypes.map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  style={[styles.chip, equipmentType === type && styles.chipActive]}
-                  onPress={() => setEquipmentType(type)}
-                >
-                  <Text style={[styles.chipText, equipmentType === type && styles.chipTextActive]}>
-                    {formatEquipmentType(type)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            <TextInput
+              style={styles.input}
+              value={equipmentType}
+              onChangeText={setEquipmentType}
+              placeholder="e.g., Tractor, Plow, Harvester, Seeder, Baler, etc."
+              placeholderTextColor="#999"
+            />
 
             <View style={styles.row}>
               <View style={styles.halfWidth}>
