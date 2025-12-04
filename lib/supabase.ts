@@ -12,5 +12,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    // Ensure proper session handling
+    storageKey: 'supabase.auth.token',
+    flowType: 'pkce',
   },
 });
+
+// Log when the client is initialized
+console.log('Supabase client initialized');

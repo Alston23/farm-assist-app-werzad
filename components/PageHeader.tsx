@@ -26,10 +26,15 @@ export default function PageHeader({ title }: PageHeaderProps) {
           text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
-            console.log('PageHeader: User confirmed sign out');
-            await signOut();
-            console.log('PageHeader: Sign out complete, redirecting to auth');
-            router.replace('/auth');
+            try {
+              console.log('PageHeader: User confirmed sign out, calling signOut');
+              await signOut();
+              console.log('PageHeader: Sign out complete, redirecting to auth');
+              router.replace('/auth');
+            } catch (error: any) {
+              console.error('PageHeader: Sign out failed:', error);
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
           },
         },
       ]

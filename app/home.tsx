@@ -23,8 +23,15 @@ export default function HomeScreen() {
           text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
-            await signOut();
-            router.replace('/auth');
+            try {
+              console.log('HomeScreen: Calling signOut');
+              await signOut();
+              console.log('HomeScreen: Sign out completed, redirecting to auth');
+              router.replace('/auth');
+            } catch (error: any) {
+              console.error('HomeScreen: Sign out failed:', error);
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
           },
         },
       ]

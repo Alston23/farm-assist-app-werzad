@@ -80,11 +80,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     console.log('AuthContext: Signing out user');
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('AuthContext: Sign out error:', error);
-    } else {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('AuthContext: Sign out error:', error);
+        throw error;
+      }
+      
+      // Explicitly clear the state
+      console.log('AuthContext: Clearing auth state');
+      setSession(null);
+      setUser(null);
+      
       console.log('AuthContext: Sign out successful');
+    } catch (error) {
+      console.error('AuthContext: Sign out exception:', error);
+      throw error;
     }
   };
 

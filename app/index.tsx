@@ -14,13 +14,19 @@ export default function Index() {
     if (!loading) {
       if (user) {
         console.log('Index: User authenticated, redirecting to tabs');
-        router.replace('/(tabs)/crops');
+        // Use setTimeout to ensure navigation happens after render
+        setTimeout(() => {
+          router.replace('/(tabs)/crops');
+        }, 0);
       } else {
         console.log('Index: No user, redirecting to auth');
-        router.replace('/auth');
+        // Use setTimeout to ensure navigation happens after render
+        setTimeout(() => {
+          router.replace('/auth');
+        }, 0);
       }
     }
-  }, [user, loading, router]);
+  }, [user, loading]);
 
   return (
     <View style={styles.container}>
