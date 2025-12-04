@@ -348,14 +348,31 @@ export default function AIAssistantScreen() {
 
   const handleQuickAction = (action: QuickAction) => {
     console.log('AI Assistant: Quick action pressed:', action.title);
-    if (action.requiresImage) {
-      // For image-based actions, show image picker and set the prompt
-      showImagePickerOptions();
-      setInputText(action.prompt);
-      // Don't send message yet - wait for user to select image and press send
-    } else {
-      // For non-image actions, send the message immediately
-      sendMessage(action.prompt);
+    
+    // Navigate to dedicated pages for each quick action
+    switch (action.id) {
+      case 'crop-recommendation':
+        router.push('/(tabs)/ai-crop-recommendations');
+        break;
+      case 'problem-diagnosis':
+        router.push('/(tabs)/ai-problem-diagnosis');
+        break;
+      case 'growing-tips':
+        router.push('/(tabs)/ai-growing-tips');
+        break;
+      case 'weather-insights':
+        router.push('/(tabs)/ai-weather-insights');
+        break;
+      case 'personalized-advice':
+        router.push('/(tabs)/ai-personalized-advice');
+        break;
+      case 'image-identification':
+        // For image-based actions, show image picker and set the prompt
+        showImagePickerOptions();
+        setInputText(action.prompt);
+        break;
+      default:
+        console.log('Unknown quick action:', action.id);
     }
   };
 
