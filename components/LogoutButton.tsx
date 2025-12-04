@@ -22,9 +22,11 @@ export function LogoutButton() {
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log('User confirmed logout');
               await logout();
+              console.log('Logout completed successfully');
             } catch (error) {
-              console.error('Logout error:', error);
+              console.error('Logout error in button:', error);
               Alert.alert('Error', 'Failed to logout. Please try again.');
             }
           },

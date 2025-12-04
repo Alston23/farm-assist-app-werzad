@@ -61,6 +61,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed:', _event, session ? 'Session exists' : 'No session');
+      
       if (session?.user) {
         const userData = {
           id: session.user.id,
@@ -273,26 +275,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      // Call Supabase signOut
+      console.log('Logout initiated...');
+      
+      // Clear local state first to ensure UI updates immediately
+      setUser(null);
+      setSession(null);
+      
+      // Call Supabase signOut to invalidate the session on the server
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        console.error('Error signing out:', error);
-        showUserFriendlyError('There was an issue signing out, but your session has been cleared locally.');
+        console.error('Error signing out from Supabase:', error);
+        // Don't show error to user since local state is already cleared
+      } else {
+        console.log('Successfully signed out from Supabase');
       }
       
-      // Always clear local state, even if there's an error
-      setUser(null);
-      setSession(null);
+      // Clear any cached auth data from AsyncStorage
+      try {
+        await AsyncStorage.removeItem('supabase.auth.token');
+        console.log('Cleared auth token from AsyncStorage');
+      } catch (storageError) {
+        console.error('Error clearing AsyncStorage:', storageError);
+      }
       
-      // Clear any cached data
-      await AsyncStorage.removeItem('supabase.auth.token');
     } catch (error: any) {
-      console.error('Unexpected error during sign out:', error);
+      console.error('Unexpected error during logout:', error);
       // Ensure user is set to null even if there's an error
       setUser(null);
       setSession(null);
-      showUserFriendlyError('Signed out successfully.');
     }
   };
 
