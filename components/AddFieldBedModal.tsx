@@ -294,8 +294,8 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
           activeOpacity={1} 
           onPress={handleClose}
         />
-        <View style={styles.modalContent} pointerEvents="box-none">
-          <View style={styles.modalHeader} pointerEvents="auto">
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Add Field/Bed</Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>✕</Text>
@@ -307,7 +307,6 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="always"
             nestedScrollEnabled={true}
-            pointerEvents="auto"
           >
             <View style={styles.section}>
               <Text style={styles.label}>Type</Text>
@@ -608,7 +607,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 0,
   },
   modalContent: {
     backgroundColor: '#fff',
@@ -616,7 +614,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     maxHeight: '90%',
     paddingBottom: 20,
-    zIndex: 1,
   },
   modalHeader: {
     flexDirection: 'row',
