@@ -19,7 +19,14 @@ export default function AIWeatherInsightsScreen() {
   const router = useRouter();
 
   React.useEffect(() => {
-    const initialPrompt = 'How should I adjust my farming practices based on current weather conditions?';
+    const initialPrompt = `Please provide me with a detailed weather forecast for my farm location and suggest specific tasks I should complete based on the upcoming weather conditions. For example:
+- If there's rain coming, suggest when to harvest before it arrives
+- If freezing temperatures are expected, suggest protecting sensitive crops or harvesting before the freeze
+- If hot weather is coming, suggest irrigation adjustments
+- If strong winds are expected, suggest securing structures or staking plants
+- Any other weather-related farming tasks that would be helpful
+
+Please be specific about timing (e.g., "harvest tomatoes in the next 2 days before the freeze on Thursday") and prioritize the most urgent tasks.`;
     sendMessage(initialPrompt);
   }, []);
 
@@ -170,7 +177,7 @@ export default function AIWeatherInsightsScreen() {
             <View style={[styles.messageContainer, styles.assistantMessage]}>
               <View style={[styles.messageBubble, styles.assistantBubble]}>
                 <ActivityIndicator color="#2D5016" />
-                <Text style={styles.loadingText}>Analyzing...</Text>
+                <Text style={styles.loadingText}>Analyzing weather and generating task recommendations...</Text>
               </View>
             </View>
           )}
@@ -180,7 +187,7 @@ export default function AIWeatherInsightsScreen() {
           <View style={styles.inputRow}>
             <TextInput
               style={styles.input}
-              placeholder="Ask about weather-related farming advice..."
+              placeholder="Ask about specific weather concerns..."
               placeholderTextColor="#999"
               value={inputText}
               onChangeText={setInputText}

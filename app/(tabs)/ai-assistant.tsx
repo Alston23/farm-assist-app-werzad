@@ -32,29 +32,16 @@ const quickActions: QuickAction[] = [
     prompt: 'Based on my farm location and current season, what crops would you recommend I plant?',
   },
   {
-    id: 'problem-diagnosis',
+    id: 'identify-plant-issues',
     icon: '🔍',
-    title: 'Problem Diagnosis',
+    title: 'Identify Plant Issues',
     prompt: 'I need help diagnosing a problem with my crops. Can you help me identify what might be wrong?',
-  },
-  {
-    id: 'image-identification',
-    icon: '📸',
-    title: 'Identify Plant Issue',
-    prompt: 'Please analyze this image and help me identify any weeds, pest damage, or plant diseases.',
-    requiresImage: true,
-  },
-  {
-    id: 'growing-tips',
-    icon: '💡',
-    title: 'Growing Tips',
-    prompt: 'What are some best practices and tips for successful crop cultivation on a small farm?',
   },
   {
     id: 'weather-insights',
     icon: '🌤️',
     title: 'Weather Insights',
-    prompt: 'How should I adjust my farming practices based on current weather conditions?',
+    prompt: 'Show me the weather forecast and suggest tasks I should complete based on upcoming conditions.',
   },
   {
     id: 'personalized-advice',
@@ -354,22 +341,14 @@ export default function AIAssistantScreen() {
       case 'crop-recommendation':
         router.push('/(tabs)/ai-crop-recommendations');
         break;
-      case 'problem-diagnosis':
+      case 'identify-plant-issues':
         router.push('/(tabs)/ai-problem-diagnosis');
-        break;
-      case 'growing-tips':
-        router.push('/(tabs)/ai-growing-tips');
         break;
       case 'weather-insights':
         router.push('/(tabs)/ai-weather-insights');
         break;
       case 'personalized-advice':
         router.push('/(tabs)/ai-personalized-advice');
-        break;
-      case 'image-identification':
-        // For image-based actions, show image picker and set the prompt
-        showImagePickerOptions();
-        setInputText(action.prompt);
         break;
       default:
         console.log('Unknown quick action:', action.id);
@@ -474,7 +453,7 @@ export default function AIAssistantScreen() {
               <View style={styles.welcomeContainer}>
                 <Text style={styles.welcomeTitle}>Welcome to Your AI Farm Assistant! 👋</Text>
                 <Text style={styles.welcomeText}>
-                  I&apos;m here to help you with crop recommendations, problem diagnosis, growing tips, and personalized farming advice. You can also upload images to identify weeds, pests, or diseases!
+                  I&apos;m here to help you with crop recommendations, plant issue diagnosis, weather insights, and personalized farming advice. You can also upload images to identify weeds, pests, or diseases!
                 </Text>
                 <Text style={styles.welcomeSubtext}>Choose a quick action below or ask me anything:</Text>
 

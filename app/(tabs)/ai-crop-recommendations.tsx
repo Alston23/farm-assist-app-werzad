@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import CropRecommendationModal from '../../components/CropRecommendationModal';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface Message {
   id: string;
@@ -17,8 +18,19 @@ export default function AICropRecommendationsScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(true);
+  const [showModal, setShowModal] = useState(false);
   const router = useRouter();
+
+  // Reset modal state when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('Crop Recommendations: Screen focused, showing modal');
+      setShowModal(true);
+      return () => {
+        console.log('Crop Recommendations: Screen unfocused');
+      };
+    }, [])
+  );
 
   const handleModalSubmit = async (criteria: {
     region: string;
