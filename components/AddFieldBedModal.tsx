@@ -92,42 +92,38 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
   };
 
   const handlePlantingDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-    console.log('Planting date change event:', event.type);
+    console.log('Planting date change event:', event.type, 'selectedDate:', selectedDate);
     
     if (Platform.OS === 'android') {
-      // On Android, always hide the picker after any interaction
       setShowPlantingDatePicker(false);
-      
-      // Only update if user pressed OK (event.type === 'set')
       if (event.type === 'set' && selectedDate) {
-        console.log('Setting planting date to:', selectedDate);
+        console.log('Android: Setting planting date to:', selectedDate);
         setPlantingDate(selectedDate);
+      } else {
+        console.log('Android: Date picker dismissed without selection');
       }
     } else {
-      // On iOS, update immediately as user scrolls
       if (selectedDate) {
-        console.log('Setting planting date to:', selectedDate);
+        console.log('iOS: Setting planting date to:', selectedDate);
         setPlantingDate(selectedDate);
       }
     }
   };
 
   const handleHarvestDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-    console.log('Harvest date change event:', event.type);
+    console.log('Harvest date change event:', event.type, 'selectedDate:', selectedDate);
     
     if (Platform.OS === 'android') {
-      // On Android, always hide the picker after any interaction
       setShowHarvestDatePicker(false);
-      
-      // Only update if user pressed OK (event.type === 'set')
       if (event.type === 'set' && selectedDate) {
-        console.log('Setting harvest date to:', selectedDate);
+        console.log('Android: Setting harvest date to:', selectedDate);
         setHarvestDate(selectedDate);
+      } else {
+        console.log('Android: Date picker dismissed without selection');
       }
     } else {
-      // On iOS, update immediately as user scrolls
       if (selectedDate) {
-        console.log('Setting harvest date to:', selectedDate);
+        console.log('iOS: Setting harvest date to:', selectedDate);
         setHarvestDate(selectedDate);
       }
     }
@@ -446,9 +442,10 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               <TouchableOpacity
                 style={styles.dateButton}
                 onPress={() => {
-                  console.log('Opening planting date picker');
+                  console.log('Planting date button pressed, showing picker');
                   setShowPlantingDatePicker(true);
                 }}
+                activeOpacity={0.7}
               >
                 <Text style={styles.dateText}>
                   📅 {formatDate(plantingDate)}
@@ -456,7 +453,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               </TouchableOpacity>
               
               {showPlantingDatePicker && (
-                <>
+                <View style={styles.datePickerWrapper}>
                   {Platform.OS === 'ios' ? (
                     <View style={styles.datePickerContainer}>
                       <DateTimePicker
@@ -465,6 +462,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                         display="spinner"
                         onChange={handlePlantingDateChange}
                         themeVariant="light"
+                        style={styles.datePicker}
                       />
                       <TouchableOpacity
                         style={styles.datePickerDoneButton}
@@ -481,7 +479,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                       onChange={handlePlantingDateChange}
                     />
                   )}
-                </>
+                </View>
               )}
             </View>
 
@@ -490,9 +488,10 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               <TouchableOpacity
                 style={styles.dateButton}
                 onPress={() => {
-                  console.log('Opening harvest date picker');
+                  console.log('Harvest date button pressed, showing picker');
                   setShowHarvestDatePicker(true);
                 }}
+                activeOpacity={0.7}
               >
                 <Text style={styles.dateText}>
                   📅 {formatDate(harvestDate)}
@@ -500,7 +499,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               </TouchableOpacity>
               
               {showHarvestDatePicker && (
-                <>
+                <View style={styles.datePickerWrapper}>
                   {Platform.OS === 'ios' ? (
                     <View style={styles.datePickerContainer}>
                       <DateTimePicker
@@ -510,6 +509,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                         onChange={handleHarvestDateChange}
                         minimumDate={plantingDate}
                         themeVariant="light"
+                        style={styles.datePicker}
                       />
                       <TouchableOpacity
                         style={styles.datePickerDoneButton}
@@ -527,7 +527,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                       minimumDate={plantingDate}
                     />
                   )}
-                </>
+                </View>
               )}
             </View>
 
@@ -725,13 +725,18 @@ const styles = StyleSheet.create({
     color: '#2D5016',
     fontWeight: '600',
   },
+  datePickerWrapper: {
+    marginTop: 12,
+  },
   datePickerContainer: {
     backgroundColor: '#F5F5F5',
     borderRadius: 12,
     padding: 16,
-    marginTop: 12,
     borderWidth: 1,
     borderColor: '#4A7C2C',
+  },
+  datePicker: {
+    width: '100%',
   },
   datePickerDoneButton: {
     backgroundColor: '#4A7C2C',

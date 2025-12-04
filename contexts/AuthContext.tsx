@@ -22,7 +22,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     console.log('AuthContext: Initializing auth state');
     
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('AuthContext: Initial session:', session ? 'exists' : 'none');
       setSession(session);
@@ -33,7 +32,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log('AuthContext: Auth state changed:', _event, session ? 'session exists' : 'no session');
       setSession(session);
@@ -95,12 +93,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     console.log('AuthContext: Starting sign out process');
     try {
-      // First, clear local state immediately for better UX
-      console.log('AuthContext: Clearing local state');
-      setUser(null);
-      setSession(null);
-      
-      // Then call Supabase signOut
       console.log('AuthContext: Calling Supabase signOut');
       const { error } = await supabase.auth.signOut();
       
@@ -109,11 +101,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
       
-      console.log('AuthContext: Sign out successful');
+      console.log('AuthContext: Sign out successful, clearing local state');
+      setUser(null);
+      setSession(null);
+      
+      console.log('AuthContext: Sign out complete');
     } catch (error) {
       console.error('AuthContext: Sign out exception:', error);
-      // State is already cleared, so we can still consider this a success from UX perspective
-      // But we'll throw the error so the caller can show an alert if needed
+      setUser(null);
+      setSession(null);
       throw error;
     }
   };

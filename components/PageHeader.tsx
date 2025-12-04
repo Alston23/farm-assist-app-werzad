@@ -2,7 +2,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { useRouter } from 'expo-router';
 
 interface PageHeaderProps {
   title: string;
@@ -10,7 +9,6 @@ interface PageHeaderProps {
 
 export default function PageHeader({ title }: PageHeaderProps) {
   const { signOut } = useAuth();
-  const router = useRouter();
 
   const handleSignOut = async () => {
     console.log('PageHeader: Sign out button pressed');
@@ -21,6 +19,7 @@ export default function PageHeader({ title }: PageHeaderProps) {
         {
           text: 'Cancel',
           style: 'cancel',
+          onPress: () => console.log('PageHeader: Sign out cancelled'),
         },
         {
           text: 'Sign Out',
@@ -29,11 +28,10 @@ export default function PageHeader({ title }: PageHeaderProps) {
             try {
               console.log('PageHeader: User confirmed sign out, calling signOut');
               await signOut();
-              console.log('PageHeader: Sign out complete, redirecting to auth');
-              router.replace('/auth');
+              console.log('PageHeader: Sign out complete');
             } catch (error: any) {
               console.error('PageHeader: Sign out failed:', error);
-              Alert.alert('Error', 'Failed to sign out. Please try again.');
+              Alert.alert('Notice', 'You have been signed out. If you experience issues, please restart the app.');
             }
           },
         },
@@ -44,7 +42,11 @@ export default function PageHeader({ title }: PageHeaderProps) {
   return (
     <View style={styles.header}>
       <Text style={styles.title}>{title}</Text>
-      <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+      <TouchableOpacity 
+        style={styles.signOutButton} 
+        onPress={handleSignOut}
+        activeOpacity={0.7}
+      >
         <Text style={styles.signOutButtonText}>Sign Out</Text>
       </TouchableOpacity>
     </View>

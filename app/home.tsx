@@ -2,12 +2,10 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function HomeScreen() {
   const { user, signOut } = useAuth();
-  const router = useRouter();
 
   const handleSignOut = async () => {
     console.log('HomeScreen: Sign out button pressed');
@@ -18,6 +16,7 @@ export default function HomeScreen() {
         {
           text: 'Cancel',
           style: 'cancel',
+          onPress: () => console.log('HomeScreen: Sign out cancelled'),
         },
         {
           text: 'Sign Out',
@@ -27,12 +26,9 @@ export default function HomeScreen() {
               console.log('HomeScreen: User confirmed sign out, calling signOut');
               await signOut();
               console.log('HomeScreen: Sign out completed successfully');
-              // Navigation will be handled automatically by _layout.tsx
             } catch (error: any) {
               console.error('HomeScreen: Sign out failed:', error);
-              // Even if there's an error, the local state is cleared
-              // So we can just show a warning but the user is effectively signed out
-              Alert.alert('Notice', 'You have been signed out locally. If you experience issues, please restart the app.');
+              Alert.alert('Notice', 'You have been signed out. If you experience issues, please restart the app.');
             }
           },
         },
@@ -45,7 +41,11 @@ export default function HomeScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>🌱 SmallFarm Copilot</Text>
-          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <TouchableOpacity 
+            style={styles.signOutButton} 
+            onPress={handleSignOut}
+            activeOpacity={0.7}
+          >
             <Text style={styles.signOutButtonText}>Sign Out</Text>
           </TouchableOpacity>
         </View>
@@ -69,15 +69,15 @@ export default function HomeScreen() {
               We&apos;re building amazing features for your farm management needs:
             </Text>
             <View style={styles.featureList}>
-              <Text style={styles.featureItem}>• Crop Management</Text>
-              <Text style={styles.featureItem}>• Field & Bed Planning</Text>
-              <Text style={styles.featureItem}>• Planting Schedules</Text>
-              <Text style={styles.featureItem}>• Equipment Tracking</Text>
-              <Text style={styles.featureItem}>• Task Management</Text>
-              <Text style={styles.featureItem}>• Inventory Control</Text>
-              <Text style={styles.featureItem}>• Revenue Tracking</Text>
-              <Text style={styles.featureItem}>• Marketplace Access</Text>
-              <Text style={styles.featureItem}>• AI Assistant</Text>
+              <Text style={styles.featureItem}>- Crop Management</Text>
+              <Text style={styles.featureItem}>- Field & Bed Planning</Text>
+              <Text style={styles.featureItem}>- Planting Schedules</Text>
+              <Text style={styles.featureItem}>- Equipment Tracking</Text>
+              <Text style={styles.featureItem}>- Task Management</Text>
+              <Text style={styles.featureItem}>- Inventory Control</Text>
+              <Text style={styles.featureItem}>- Revenue Tracking</Text>
+              <Text style={styles.featureItem}>- Marketplace Access</Text>
+              <Text style={styles.featureItem}>- AI Assistant</Text>
             </View>
           </View>
         </View>
