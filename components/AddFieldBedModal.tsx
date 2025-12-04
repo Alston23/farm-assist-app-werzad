@@ -78,6 +78,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
   }, [plantingDate, daysToMaturity]);
 
   const handleCropSelect = (crop: { id: string; name: string }) => {
+    console.log('Crop selected:', crop.name);
     setCropId(crop.id);
     setCropName(crop.name);
     setCropSearchQuery(crop.name);
@@ -85,6 +86,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
 
     const cropDetail = getCropDetail(crop.id);
     if (cropDetail) {
+      console.log('Days to maturity:', cropDetail.daysToMaturity);
       setDaysToMaturity(cropDetail.daysToMaturity);
     }
   };
@@ -92,7 +94,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
   const handlePlantingDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     console.log('Planting date change - event type:', event.type, 'selected date:', selectedDate);
     
-    // On Android, the picker is dismissed automatically
+    // On Android, the picker is dismissed automatically after selection
     if (Platform.OS === 'android') {
       setShowPlantingDatePicker(false);
     }
@@ -109,7 +111,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
   const handleHarvestDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     console.log('Harvest date change - event type:', event.type, 'selected date:', selectedDate);
     
-    // On Android, the picker is dismissed automatically
+    // On Android, the picker is dismissed automatically after selection
     if (Platform.OS === 'android') {
       setShowHarvestDatePicker(false);
     }
@@ -134,6 +136,8 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
   };
 
   const handleSave = async () => {
+    console.log('Save button pressed');
+    
     if (!name.trim()) {
       Alert.alert('Error', 'Please enter a name');
       return;
@@ -165,6 +169,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
         return;
       }
 
+      console.log('Creating field/bed...');
       const { data: fieldBedData, error: fieldBedError } = await supabase
         .from('fields_beds')
         .insert({
@@ -186,6 +191,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
         return;
       }
 
+      console.log('Field/bed created, creating planting...');
       const { error: plantingError } = await supabase
         .from('plantings')
         .insert({
@@ -205,6 +211,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
         return;
       }
 
+      console.log('Success! Field/bed and planting created');
       Alert.alert(
         'Success',
         `${type === 'field' ? 'Field' : 'Bed'} saved successfully! You can now view it in the Plantings tab.`,
@@ -223,6 +230,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
   };
 
   const resetForm = () => {
+    console.log('Resetting form');
     setType('field');
     setName('');
     setAreaValue('');
@@ -241,6 +249,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
   };
 
   const handleClose = () => {
+    console.log('Modal close requested');
     resetForm();
     onClose();
   };

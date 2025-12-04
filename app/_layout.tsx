@@ -1,9 +1,11 @@
 
-import { Stack } from 'expo-router';
-import { AuthProvider } from '../contexts/AuthContext';
 import { useEffect } from 'react';
-import { useRouter, useSegments } from 'expo-router';
-import { useAuth } from '../contexts/AuthContext';
+import { Stack, useRouter, useSegments } from 'expo-router';
+import { AuthProvider, useAuth } from '../contexts/AuthContext';
+import * as SplashScreen from 'expo-splash-screen';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
   const { user, loading } = useAuth();
@@ -11,22 +13,28 @@ function RootLayoutNav() {
   const router = useRouter();
 
   useEffect(() => {
-    if (loading) {
-      console.log('RootLayout: Auth loading...');
-      return;
-    }
+    console.log('RootLayoutNav: Auth state - loading:', loading, 'user:', user ? 'exists' : 'none', 'segments:', segments);
+    
+    if (!loading) {
+      // Hide splash screen once auth state is determined
+      SplashScreen.hideAsync();
 
-    const inAuthGroup = segments[0] === 'auth';
-    const inTabsGroup = segments[0] === '(tabs)';
+      const inAuthGroup = segments[0] === 'auth';
+      const inTabsGroup = segments[0] === '(tabs)';
 
-    console.log('RootLayout: Navigation check - user:', user ? 'exists' : 'none', 'segments:', segments);
-
-    if (!user && !inAuthGroup) {
-      console.log('RootLayout: No user, redirecting to /auth');
-      router.replace('/auth');
-    } else if (user && inAuthGroup) {
-      console.log('RootLayout: User exists, redirecting to /(tabs)/crops');
-      router.replace('/(tabs)/crops');
+      if (!user && !inAuthGroup) {
+        // Redirect to auth if not authenticated
+        console.log('RootLayoutNav: No user, redirecting to /auth');
+        router.replace('/auth');
+      } else if (user && inAuthGroup) {
+        // Redirect to tabs if authenticated and on auth screen
+        console.log('RootLayoutNav: User authenticated, redirecting to /(tabs)/crops');
+        router.replace('/(tabs)/crops');
+      } else if (user && !inTabsGroup && segments[0] !== 'crop' && segments[0] !== 'marketplace') {
+        // Redirect to tabs if authenticated but not in a valid route
+        console.log('RootLayoutNav: User authenticated but in invalid route, redirecting to /(tabs)/crops');
+        router.replace('/(tabs)/crops');
+      }
     }
   }, [user, loading, segments]);
 
@@ -34,7 +42,6 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="auth" />
-      <Stack.Screen name="home" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="crop" />
       <Stack.Screen name="marketplace" />

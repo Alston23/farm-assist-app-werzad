@@ -89,16 +89,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
       
-      console.log('AuthContext: Sign out successful - clearing local state');
-      
-      // Manually clear state immediately to ensure UI updates
-      setUser(null);
-      setSession(null);
-      
-      console.log('AuthContext: Local state cleared');
+      console.log('AuthContext: Sign out successful - state will be cleared by onAuthStateChange');
     } catch (error) {
       console.error('AuthContext: Sign out exception:', error);
-      // Even if there's an error, clear local state to ensure UI updates
+      // Even if there's an error, try to clear local state
       setUser(null);
       setSession(null);
       throw error;
