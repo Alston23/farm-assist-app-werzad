@@ -74,84 +74,51 @@ export default function PlantingsScreen() {
   };
 
   const handleDeletePlanting = (planting: Planting) => {
-    console.log('Delete button pressed for planting:', planting.id, planting.crop_name);
-    
     Alert.alert(
-      'Delete Planting',
+      "Delete Planting",
       `Are you sure you want to delete ${planting.crop_name} from ${planting.field_bed.name}?`,
       [
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Cancel',
-          style: 'cancel',
-          onPress: () => console.log('Delete cancelled'),
+          text: "Delete",
+          style: "destructive",
+          onPress: () => confirmDelete(planting.id),
         },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            console.log('Delete confirmed, proceeding...');
-            confirmDelete(planting.id);
-          },
-        },
-      ],
-      { cancelable: true }
+      ]
     );
   };
 
   const confirmDelete = async (plantingId: string) => {
-    console.log('=== Starting delete operation for planting:', plantingId, '===');
-    setDeletingId(plantingId);
-    
     try {
-      // Get the current user to ensure we're authenticated
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
-        console.error('Error getting user:', userError);
-        Alert.alert('Error', 'Authentication error. Please try logging in again.');
-        setDeletingId(null);
+      setDeletingId(plantingId);
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        Alert.alert("Error", "User not found.");
         return;
       }
 
-      if (!user) {
-        console.error('No authenticated user found');
-        Alert.alert('Error', 'You must be logged in to delete plantings');
-        setDeletingId(null);
-        return;
-      }
-
-      console.log('User authenticated:', user.id);
-      console.log('Attempting to delete planting:', plantingId, 'for user:', user.id);
-
-      // Perform the delete operation
-      const { error } = await supabase
-        .from('plantings')
+      const { error: deleteError } = await supabase
+        .from("plantings")
         .delete()
-        .eq('id', plantingId)
-        .eq('user_id', user.id);
+        .eq("id", plantingId)
+        .eq("user_id", user.id);
 
-      if (error) {
-        console.error('Supabase delete error:', error);
-        Alert.alert('Error', `Failed to delete planting: ${error.message}`);
-        setDeletingId(null);
+      if (deleteError) {
+        console.error(deleteError);
+        Alert.alert("Error", "Failed to delete planting.");
         return;
       }
 
-      console.log('Delete operation successful');
-      
-      // Remove the deleted planting from the local state
-      setPlantings((prevPlantings) => {
-        const filtered = prevPlantings.filter((p) => p.id !== plantingId);
-        console.log('Updated plantings count:', filtered.length);
-        return filtered;
-      });
-      
-      console.log('=== Delete operation completed successfully ===');
-      Alert.alert('Success', 'Planting deleted successfully');
-      
-    } catch (error) {
-      console.error('Unexpected error during delete:', error);
-      Alert.alert('Error', 'An unexpected error occurred while deleting the planting');
+      // update local state so UI refreshes
+      setPlantings((prev) => prev.filter((p) => p.id !== plantingId));
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Error", "Something went wrong while deleting.");
     } finally {
       setDeletingId(null);
     }
@@ -245,15 +212,15 @@ export default function PlantingsScreen() {
                       <TouchableOpacity
                         style={[
                           styles.deleteButton,
-                          deletingId === planting.id && styles.deleteButtonDisabled
+                          deletingId === planting.id && styles.deleteButtonDisabled,
                         ]}
-                        onPress={() => handleDeletePlanting(planting)}
                         disabled={deletingId === planting.id}
+                        onPress={() => handleDeletePlanting(planting)}
                       >
-                        <Ionicons 
-                          name="trash-outline" 
-                          size={22} 
-                          color={deletingId === planting.id ? '#ccc' : '#d32f2f'} 
+                        <Ionicons
+                          name="trash-outline"
+                          size={22}
+                          color={deletingId === planting.id ? "#ccc" : "#d32f2f"}
                         />
                       </TouchableOpacity>
                     </View>
