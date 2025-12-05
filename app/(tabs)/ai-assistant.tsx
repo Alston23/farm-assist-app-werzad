@@ -391,10 +391,153 @@ export default function AIAssistantScreen() {
     router.push('/paywall');
   };
 
-  const handleQuickAction = (action: QuickAction) => {
-    console.log('AI Assistant: Quick action pressed:', action.title);
-    // All tiles now open the paywall (same as the Upgrade button)
-    handleUpgradePress();
+  const buildQuickActionPrompt = async (type: 'crop' | 'diagnosis' | 'weather' | 'advice'): Promise<string> => {
+    const context = await getUserContext();
+    
+    switch (type) {
+      case 'crop':
+        // Advanced crop planning prompt using the user's farm data
+        let cropPrompt = 'Based on my farm data, please provide advanced crop recommendations:\n\n';
+        
+        if (context?.fields && context.fields.length > 0) {
+          cropPrompt += 'My Fields:\n';
+          context.fields.forEach((field: any) => {
+            cropPrompt += `- ${field.name}: ${field.area_value} ${field.area_unit}, ${field.soil_type} soil, ${field.irrigation_type} irrigation\n`;
+          });
+          cropPrompt += '\n';
+        }
+        
+        if (context?.plantings && context.plantings.length > 0) {
+          cropPrompt += 'Current/Recent Plantings:\n';
+          context.plantings.forEach((planting: any) => {
+            cropPrompt += `- ${planting.crop_name}: planted ${planting.planting_date}, harvest ${planting.harvest_date}\n`;
+          });
+          cropPrompt += '\n';
+        }
+        
+        cropPrompt += 'Please recommend:\n';
+        cropPrompt += '1. What crops I should plant next based on my soil types and irrigation\n';
+        cropPrompt += '2. Optimal planting schedule for the upcoming season\n';
+        cropPrompt += '3. Crop rotation suggestions to maintain soil health\n';
+        cropPrompt += '4. Expected yields and space optimization tips';
+        
+        return cropPrompt;
+        
+      case 'diagnosis':
+        // Plant-problem diagnosis prompt
+        let diagnosisPrompt = 'I need help diagnosing potential issues with my crops.\n\n';
+        
+        if (selectedImage) {
+          diagnosisPrompt += 'I have attached an image of the plant showing the problem. ';
+        }
+        
+        if (context?.plantings && context.plantings.length > 0) {
+          diagnosisPrompt += 'My current crops include:\n';
+          context.plantings.forEach((planting: any) => {
+            diagnosisPrompt += `- ${planting.crop_name}\n`;
+          });
+          diagnosisPrompt += '\n';
+        }
+        
+        diagnosisPrompt += 'Please help me:\n';
+        diagnosisPrompt += '1. Identify any visible pests, diseases, or nutrient deficiencies\n';
+        diagnosisPrompt += '2. Suggest immediate treatment options\n';
+        diagnosisPrompt += '3. Recommend preventive measures for the future\n';
+        diagnosisPrompt += '4. Advise on whether this issue might affect other crops';
+        
+        return diagnosisPrompt;
+        
+      case 'weather':
+        // Weather risk + irrigation/planting adjustment prompt
+        let weatherPrompt = 'Please provide weather-based farming insights for my operation:\n\n';
+        
+        if (context?.fields && context.fields.length > 0) {
+          weatherPrompt += 'My irrigation systems:\n';
+          const irrigationTypes = new Set(context.fields.map((f: any) => f.irrigation_type));
+          irrigationTypes.forEach((type: any) => {
+            weatherPrompt += `- ${type}\n`;
+          });
+          weatherPrompt += '\n';
+        }
+        
+        if (context?.plantings && context.plantings.length > 0) {
+          weatherPrompt += 'Current crops:\n';
+          context.plantings.forEach((planting: any) => {
+            weatherPrompt += `- ${planting.crop_name}\n`;
+          });
+          weatherPrompt += '\n';
+        }
+        
+        weatherPrompt += 'Please advise on:\n';
+        weatherPrompt += '1. Weather risks I should prepare for this week\n';
+        weatherPrompt += '2. Irrigation adjustments based on forecasted conditions\n';
+        weatherPrompt += '3. Optimal timing for planting or harvesting activities\n';
+        weatherPrompt += '4. Protective measures I should take for my crops';
+        
+        return weatherPrompt;
+        
+      case 'advice':
+        // Top 3-5 priorities for the farm this week
+        let advicePrompt = 'Based on my complete farm data, what are the top 3-5 priorities I should focus on this week?\n\n';
+        
+        if (context?.fields && context.fields.length > 0) {
+          advicePrompt += 'My Fields:\n';
+          context.fields.forEach((field: any) => {
+            advicePrompt += `- ${field.name}: ${field.area_value} ${field.area_unit}\n`;
+          });
+          advicePrompt += '\n';
+        }
+        
+        if (context?.plantings && context.plantings.length > 0) {
+          advicePrompt += 'Current Plantings:\n';
+          context.plantings.forEach((planting: any) => {
+            const daysUntilHarvest = Math.ceil((new Date(planting.harvest_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+            advicePrompt += `- ${planting.crop_name}: ${daysUntilHarvest > 0 ? `${daysUntilHarvest} days until harvest` : 'ready to harvest'}\n`;
+          });
+          advicePrompt += '\n';
+        }
+        
+        advicePrompt += 'Please provide:\n';
+        advicePrompt += '1. Urgent tasks that need immediate attention\n';
+        advicePrompt += '2. Maintenance activities I should schedule\n';
+        advicePrompt += '3. Opportunities to optimize yields or revenue\n';
+        advicePrompt += '4. Preparation tasks for upcoming planting or harvest\n';
+        advicePrompt += '5. Any seasonal considerations specific to my crops';
+        
+        return advicePrompt;
+        
+      default:
+        return 'How can I help you with your farm today?';
+    }
+  };
+
+  const handleQuickAction = async (type: 'crop' | 'diagnosis' | 'weather' | 'advice') => {
+    console.log('AI Assistant: Quick action pressed:', type);
+    
+    // Check if user is Pro
+    if (!isPro) {
+      console.log('AI Assistant: User is not Pro, showing paywall');
+      handleUpgradePress();
+      return;
+    }
+    
+    // User is Pro - build and send the appropriate prompt
+    console.log('AI Assistant: User is Pro, building prompt for:', type);
+    
+    try {
+      const prompt = await buildQuickActionPrompt(type);
+      console.log('AI Assistant: Sending quick action prompt');
+      
+      // For diagnosis, if there's a selected image, include it
+      if (type === 'diagnosis' && selectedImage) {
+        await sendMessage(prompt, selectedImage);
+      } else {
+        await sendMessage(prompt);
+      }
+    } catch (error) {
+      console.error('AI Assistant: Error handling quick action:', error);
+      Alert.alert('Error', 'Failed to process your request. Please try again.');
+    }
   };
 
   const clearConversation = async () => {
@@ -500,6 +643,13 @@ export default function AIAssistantScreen() {
                     </Text>
                   </View>
                 )}
+                {isPro && (
+                  <View style={styles.proUserNotice}>
+                    <Text style={styles.proUserNoticeText}>
+                      ⭐ Pro Active! Tap any tile below for instant personalized insights based on your farm data.
+                    </Text>
+                  </View>
+                )}
                 <Text style={styles.welcomeSubtext}>Choose a quick action below or ask me anything:</Text>
 
                 <View style={styles.quickActionsGrid}>
@@ -510,10 +660,20 @@ export default function AIAssistantScreen() {
                         styles.quickActionCard,
                         action.isPremium && styles.premiumActionCard,
                       ]}
-                      onPress={() => handleQuickAction(action)}
+                      onPress={() => {
+                        if (action.id === 'crop-recommendation') {
+                          handleQuickAction('crop');
+                        } else if (action.id === 'identify-plant-issues') {
+                          handleQuickAction('diagnosis');
+                        } else if (action.id === 'weather-insights') {
+                          handleQuickAction('weather');
+                        } else if (action.id === 'personalized-advice') {
+                          handleQuickAction('advice');
+                        }
+                      }}
                       activeOpacity={0.7}
                     >
-                      {action.isPremium && (
+                      {action.isPremium && !isPro && (
                         <View style={styles.premiumBadge}>
                           <Text style={styles.premiumBadgeText}>PRO</Text>
                         </View>
@@ -732,6 +892,21 @@ const styles = StyleSheet.create({
     color: '#2D5016',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  proUserNotice: {
+    backgroundColor: '#E6F7E6',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#4A7C2C',
+  },
+  proUserNoticeText: {
+    fontSize: 14,
+    color: '#2D5016',
+    textAlign: 'center',
+    lineHeight: 20,
+    fontWeight: '600',
   },
   welcomeSubtext: {
     fontSize: 14,
