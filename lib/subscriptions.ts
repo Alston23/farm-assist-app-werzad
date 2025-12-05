@@ -1,8 +1,8 @@
 
-import * as InAppPurchases from 'expo-in-app-purchases';
-import { Platform, Alert } from 'react-native';
+import * as InAppPurchases from "expo-in-app-purchases";
+import { Platform, Alert } from "react-native";
+import { supabase } from "./supabase";
 import Constants from 'expo-constants';
-import { supabase } from './supabase';
 
 // Product ID for the Pro subscription
 export const PRO_SUBSCRIPTION_ID = 'farmcopilot_pro_monthly';
