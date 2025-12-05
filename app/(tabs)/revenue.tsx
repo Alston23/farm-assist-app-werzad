@@ -6,6 +6,7 @@ import PageHeader from '../../components/PageHeader';
 import AddIncomeModal from '../../components/AddIncomeModal';
 import AddExpenseModal from '../../components/AddExpenseModal';
 import ReportsModal from '../../components/ReportsModal';
+import PremiumGuard from '../../components/PremiumGuard';
 import { supabase } from '../../lib/supabase';
 
 interface Income {
@@ -36,7 +37,7 @@ interface ExpenseCategoryData {
   count: number;
 }
 
-export default function RevenueScreen() {
+function RevenueContent() {
   const [showIncomeModal, setShowIncomeModal] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [showReportsModal, setShowReportsModal] = useState(false);
@@ -379,6 +380,14 @@ export default function RevenueScreen() {
         onClose={() => setShowReportsModal(false)}
       />
     </View>
+  );
+}
+
+export default function RevenueScreen() {
+  return (
+    <PremiumGuard>
+      <RevenueContent />
+    </PremiumGuard>
   );
 }
 

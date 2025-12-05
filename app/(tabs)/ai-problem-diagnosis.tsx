@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
+import ProUpsellBanner from '../../components/ProUpsellBanner';
 
 interface Message {
   id: string;
@@ -261,6 +262,8 @@ export default function AIProblemDiagnosisScreen() {
       </View>
       <LinearGradient colors={['#2D5016', '#4A7C2C', '#6BA542']} style={styles.gradient}>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+          <ProUpsellBanner message="Want advanced image analysis with treatment recommendations? Unlock Farm Copilot Pro." />
+          
           {showWelcome && messages.length === 0 && (
             <View style={styles.welcomeContainer}>
               <Text style={styles.welcomeTitle}>Identify Plant Problems 🔍</Text>

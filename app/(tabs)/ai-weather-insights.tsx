@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import * as Location from 'expo-location';
+import ProUpsellBanner from '../../components/ProUpsellBanner';
 
 interface Message {
   id: string;
@@ -312,6 +313,8 @@ Now, let me provide you with specific farming tasks and recommendations based on
             </View>
           ) : (
             <>
+              <ProUpsellBanner message="Want detailed weather-based task scheduling and alerts? Unlock Farm Copilot Pro." />
+              
               {weatherForecast.length > 0 && (
                 <View style={styles.forecastContainer}>
                   <Text style={styles.forecastTitle}>5-Day Forecast</Text>

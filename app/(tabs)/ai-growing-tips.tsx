@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platfo
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import ProUpsellBanner from '../../components/ProUpsellBanner';
 
 interface Message {
   id: string;
@@ -140,6 +141,8 @@ export default function AIGrowingTipsScreen() {
       </View>
       <LinearGradient colors={['#2D5016', '#4A7C2C', '#6BA542']} style={styles.gradient}>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+          <ProUpsellBanner message="Want personalized growing tips based on your specific farm data? Unlock Farm Copilot Pro." />
+          
           {messages.map((message) => (
             <View
               key={message.id}

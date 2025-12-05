@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platfo
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import ProUpsellBanner from '../../components/ProUpsellBanner';
 
 interface Message {
   id: string;
@@ -141,6 +142,8 @@ export default function AIPersonalizedAdviceScreen() {
       </View>
       <LinearGradient colors={['#2D5016', '#4A7C2C', '#6BA542']} style={styles.gradient}>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+          <ProUpsellBanner message="Want deep analysis of your farm data with AI-powered recommendations? Unlock Farm Copilot Pro." />
+          
           {showWelcome && messages.length === 0 && (
             <View style={styles.welcomeContainer}>
               <Text style={styles.welcomeTitle}>Get Personalized Farming Advice 🌾</Text>
