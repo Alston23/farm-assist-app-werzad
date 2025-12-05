@@ -11,7 +11,9 @@ import {
   Image,
   Dimensions,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import SellerProfileModal from './SellerProfileModal';
 import RateSellerModal from './RateSellerModal';
 
@@ -52,6 +54,8 @@ export default function EquipmentListingDetailModal({
   onClose,
   onUpdate,
 }: EquipmentListingDetailModalProps) {
+  const router = useRouter();
+  const { user } = useAuth();
   const [isOwner, setIsOwner] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showSellerProfile, setShowSellerProfile] = useState(false);
@@ -66,8 +70,8 @@ export default function EquipmentListingDetailModal({
   }, [listing]);
 
   const checkOwnership = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setIsOwner(user?.id === listing.user_id);
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    setIsOwner(currentUser?.id === listing.user_id);
   };
 
   const fetchSellerInfo = async () => {
@@ -125,12 +129,55 @@ export default function EquipmentListingDetailModal({
     );
   };
 
-  const handleContact = () => {
-    Alert.alert(
-      'Contact Seller',
-      'Messaging feature coming soon! For now, please contact the seller directly.',
-      [{ text: 'OK' }]
-    );
+  const handleMessageSeller = async () => {
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to message sellers');
+      return;
+    }
+
+    try {
+      // Check if conversation already exists
+      const { data: existingConv, error: searchError } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('listing_id', listing.id)
+        .eq('seller_id', listing.user_id)
+        .eq('buyer_id', user.id)
+        .single();
+
+      if (searchError && searchError.code !== 'PGRST116') {
+        throw searchError;
+      }
+
+      let conversationId: string;
+
+      if (existingConv) {
+        // Use existing conversation
+        conversationId = existingConv.id;
+      } else {
+        // Create new conversation
+        const { data: newConv, error: createError } = await supabase
+          .from('conversations')
+          .insert({
+            listing_id: listing.id,
+            listing_type: 'equipment',
+            seller_id: listing.user_id,
+            buyer_id: user.id,
+          })
+          .select('id')
+          .single();
+
+        if (createError) throw createError;
+        conversationId = newConv.id;
+      }
+
+      // Navigate to chat screen
+      onClose();
+      router.push(`/messages/${conversationId}` as any);
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      Alert.alert('Error', 'Failed to start conversation');
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -330,10 +377,8 @@ export default function EquipmentListingDetailModal({
                   >
                     <Text style={styles.rateButtonText}>Rate Seller</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.contactButton} onPress={handleContact}>
-                    <Text style={styles.contactButtonText}>
-                      {listing.listing_type === 'for_sale' ? 'Contact Seller' : 'Contact Buyer'}
-                    </Text>
+                  <TouchableOpacity style={styles.contactButton} onPress={handleMessageSeller}>
+                    <Text style={styles.contactButtonText}>Message Seller</Text>
                   </TouchableOpacity>
                 </View>
               )}
