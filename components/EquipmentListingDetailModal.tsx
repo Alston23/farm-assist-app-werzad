@@ -173,7 +173,7 @@ export default function EquipmentListingDetailModal({
 
       // Navigate to chat screen
       onClose();
-      router.push(`/marketplace-messages/${conversationId}` as any);
+      router.push(`/(tabs)/marketplace-messages/${conversationId}` as any);
     } catch (error) {
       console.error('Error creating conversation:', error);
       Alert.alert('Error', 'Failed to start conversation');

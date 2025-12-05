@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface ConversationWithDetails {
   id: string;
@@ -164,7 +164,7 @@ export default function MarketplaceMessagesScreen() {
               <TouchableOpacity
                 key={conv.id}
                 style={styles.conversationCard}
-                onPress={() => router.push(`/marketplace-messages/${conv.id}` as any)}
+                onPress={() => router.push(`/(tabs)/marketplace-messages/${conv.id}` as any)}
               >
                 <View style={styles.conversationHeader}>
                   <View style={styles.avatar}>
