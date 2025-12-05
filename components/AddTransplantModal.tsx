@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -25,12 +25,24 @@ interface AddTransplantModalProps {
 export default function AddTransplantModal({ visible, onClose, onSuccess, editItem }: AddTransplantModalProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [cropName, setCropName] = useState(editItem?.crop_name || '');
-  const [quantity, setQuantity] = useState(editItem?.quantity?.toString() || '');
-  const [unit, setUnit] = useState(editItem?.unit || 'plants');
-  const [notes, setNotes] = useState(editItem?.notes || '');
+  const [cropName, setCropName] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [unit, setUnit] = useState('plants');
+  const [notes, setNotes] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (editItem) {
+      setCropName(editItem.crop_name || '');
+      setQuantity(editItem.quantity?.toString() || '');
+      setUnit(editItem.unit || 'plants');
+      setNotes(editItem.notes || '');
+      setSearchQuery('');
+    } else if (!visible) {
+      resetForm();
+    }
+  }, [editItem, visible]);
 
   const filteredCrops = allCrops.filter(c =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase())

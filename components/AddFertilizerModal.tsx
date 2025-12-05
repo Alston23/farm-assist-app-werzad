@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -25,12 +25,24 @@ interface AddFertilizerModalProps {
 export default function AddFertilizerModal({ visible, onClose, onSuccess, editItem }: AddFertilizerModalProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [name, setName] = useState(editItem?.name || '');
-  const [quantity, setQuantity] = useState(editItem?.quantity?.toString() || '');
-  const [unit, setUnit] = useState(editItem?.unit || 'lbs');
-  const [notes, setNotes] = useState(editItem?.notes || '');
+  const [name, setName] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [unit, setUnit] = useState('lbs');
+  const [notes, setNotes] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (editItem) {
+      setName(editItem.name || '');
+      setQuantity(editItem.quantity?.toString() || '');
+      setUnit(editItem.unit || 'lbs');
+      setNotes(editItem.notes || '');
+      setSearchQuery('');
+    } else if (!visible) {
+      resetForm();
+    }
+  }, [editItem, visible]);
 
   const filteredFertilizers = commonFertilizers.filter(f =>
     f.toLowerCase().includes(searchQuery.toLowerCase())

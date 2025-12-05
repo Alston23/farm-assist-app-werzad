@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -24,11 +24,23 @@ interface AddStorageModalProps {
 export default function AddStorageModal({ visible, onClose, onSuccess, editItem }: AddStorageModalProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [storageType, setStorageType] = useState(editItem?.type || 'dry');
-  const [unit, setUnit] = useState(editItem?.unit || 'sqft');
-  const [capacity, setCapacity] = useState(editItem?.capacity?.toString() || '');
-  const [used, setUsed] = useState(editItem?.used?.toString() || '0');
-  const [notes, setNotes] = useState(editItem?.notes || '');
+  const [storageType, setStorageType] = useState('dry');
+  const [unit, setUnit] = useState('sqft');
+  const [capacity, setCapacity] = useState('');
+  const [used, setUsed] = useState('0');
+  const [notes, setNotes] = useState('');
+
+  useEffect(() => {
+    if (editItem) {
+      setStorageType(editItem.type || 'dry');
+      setUnit(editItem.unit || 'sqft');
+      setCapacity(editItem.capacity?.toString() || '');
+      setUsed(editItem.used?.toString() || '0');
+      setNotes(editItem.notes || '');
+    } else {
+      resetForm();
+    }
+  }, [editItem, visible]);
 
   const handleSave = async () => {
     if (!capacity || parseFloat(capacity) <= 0) {

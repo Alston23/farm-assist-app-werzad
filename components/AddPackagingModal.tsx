@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -25,13 +25,26 @@ interface AddPackagingModalProps {
 export default function AddPackagingModal({ visible, onClose, onSuccess, editItem }: AddPackagingModalProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [name, setName] = useState(editItem?.name || '');
-  const [quantity, setQuantity] = useState(editItem?.quantity?.toString() || '');
-  const [unit, setUnit] = useState(editItem?.unit || 'units');
-  const [reorderThreshold, setReorderThreshold] = useState(editItem?.reorder_threshold?.toString() || '');
-  const [notes, setNotes] = useState(editItem?.notes || '');
+  const [name, setName] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [unit, setUnit] = useState('units');
+  const [reorderThreshold, setReorderThreshold] = useState('');
+  const [notes, setNotes] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (editItem) {
+      setName(editItem.name || '');
+      setQuantity(editItem.quantity?.toString() || '');
+      setUnit(editItem.unit || 'units');
+      setReorderThreshold(editItem.reorder_threshold?.toString() || '');
+      setNotes(editItem.notes || '');
+      setSearchQuery('');
+    } else if (!visible) {
+      resetForm();
+    }
+  }, [editItem, visible]);
 
   const filteredPackaging = packagingTypes.filter(p =>
     p.toLowerCase().includes(searchQuery.toLowerCase())
