@@ -3,49 +3,62 @@ import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { SubscriptionProvider } from '../contexts/SubscriptionContext';
+import { LocationProvider, useLocation } from '../contexts/LocationContext';
 import * as SplashScreen from 'expo-splash-screen';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { hasAskedForLocation, loading: locationLoading } = useLocation();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    console.log('RootLayoutNav: Auth state - loading:', loading, 'user:', user ? 'exists' : 'none', 'segments:', segments);
+    console.log('RootLayoutNav: Auth state - loading:', authLoading, 'user:', user ? 'exists' : 'none', 'segments:', segments);
+    console.log('RootLayoutNav: Location state - loading:', locationLoading, 'hasAskedForLocation:', hasAskedForLocation);
     
-    if (!loading) {
-      // Hide splash screen once auth state is determined
+    if (!authLoading && !locationLoading) {
+      // Hide splash screen once auth and location state are determined
       SplashScreen.hideAsync().catch((error) => {
         console.error('Error hiding splash screen:', error);
       });
 
       const inAuthGroup = segments[0] === 'auth';
       const inTabsGroup = segments[0] === '(tabs)';
+      const inLocationOnboarding = segments[0] === 'location-onboarding';
 
       if (!user && !inAuthGroup) {
         // Redirect to auth if not authenticated
         console.log('RootLayoutNav: No user, redirecting to /auth');
-        // Use replace to prevent going back to protected routes
         router.replace('/auth');
       } else if (user && inAuthGroup) {
-        // Redirect to tabs if authenticated and on auth screen
-        console.log('RootLayoutNav: User authenticated, redirecting to /(tabs)/crops');
-        router.replace('/(tabs)/crops');
-      } else if (user && !inTabsGroup && segments[0] !== 'crop' && segments[0] !== 'marketplace' && segments[0] !== 'home' && segments[0] !== 'paywall' && segments[0] !== 'fertilizers' && segments[0] !== 'seeds' && segments[0] !== 'storage-locations' && segments[0] !== 'transplants') {
+        // User just logged in, check if we need to show location onboarding
+        if (!hasAskedForLocation) {
+          console.log('RootLayoutNav: User authenticated, showing location onboarding');
+          router.replace('/location-onboarding');
+        } else {
+          console.log('RootLayoutNav: User authenticated, redirecting to /(tabs)/crops');
+          router.replace('/(tabs)/crops');
+        }
+      } else if (user && !hasAskedForLocation && !inLocationOnboarding) {
+        // User is authenticated but hasn't been asked about location yet
+        console.log('RootLayoutNav: User needs location onboarding');
+        router.replace('/location-onboarding');
+      } else if (user && !inTabsGroup && segments[0] !== 'crop' && segments[0] !== 'marketplace' && segments[0] !== 'home' && segments[0] !== 'paywall' && segments[0] !== 'fertilizers' && segments[0] !== 'seeds' && segments[0] !== 'storage-locations' && segments[0] !== 'transplants' && segments[0] !== 'location-onboarding') {
         // Redirect to tabs if authenticated but not in a valid route
         console.log('RootLayoutNav: User authenticated but in invalid route, redirecting to /(tabs)/crops');
         router.replace('/(tabs)/crops');
       }
     }
-  }, [user, loading, segments, router]);
+  }, [user, authLoading, hasAskedForLocation, locationLoading, segments, router]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="auth" />
+      <Stack.Screen name="location-onboarding" />
       <Stack.Screen name="home" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="crop" />
@@ -62,9 +75,11 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <SubscriptionProvider>
-        <RootLayoutNav />
-      </SubscriptionProvider>
+      <LocationProvider>
+        <SubscriptionProvider>
+          <RootLayoutNav />
+        </SubscriptionProvider>
+      </LocationProvider>
     </AuthProvider>
   );
 }

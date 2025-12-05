@@ -5,8 +5,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import CropRecommendationModal from '../../components/CropRecommendationModal';
+import LocationPermissionModal from '../../components/LocationPermissionModal';
 import PremiumGuard from '../../components/PremiumGuard';
 import { useFocusEffect } from '@react-navigation/native';
+import { useLocationCheck } from '../../hooks/useLocationCheck';
 
 interface Message {
   id: string;
@@ -21,16 +23,19 @@ function AICropRecommendationsContent() {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const router = useRouter();
+  const { showLocationModal, checkAndRequestLocation, closeLocationModal } = useLocationCheck();
 
   // Reset modal state when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      console.log('Crop Recommendations: Screen focused, showing modal');
+      console.log('Crop Recommendations: Screen focused, checking location and showing modal');
+      // Check location permission when screen is focused
+      checkAndRequestLocation();
       setShowModal(true);
       return () => {
         console.log('Crop Recommendations: Screen unfocused');
       };
-    }, [])
+    }, [checkAndRequestLocation])
   );
 
   const handleModalSubmit = async (criteria: {
@@ -243,6 +248,12 @@ Please provide detailed crop recommendations including expected yields, revenue 
           router.push('/(tabs)/ai-assistant');
         }}
         onSubmit={handleModalSubmit}
+      />
+
+      <LocationPermissionModal
+        visible={showLocationModal}
+        onClose={closeLocationModal}
+        featureName="advanced recommendations"
       />
     </View>
   );
