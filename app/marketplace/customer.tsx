@@ -21,6 +21,9 @@ interface CustomerListing {
   delivery_available: boolean;
   images: string[] | null;
   created_at: string;
+  seller_name?: string;
+  seller_rating?: number;
+  seller_review_count?: number;
 }
 
 export default function CustomerMarketplaceScreen() {
@@ -52,7 +55,31 @@ export default function CustomerMarketplaceScreen() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setListings(data || []);
+
+      // Fetch seller info and ratings for each listing
+      const listingsWithSellerInfo = await Promise.all(
+        (data || []).map(async (listing) => {
+          // Get seller name
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', listing.user_id)
+            .single();
+
+          // Get seller rating
+          const { data: ratingData } = await supabase
+            .rpc('get_seller_average_rating', { seller_uuid: listing.user_id });
+
+          return {
+            ...listing,
+            seller_name: profileData?.name || 'Anonymous',
+            seller_rating: ratingData?.[0]?.avg_rating || null,
+            seller_review_count: ratingData?.[0]?.review_count || 0,
+          };
+        })
+      );
+
+      setListings(listingsWithSellerInfo);
     } catch (error) {
       console.error('Error fetching listings:', error);
       Alert.alert('Error', 'Failed to load listings');
@@ -206,6 +233,21 @@ export default function CustomerMarketplaceScreen() {
                     <Text style={styles.listingCategory}>
                       {listing.category.charAt(0).toUpperCase() + listing.category.slice(1)}
                     </Text>
+
+                    {/* Seller Info */}
+                    <View style={styles.sellerInfo}>
+                      <Text style={styles.sellerLabel}>Seller: </Text>
+                      <Text style={styles.sellerName}>{listing.seller_name}</Text>
+                    </View>
+                    {listing.seller_rating !== null && (
+                      <View style={styles.ratingRow}>
+                        <Text style={styles.ratingStar}>⭐</Text>
+                        <Text style={styles.ratingText}>
+                          {listing.seller_rating.toFixed(1)} ({listing.seller_review_count})
+                        </Text>
+                      </View>
+                    )}
+
                     <Text style={styles.listingPrice}>
                       ${listing.price.toFixed(2)} / {listing.unit}
                     </Text>
@@ -394,6 +436,33 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginBottom: 6,
+  },
+  sellerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  sellerLabel: {
+    fontSize: 11,
+    color: '#666',
+  },
+  sellerName: {
+    fontSize: 11,
+    color: '#2D5016',
+    fontWeight: '600',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  ratingStar: {
+    fontSize: 12,
+    marginRight: 2,
+  },
+  ratingText: {
+    fontSize: 11,
+    color: '#666',
   },
   listingPrice: {
     fontSize: 18,

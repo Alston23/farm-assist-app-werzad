@@ -12,6 +12,8 @@ import {
   Dimensions,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
+import SellerProfileModal from './SellerProfileModal';
+import RateSellerModal from './RateSellerModal';
 
 interface CustomerListing {
   id: string;
@@ -27,6 +29,9 @@ interface CustomerListing {
   delivery_available: boolean;
   images: string[] | null;
   created_at: string;
+  seller_name?: string;
+  seller_rating?: number;
+  seller_review_count?: number;
 }
 
 interface CustomerListingDetailModalProps {
@@ -46,14 +51,44 @@ export default function CustomerListingDetailModal({
 }: CustomerListingDetailModalProps) {
   const [isOwner, setIsOwner] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showSellerProfile, setShowSellerProfile] = useState(false);
+  const [showRateSeller, setShowRateSeller] = useState(false);
+  const [sellerName, setSellerName] = useState('');
+  const [avgRating, setAvgRating] = useState<number | null>(null);
+  const [reviewCount, setReviewCount] = useState(0);
 
   useEffect(() => {
     checkOwnership();
+    fetchSellerInfo();
   }, [listing]);
 
   const checkOwnership = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setIsOwner(user?.id === listing.user_id);
+  };
+
+  const fetchSellerInfo = async () => {
+    try {
+      // Fetch seller name
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', listing.user_id)
+        .single();
+
+      setSellerName(profileData?.name || 'Anonymous');
+
+      // Fetch seller rating
+      const { data: ratingData } = await supabase
+        .rpc('get_seller_average_rating', { seller_uuid: listing.user_id });
+
+      if (ratingData && ratingData.length > 0) {
+        setAvgRating(ratingData[0].avg_rating);
+        setReviewCount(ratingData[0].review_count || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching seller info:', error);
+    }
   };
 
   const handleDelete = () => {
@@ -122,121 +157,183 @@ export default function CustomerListingDetailModal({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
+    <>
+      <Modal visible={visible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
 
-          <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-            {listing.images && listing.images.length > 0 ? (
-              <View>
-                <ScrollView
-                  horizontal
-                  pagingEnabled
-                  showsHorizontalScrollIndicator={false}
-                  onScroll={(event) => {
-                    const index = Math.round(event.nativeEvent.contentOffset.x / width);
-                    setCurrentImageIndex(index);
-                  }}
-                  scrollEventThrottle={16}
-                >
-                  {listing.images.map((uri, index) => (
-                    <Image
-                      key={index}
-                      source={{ uri }}
-                      style={styles.image}
-                      resizeMode="cover"
-                    />
-                  ))}
-                </ScrollView>
-                {listing.images.length > 1 && (
-                  <View style={styles.pagination}>
-                    {listing.images.map((_, index) => (
-                      <View
+            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+              {listing.images && listing.images.length > 0 ? (
+                <View>
+                  <ScrollView
+                    horizontal
+                    pagingEnabled
+                    showsHorizontalScrollIndicator={false}
+                    onScroll={(event) => {
+                      const index = Math.round(event.nativeEvent.contentOffset.x / width);
+                      setCurrentImageIndex(index);
+                    }}
+                    scrollEventThrottle={16}
+                  >
+                    {listing.images.map((uri, index) => (
+                      <Image
                         key={index}
-                        style={[
-                          styles.paginationDot,
-                          index === currentImageIndex && styles.paginationDotActive,
-                        ]}
+                        source={{ uri }}
+                        style={styles.image}
+                        resizeMode="cover"
                       />
                     ))}
+                  </ScrollView>
+                  {listing.images.length > 1 && (
+                    <View style={styles.pagination}>
+                      {listing.images.map((_, index) => (
+                        <View
+                          key={index}
+                          style={[
+                            styles.paginationDot,
+                            index === currentImageIndex && styles.paginationDotActive,
+                          ]}
+                        />
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ) : (
+                <View style={styles.imagePlaceholder}>
+                  <Text style={styles.imagePlaceholderText}>📦</Text>
+                </View>
+              )}
+
+              <View style={styles.content}>
+                <View style={styles.headerRow}>
+                  <View style={styles.headerLeft}>
+                    <Text style={styles.productName}>{listing.product_name}</Text>
+                    <Text style={styles.category}>
+                      {listing.category.charAt(0).toUpperCase() + listing.category.slice(1)}
+                    </Text>
+                  </View>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(listing.availability_status) }]}>
+                    <Text style={styles.statusBadgeText}>
+                      {getStatusText(listing.availability_status)}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Seller Info Section */}
+                <View style={styles.sellerSection}>
+                  <View style={styles.sellerInfoRow}>
+                    <View style={styles.sellerAvatar}>
+                      <Text style={styles.sellerAvatarText}>
+                        {sellerName.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                    <View style={styles.sellerDetails}>
+                      <Text style={styles.sellerLabel}>Seller</Text>
+                      <Text style={styles.sellerName}>{sellerName}</Text>
+                      {avgRating !== null && (
+                        <View style={styles.ratingRow}>
+                          <Text style={styles.ratingStar}>⭐</Text>
+                          <Text style={styles.ratingText}>
+                            {avgRating.toFixed(1)} ({reviewCount} {reviewCount === 1 ? 'review' : 'reviews'})
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.viewProfileButton}
+                    onPress={() => setShowSellerProfile(true)}
+                  >
+                    <Text style={styles.viewProfileButtonText}>View Profile</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.price}>
+                  ${listing.price.toFixed(2)} / {listing.unit}
+                </Text>
+
+                <Text style={styles.quantity}>
+                  {listing.quantity} {listing.unit} available
+                </Text>
+
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Description</Text>
+                  <Text style={styles.description}>{listing.description}</Text>
+                </View>
+
+                {listing.pickup_location && (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Pickup Location</Text>
+                    <Text style={styles.infoText}>📍 {listing.pickup_location}</Text>
                   </View>
                 )}
-              </View>
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <Text style={styles.imagePlaceholderText}>📦</Text>
-              </View>
-            )}
 
-            <View style={styles.content}>
-              <View style={styles.headerRow}>
-                <View style={styles.headerLeft}>
-                  <Text style={styles.productName}>{listing.product_name}</Text>
-                  <Text style={styles.category}>
-                    {listing.category.charAt(0).toUpperCase() + listing.category.slice(1)}
-                  </Text>
-                </View>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(listing.availability_status) }]}>
-                  <Text style={styles.statusBadgeText}>
-                    {getStatusText(listing.availability_status)}
-                  </Text>
-                </View>
-              </View>
+                {listing.delivery_available && (
+                  <View style={styles.deliveryBadge}>
+                    <Text style={styles.deliveryBadgeText}>🚚 Delivery Available</Text>
+                  </View>
+                )}
 
-              <Text style={styles.price}>
-                ${listing.price.toFixed(2)} / {listing.unit}
-              </Text>
-
-              <Text style={styles.quantity}>
-                {listing.quantity} {listing.unit} available
-              </Text>
-
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Description</Text>
-                <Text style={styles.description}>{listing.description}</Text>
-              </View>
-
-              {listing.pickup_location && (
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Pickup Location</Text>
-                  <Text style={styles.infoText}>📍 {listing.pickup_location}</Text>
+                  <Text style={styles.sectionTitle}>Posted</Text>
+                  <Text style={styles.infoText}>
+                    {new Date(listing.created_at).toLocaleDateString()}
+                  </Text>
                 </View>
-              )}
-
-              {listing.delivery_available && (
-                <View style={styles.deliveryBadge}>
-                  <Text style={styles.deliveryBadgeText}>🚚 Delivery Available</Text>
-                </View>
-              )}
-
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Posted</Text>
-                <Text style={styles.infoText}>
-                  {new Date(listing.created_at).toLocaleDateString()}
-                </Text>
               </View>
-            </View>
-          </ScrollView>
+            </ScrollView>
 
-          <View style={styles.footer}>
-            {isOwner ? (
-              <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-                <Text style={styles.deleteButtonText}>Delete Listing</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity style={styles.contactButton} onPress={handleContact}>
-                <Text style={styles.contactButtonText}>Contact Seller</Text>
-              </TouchableOpacity>
-            )}
+            <View style={styles.footer}>
+              {isOwner ? (
+                <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+                  <Text style={styles.deleteButtonText}>Delete Listing</Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.footerButtons}>
+                  <TouchableOpacity 
+                    style={styles.rateButton} 
+                    onPress={() => setShowRateSeller(true)}
+                  >
+                    <Text style={styles.rateButtonText}>Rate Seller</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.contactButton} onPress={handleContact}>
+                    <Text style={styles.contactButtonText}>Contact Seller</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
           </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
+
+      <SellerProfileModal
+        visible={showSellerProfile}
+        sellerId={listing.user_id}
+        onClose={() => setShowSellerProfile(false)}
+        onRatePress={() => {
+          setShowSellerProfile(false);
+          setShowRateSeller(true);
+        }}
+        isOwnProfile={isOwner}
+      />
+
+      <RateSellerModal
+        visible={showRateSeller}
+        sellerId={listing.user_id}
+        listingId={listing.id}
+        listingType="customer"
+        onClose={() => setShowRateSeller(false)}
+        onSuccess={() => {
+          fetchSellerInfo();
+          onUpdate();
+        }}
+      />
+    </>
   );
 }
 
@@ -321,7 +418,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   headerLeft: {
     flex: 1,
@@ -345,6 +442,70 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  sellerSection: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  sellerInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sellerAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#4A7C2C',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  sellerAvatarText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  sellerDetails: {
+    flex: 1,
+  },
+  sellerLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 2,
+  },
+  sellerName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2D5016',
+    marginBottom: 4,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ratingStar: {
+    fontSize: 14,
+    marginRight: 4,
+  },
+  ratingText: {
+    fontSize: 13,
+    color: '#666',
+  },
+  viewProfileButton: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#4A7C2C',
+  },
+  viewProfileButtonText: {
+    color: '#4A7C2C',
+    fontSize: 14,
+    fontWeight: '600',
   },
   price: {
     fontSize: 28,
@@ -392,7 +553,26 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
   },
+  footerButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  rateButton: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#4A7C2C',
+  },
+  rateButtonText: {
+    color: '#4A7C2C',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   contactButton: {
+    flex: 1,
     backgroundColor: '#4A7C2C',
     borderRadius: 12,
     paddingVertical: 16,
@@ -400,7 +580,7 @@ const styles = StyleSheet.create({
   },
   contactButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   deleteButton: {

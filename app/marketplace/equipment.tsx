@@ -24,6 +24,9 @@ interface EquipmentListing {
   images: string[] | null;
   status: string;
   created_at: string;
+  seller_name?: string;
+  seller_rating?: number;
+  seller_review_count?: number;
 }
 
 export default function EquipmentMarketplaceScreen() {
@@ -56,7 +59,31 @@ export default function EquipmentMarketplaceScreen() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setListings(data || []);
+
+      // Fetch seller info and ratings for each listing
+      const listingsWithSellerInfo = await Promise.all(
+        (data || []).map(async (listing) => {
+          // Get seller name
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', listing.user_id)
+            .single();
+
+          // Get seller rating
+          const { data: ratingData } = await supabase
+            .rpc('get_seller_average_rating', { seller_uuid: listing.user_id });
+
+          return {
+            ...listing,
+            seller_name: profileData?.name || 'Anonymous',
+            seller_rating: ratingData?.[0]?.avg_rating || null,
+            seller_review_count: ratingData?.[0]?.review_count || 0,
+          };
+        })
+      );
+
+      setListings(listingsWithSellerInfo);
     } catch (error) {
       console.error('Error fetching listings:', error);
       Alert.alert('Error', 'Failed to load listings');
@@ -266,6 +293,21 @@ export default function EquipmentMarketplaceScreen() {
                     <Text style={styles.listingType}>
                       {formatEquipmentType(listing.equipment_type)}
                     </Text>
+                    
+                    {/* Seller Info */}
+                    <View style={styles.sellerInfo}>
+                      <Text style={styles.sellerLabel}>Seller: </Text>
+                      <Text style={styles.sellerName}>{listing.seller_name}</Text>
+                    </View>
+                    {listing.seller_rating !== null && (
+                      <View style={styles.ratingRow}>
+                        <Text style={styles.ratingStar}>⭐</Text>
+                        <Text style={styles.ratingText}>
+                          {listing.seller_rating.toFixed(1)} ({listing.seller_review_count} {listing.seller_review_count === 1 ? 'review' : 'reviews'})
+                        </Text>
+                      </View>
+                    )}
+
                     {listing.manufacturer && listing.model && (
                       <Text style={styles.listingDetails}>
                         {listing.manufacturer} {listing.model}
@@ -514,7 +556,34 @@ const styles = StyleSheet.create({
   listingType: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 4,
+    marginBottom: 6,
+  },
+  sellerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  sellerLabel: {
+    fontSize: 12,
+    color: '#666',
+  },
+  sellerName: {
+    fontSize: 12,
+    color: '#2D5016',
+    fontWeight: '600',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  ratingStar: {
+    fontSize: 14,
+    marginRight: 4,
+  },
+  ratingText: {
+    fontSize: 12,
+    color: '#666',
   },
   listingDetails: {
     fontSize: 13,
