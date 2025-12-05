@@ -77,8 +77,8 @@ export default function PaywallScreen() {
 
   const handleMaybeLater = () => {
     console.log('Paywall: Maybe later button pressed');
-    // Navigate back to the Crops tab
-    router.replace("/(tabs)/crops");
+    // Navigate back to the previous screen
+    router.back();
   };
 
   return (
