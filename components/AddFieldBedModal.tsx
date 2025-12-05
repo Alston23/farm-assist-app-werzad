@@ -20,6 +20,7 @@ interface AddFieldBedModalProps {
   visible: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  editItem?: any;
 }
 
 const soilTypes = [
@@ -43,7 +44,7 @@ const irrigationTypes = [
   'Subsurface Drip',
 ];
 
-export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFieldBedModalProps) {
+export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem }: AddFieldBedModalProps) {
   const [type, setType] = useState<'field' | 'bed'>('field');
   const [name, setName] = useState('');
   const [areaValue, setAreaValue] = useState('');
@@ -72,6 +73,18 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
     : allCrops;
 
   useEffect(() => {
+    if (editItem) {
+      console.log('Editing field/bed:', editItem);
+      setType(editItem.type);
+      setName(editItem.name);
+      setAreaValue(editItem.area_value?.toString() || '');
+      setAreaUnit(editItem.area_unit);
+      setSoilType(editItem.soil_type);
+      setIrrigationType(editItem.irrigation_type);
+    }
+  }, [editItem]);
+
+  useEffect(() => {
     if (daysToMaturity !== null && plantingDate) {
       const newHarvestDate = new Date(plantingDate);
       newHarvestDate.setDate(newHarvestDate.getDate() + daysToMaturity);
@@ -98,18 +111,15 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
   const handlePlantingDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     console.log('Planting date change - Event type:', event.type, 'Selected date:', selectedDate);
     
-    // On Android, always hide the picker after interaction
     if (Platform.OS === 'android') {
       setShowPlantingDatePicker(false);
     }
     
-    // Update the date if user confirmed selection
     if (event.type === 'set' && selectedDate) {
       console.log('Setting planting date to:', selectedDate);
       setPlantingDate(selectedDate);
       setPlantingDateInput(formatDateForInput(selectedDate));
       
-      // If harvest date is before the new planting date, adjust it
       if (harvestDate && harvestDate < selectedDate) {
         console.log('Adjusting harvest date to match planting date');
         setHarvestDate(selectedDate);
@@ -121,12 +131,10 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
   const handleHarvestDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     console.log('Harvest date change - Event type:', event.type, 'Selected date:', selectedDate);
     
-    // On Android, always hide the picker after interaction
     if (Platform.OS === 'android') {
       setShowHarvestDatePicker(false);
     }
     
-    // Update the date if user confirmed selection
     if (event.type === 'set' && selectedDate) {
       console.log('Setting harvest date to:', selectedDate);
       setHarvestDate(selectedDate);
@@ -134,7 +142,6 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
     }
   };
 
-  // Web-specific date change handlers
   const handleWebPlantingDateChange = (dateString: string) => {
     console.log('Web planting date change:', dateString);
     setPlantingDateInput(dateString);
@@ -144,7 +151,6 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
       if (!isNaN(newDate.getTime())) {
         setPlantingDate(newDate);
         
-        // If harvest date is before the new planting date, adjust it
         if (harvestDate && harvestDate < newDate) {
           console.log('Adjusting harvest date to match planting date');
           setHarvestDate(newDate);
@@ -178,8 +184,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
 
   const handleSave = async () => {
     console.log('Save button pressed');
-    console.log('Planting date:', plantingDate);
-    console.log('Harvest date:', harvestDate);
+    console.log('Edit mode:', !!editItem);
     
     if (!name.trim()) {
       Alert.alert('Error', 'Please enter a name');
@@ -193,21 +198,25 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
       Alert.alert('Error', 'Please select a soil type');
       return;
     }
-    if (!cropId) {
-      Alert.alert('Error', 'Please select a crop');
-      return;
-    }
     if (!irrigationType) {
       Alert.alert('Error', 'Please select an irrigation type');
       return;
     }
-    if (!plantingDate || isNaN(plantingDate.getTime())) {
-      Alert.alert('Error', 'Please select a valid planting date');
-      return;
-    }
-    if (!harvestDate || isNaN(harvestDate.getTime())) {
-      Alert.alert('Error', 'Please select a valid harvest date');
-      return;
+
+    // If editing, we don't need crop/planting info
+    if (!editItem) {
+      if (!cropId) {
+        Alert.alert('Error', 'Please select a crop');
+        return;
+      }
+      if (!plantingDate || isNaN(plantingDate.getTime())) {
+        Alert.alert('Error', 'Please select a valid planting date');
+        return;
+      }
+      if (!harvestDate || isNaN(harvestDate.getTime())) {
+        Alert.alert('Error', 'Please select a valid harvest date');
+        return;
+      }
     }
 
     setSaving(true);
@@ -220,63 +229,93 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
         return;
       }
 
-      console.log('Creating field/bed...');
-      const { data: fieldBedData, error: fieldBedError } = await supabase
-        .from('fields_beds')
-        .insert({
-          user_id: user.id,
-          type,
-          name: name.trim(),
-          area_value: parseFloat(areaValue),
-          area_unit: areaUnit,
-          soil_type: soilType,
-          irrigation_type: irrigationType,
-        })
-        .select()
-        .single();
+      const fieldBedData = {
+        user_id: user.id,
+        type,
+        name: name.trim(),
+        area_value: parseFloat(areaValue),
+        area_unit: areaUnit,
+        soil_type: soilType,
+        irrigation_type: irrigationType,
+      };
 
-      if (fieldBedError) {
-        console.error('Error creating field/bed:', fieldBedError);
-        Alert.alert('Error', 'Failed to create field/bed');
-        setSaving(false);
-        return;
+      if (editItem) {
+        // Update existing field/bed
+        console.log('Updating field/bed...');
+        const { error: updateError } = await supabase
+          .from('fields_beds')
+          .update(fieldBedData)
+          .eq('id', editItem.id);
+
+        if (updateError) {
+          console.error('Error updating field/bed:', updateError);
+          Alert.alert('Error', 'Failed to update field/bed');
+          setSaving(false);
+          return;
+        }
+
+        console.log('Success! Field/bed updated');
+        Alert.alert(
+          'Success',
+          `${type === 'field' ? 'Field' : 'Bed'} updated successfully!`,
+          [{ text: 'OK', onPress: () => {
+            resetForm();
+            onSuccess();
+            onClose();
+          }}]
+        );
+      } else {
+        // Create new field/bed with planting
+        console.log('Creating field/bed...');
+        const { data: newFieldBed, error: fieldBedError } = await supabase
+          .from('fields_beds')
+          .insert(fieldBedData)
+          .select()
+          .single();
+
+        if (fieldBedError) {
+          console.error('Error creating field/bed:', fieldBedError);
+          Alert.alert('Error', 'Failed to create field/bed');
+          setSaving(false);
+          return;
+        }
+
+        console.log('Field/bed created, creating planting...');
+        const plantingDateStr = plantingDate!.toISOString().split('T')[0];
+        const harvestDateStr = harvestDate!.toISOString().split('T')[0];
+        console.log('Saving planting_date:', plantingDateStr);
+        console.log('Saving harvest_date:', harvestDateStr);
+
+        const { error: plantingError } = await supabase
+          .from('plantings')
+          .insert({
+            user_id: user.id,
+            field_bed_id: newFieldBed.id,
+            crop_id: cropId,
+            crop_name: cropName,
+            days_to_maturity: daysToMaturity || 0,
+            planting_date: plantingDateStr,
+            harvest_date: harvestDateStr,
+          });
+
+        if (plantingError) {
+          console.error('Error creating planting:', plantingError);
+          Alert.alert('Error', 'Failed to create planting');
+          setSaving(false);
+          return;
+        }
+
+        console.log('Success! Field/bed and planting created');
+        Alert.alert(
+          'Success',
+          `${type === 'field' ? 'Field' : 'Bed'} saved successfully! You can now view it in the Plantings tab.`,
+          [{ text: 'OK', onPress: () => {
+            resetForm();
+            onSuccess();
+            onClose();
+          }}]
+        );
       }
-
-      console.log('Field/bed created, creating planting...');
-      const plantingDateStr = plantingDate.toISOString().split('T')[0];
-      const harvestDateStr = harvestDate.toISOString().split('T')[0];
-      console.log('Saving planting_date:', plantingDateStr);
-      console.log('Saving harvest_date:', harvestDateStr);
-
-      const { error: plantingError } = await supabase
-        .from('plantings')
-        .insert({
-          user_id: user.id,
-          field_bed_id: fieldBedData.id,
-          crop_id: cropId,
-          crop_name: cropName,
-          days_to_maturity: daysToMaturity || 0,
-          planting_date: plantingDateStr,
-          harvest_date: harvestDateStr,
-        });
-
-      if (plantingError) {
-        console.error('Error creating planting:', plantingError);
-        Alert.alert('Error', 'Failed to create planting');
-        setSaving(false);
-        return;
-      }
-
-      console.log('Success! Field/bed and planting created');
-      Alert.alert(
-        'Success',
-        `${type === 'field' ? 'Field' : 'Bed'} saved successfully! You can now view it in the Plantings tab.`,
-        [{ text: 'OK', onPress: () => {
-          resetForm();
-          onSuccess();
-          onClose();
-        }}]
-      );
     } catch (error) {
       console.error('Error saving:', error);
       Alert.alert('Error', 'An unexpected error occurred');
@@ -308,7 +347,9 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
 
   const handleClose = () => {
     console.log('Modal close requested');
-    resetForm();
+    if (!editItem) {
+      resetForm();
+    }
     onClose();
   };
 
@@ -369,7 +410,9 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
         />
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Add Field/Bed</Text>
+            <Text style={styles.modalTitle}>
+              {editItem ? 'Edit' : 'Add'} Field/Bed
+            </Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
@@ -490,44 +533,48 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               )}
             </View>
 
-            <View style={styles.section}>
-              <Text style={styles.label}>Crop</Text>
-              <TextInput
-                style={styles.input}
-                value={cropSearchQuery}
-                onChangeText={(text) => {
-                  setCropSearchQuery(text);
-                  setShowCropDropdown(true);
-                }}
-                placeholder="Search for a crop"
-                placeholderTextColor="#999"
-                onFocus={() => setShowCropDropdown(true)}
-              />
-              {showCropDropdown && (
-                <View style={styles.dropdownList}>
-                  <ScrollView style={styles.cropScrollView} nestedScrollEnabled>
-                    {filteredCrops.slice(0, 50).map((crop) => (
-                      <TouchableOpacity
-                        key={crop.id}
-                        style={styles.dropdownItem}
-                        onPress={() => handleCropSelect(crop)}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={styles.dropdownItemText}>{crop.name}</Text>
-                        <Text style={styles.dropdownItemSubtext}>{crop.category}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
+            {!editItem && (
+              <React.Fragment>
+                <View style={styles.section}>
+                  <Text style={styles.label}>Crop</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={cropSearchQuery}
+                    onChangeText={(text) => {
+                      setCropSearchQuery(text);
+                      setShowCropDropdown(true);
+                    }}
+                    placeholder="Search for a crop"
+                    placeholderTextColor="#999"
+                    onFocus={() => setShowCropDropdown(true)}
+                  />
+                  {showCropDropdown && (
+                    <View style={styles.dropdownList}>
+                      <ScrollView style={styles.cropScrollView} nestedScrollEnabled>
+                        {filteredCrops.slice(0, 50).map((crop) => (
+                          <TouchableOpacity
+                            key={crop.id}
+                            style={styles.dropdownItem}
+                            onPress={() => handleCropSelect(crop)}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={styles.dropdownItemText}>{crop.name}</Text>
+                            <Text style={styles.dropdownItemSubtext}>{crop.category}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
                 </View>
-              )}
-            </View>
 
-            {daysToMaturity !== null && (
-              <View style={styles.maturityInfo}>
-                <Text style={styles.maturityText}>
-                  Days to Maturity: {daysToMaturity} days
-                </Text>
-              </View>
+                {daysToMaturity !== null && (
+                  <View style={styles.maturityInfo}>
+                    <Text style={styles.maturityText}>
+                      Days to Maturity: {daysToMaturity} days
+                    </Text>
+                  </View>
+                )}
+              </React.Fragment>
             )}
 
             <View style={styles.section}>
@@ -564,111 +611,111 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               )}
             </View>
 
-            <View style={styles.section}>
-              <Text style={styles.label}>Planting Date</Text>
-              <TouchableOpacity
-                style={styles.dateButton}
-                onPress={handlePlantingDatePress}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.dateText}>
-                  📅 {formatDate(plantingDate)}
-                </Text>
-              </TouchableOpacity>
-              
-              {/* iOS Native Date Picker */}
-              {showPlantingDatePicker && Platform.OS === 'ios' && (
-                <View style={styles.datePickerContainer}>
-                  <DateTimePicker
-                    value={plantingDate || new Date()}
-                    mode="date"
-                    display="spinner"
-                    onChange={handlePlantingDateChange}
-                    themeVariant="light"
-                    style={styles.datePicker}
-                  />
+            {!editItem && (
+              <React.Fragment>
+                <View style={styles.section}>
+                  <Text style={styles.label}>Planting Date</Text>
                   <TouchableOpacity
-                    style={styles.datePickerDoneButton}
-                    onPress={closePlantingDatePicker}
+                    style={styles.dateButton}
+                    onPress={handlePlantingDatePress}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.datePickerDoneText}>Done</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {/* Web Date Picker Fallback */}
-              {showPlantingDatePicker && Platform.OS === 'web' && (
-                <View style={styles.webDatePickerContainer}>
-                  <TextInput
-                    style={styles.webDateInput}
-                    value={plantingDateInput || formatDateForInput(plantingDate)}
-                    onChangeText={handleWebPlantingDateChange}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor="#999"
-                  />
-                  <Text style={styles.webDateHint}>
-                    Enter date in format: YYYY-MM-DD (e.g., 2024-03-15)
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.label}>Harvest Date</Text>
-              <TouchableOpacity
-                style={styles.dateButton}
-                onPress={handleHarvestDatePress}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.dateText}>
-                  📅 {formatDate(harvestDate)}
-                </Text>
-              </TouchableOpacity>
-              
-              {/* iOS Native Date Picker */}
-              {showHarvestDatePicker && Platform.OS === 'ios' && (
-                <View style={styles.datePickerContainer}>
-                  <DateTimePicker
-                    value={harvestDate || new Date()}
-                    mode="date"
-                    display="spinner"
-                    onChange={handleHarvestDateChange}
-                    minimumDate={plantingDate || undefined}
-                    themeVariant="light"
-                    style={styles.datePicker}
-                  />
-                  <TouchableOpacity
-                    style={styles.datePickerDoneButton}
-                    onPress={closeHarvestDatePicker}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.datePickerDoneText}>Done</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {/* Web Date Picker Fallback */}
-              {showHarvestDatePicker && Platform.OS === 'web' && (
-                <View style={styles.webDatePickerContainer}>
-                  <TextInput
-                    style={styles.webDateInput}
-                    value={harvestDateInput || formatDateForInput(harvestDate)}
-                    onChangeText={handleWebHarvestDateChange}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor="#999"
-                  />
-                  <Text style={styles.webDateHint}>
-                    Enter date in format: YYYY-MM-DD (e.g., 2024-06-15)
-                  </Text>
-                  {plantingDate && (
-                    <Text style={styles.webDateHint}>
-                      Must be on or after planting date: {formatDateForInput(plantingDate)}
+                    <Text style={styles.dateText}>
+                      📅 {formatDate(plantingDate)}
                     </Text>
+                  </TouchableOpacity>
+                  
+                  {showPlantingDatePicker && Platform.OS === 'ios' && (
+                    <View style={styles.datePickerContainer}>
+                      <DateTimePicker
+                        value={plantingDate || new Date()}
+                        mode="date"
+                        display="spinner"
+                        onChange={handlePlantingDateChange}
+                        themeVariant="light"
+                        style={styles.datePicker}
+                      />
+                      <TouchableOpacity
+                        style={styles.datePickerDoneButton}
+                        onPress={closePlantingDatePicker}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.datePickerDoneText}>Done</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {showPlantingDatePicker && Platform.OS === 'web' && (
+                    <View style={styles.webDatePickerContainer}>
+                      <TextInput
+                        style={styles.webDateInput}
+                        value={plantingDateInput || formatDateForInput(plantingDate)}
+                        onChangeText={handleWebPlantingDateChange}
+                        placeholder="YYYY-MM-DD"
+                        placeholderTextColor="#999"
+                      />
+                      <Text style={styles.webDateHint}>
+                        Enter date in format: YYYY-MM-DD (e.g., 2024-03-15)
+                      </Text>
+                    </View>
                   )}
                 </View>
-              )}
-            </View>
+
+                <View style={styles.section}>
+                  <Text style={styles.label}>Harvest Date</Text>
+                  <TouchableOpacity
+                    style={styles.dateButton}
+                    onPress={handleHarvestDatePress}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.dateText}>
+                      📅 {formatDate(harvestDate)}
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  {showHarvestDatePicker && Platform.OS === 'ios' && (
+                    <View style={styles.datePickerContainer}>
+                      <DateTimePicker
+                        value={harvestDate || new Date()}
+                        mode="date"
+                        display="spinner"
+                        onChange={handleHarvestDateChange}
+                        minimumDate={plantingDate || undefined}
+                        themeVariant="light"
+                        style={styles.datePicker}
+                      />
+                      <TouchableOpacity
+                        style={styles.datePickerDoneButton}
+                        onPress={closeHarvestDatePicker}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.datePickerDoneText}>Done</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {showHarvestDatePicker && Platform.OS === 'web' && (
+                    <View style={styles.webDatePickerContainer}>
+                      <TextInput
+                        style={styles.webDateInput}
+                        value={harvestDateInput || formatDateForInput(harvestDate)}
+                        onChangeText={handleWebHarvestDateChange}
+                        placeholder="YYYY-MM-DD"
+                        placeholderTextColor="#999"
+                      />
+                      <Text style={styles.webDateHint}>
+                        Enter date in format: YYYY-MM-DD (e.g., 2024-06-15)
+                      </Text>
+                      {plantingDate && (
+                        <Text style={styles.webDateHint}>
+                          Must be on or after planting date: {formatDateForInput(plantingDate)}
+                        </Text>
+                      )}
+                    </View>
+                  )}
+                </View>
+              </React.Fragment>
+            )}
 
             <TouchableOpacity
               style={[styles.saveButton, saving && styles.saveButtonDisabled]}
@@ -677,14 +724,13 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               activeOpacity={0.7}
             >
               <Text style={styles.saveButtonText}>
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? 'Saving...' : editItem ? 'Update' : 'Save'}
               </Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
       </View>
 
-      {/* Android date pickers - rendered outside modal content to avoid z-index issues */}
       {showPlantingDatePicker && Platform.OS === 'android' && (
         <DateTimePicker
           value={plantingDate || new Date()}

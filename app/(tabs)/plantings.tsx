@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, ScrollView, Alert, RefreshControl, TouchableOpa
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import PageHeader from '../../components/PageHeader';
+import EditPlantingModal from '../../components/EditPlantingModal';
 import { supabase } from '../../lib/supabase';
 
 interface Planting {
@@ -27,6 +28,8 @@ export default function PlantingsScreen() {
   const [plantings, setPlantings] = useState<Planting[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingPlanting, setEditingPlanting] = useState<Planting | null>(null);
 
   useEffect(() => {
     fetchPlantings();
@@ -70,6 +73,17 @@ export default function PlantingsScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     fetchPlantings();
+  };
+
+  const handleEdit = (planting: Planting) => {
+    console.log('Editing planting:', planting);
+    setEditingPlanting(planting);
+    setEditModalVisible(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalVisible(false);
+    setEditingPlanting(null);
   };
 
   const deletePlanting = async (id: string | number) => {
@@ -183,6 +197,12 @@ export default function PlantingsScreen() {
                         </Text>
                       </View>
                       <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() => handleEdit(planting)}
+                      >
+                        <Ionicons name="pencil-outline" size={22} color="#4A7C2C" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
                         style={styles.deleteButton}
                         onPress={() => deletePlanting(planting.id)}
                       >
@@ -229,6 +249,15 @@ export default function PlantingsScreen() {
           )}
         </ScrollView>
       </LinearGradient>
+
+      {editingPlanting && (
+        <EditPlantingModal
+          visible={editModalVisible}
+          onClose={handleCloseEditModal}
+          onSuccess={fetchPlantings}
+          planting={editingPlanting}
+        />
+      )}
     </View>
   );
 }
@@ -292,6 +321,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  editButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(74, 124, 44, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   deleteButton: {
     padding: 8,

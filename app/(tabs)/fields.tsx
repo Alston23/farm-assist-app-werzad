@@ -22,6 +22,7 @@ export default function FieldsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [fieldsBeds, setFieldsBeds] = useState<FieldBed[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingItem, setEditingItem] = useState<FieldBed | null>(null);
 
   useEffect(() => {
     fetchFieldsBeds();
@@ -56,6 +57,17 @@ export default function FieldsScreen() {
 
   const handleSuccess = () => {
     fetchFieldsBeds();
+  };
+
+  const handleEdit = (item: FieldBed) => {
+    console.log('Editing field/bed:', item);
+    setEditingItem(item);
+    setModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalVisible(false);
+    setEditingItem(null);
   };
 
   const deleteFieldBed = async (id: string | number) => {
@@ -119,6 +131,12 @@ export default function FieldsScreen() {
                         </Text>
                       </View>
                       <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() => handleEdit(item)}
+                      >
+                        <Ionicons name="pencil-outline" size={22} color="#4A7C2C" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
                         style={styles.deleteButton}
                         onPress={() => deleteFieldBed(item.id)}
                       >
@@ -149,8 +167,9 @@ export default function FieldsScreen() {
 
       <AddFieldBedModal
         visible={modalVisible}
-        onClose={() => setModalVisible(false)}
+        onClose={handleCloseModal}
         onSuccess={handleSuccess}
+        editItem={editingItem}
       />
     </View>
   );
@@ -231,6 +250,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  editButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(74, 124, 44, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   deleteButton: {
     padding: 8,
