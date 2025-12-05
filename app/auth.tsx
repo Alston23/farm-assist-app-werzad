@@ -31,8 +31,6 @@ export default function AuthScreen() {
   };
 
   const handleAuth = async () => {
-    console.log('AuthScreen: handleAuth called, isLogin:', isLogin);
-    
     // Validation
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
@@ -59,27 +57,23 @@ export default function AuthScreen() {
     try {
       if (isLogin) {
         // Sign In
-        console.log('AuthScreen: Attempting sign in');
         const { data, error } = await signIn(email, password);
         
         if (error) {
           console.error('AuthScreen: Sign in error:', error);
           Alert.alert('Login Failed', error.message || 'An error occurred during login');
         } else if (data.user) {
-          console.log('AuthScreen: Sign in successful, redirecting to tabs');
           Alert.alert('Success', 'Login successful!');
           router.replace('/(tabs)/crops');
         }
       } else {
         // Sign Up
-        console.log('AuthScreen: Attempting sign up');
         const { data, error } = await signUp(email, password);
         
         if (error) {
           console.error('AuthScreen: Sign up error:', error);
           Alert.alert('Sign Up Failed', error.message || 'An error occurred during sign up');
         } else {
-          console.log('AuthScreen: Sign up successful');
           Alert.alert(
             'Success',
             'Account created successfully! Please check your email to verify your account before logging in.',

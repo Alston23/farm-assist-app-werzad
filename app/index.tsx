@@ -9,17 +9,13 @@ export default function Index() {
   const router = useRouter();
 
   useEffect(() => {
-    console.log('Index: Auth state - loading:', loading, 'user:', user ? 'exists' : 'none');
-    
     if (!loading) {
       if (user) {
-        console.log('Index: User authenticated, redirecting to tabs');
         // Use setTimeout to ensure navigation happens after render
         setTimeout(() => {
           router.replace('/(tabs)/crops');
         }, 0);
       } else {
-        console.log('Index: No user, redirecting to auth');
         // Use setTimeout to ensure navigation happens after render
         setTimeout(() => {
           router.replace('/auth');

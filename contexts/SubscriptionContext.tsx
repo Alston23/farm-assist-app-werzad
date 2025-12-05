@@ -40,10 +40,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   // Fetch subscription from database when user changes
   useEffect(() => {
     if (user) {
-      console.log('SubscriptionContext: User logged in, fetching subscription');
       fetchSubscription();
     } else {
-      console.log('SubscriptionContext: No user, clearing subscription');
       clearSubscription();
     }
   }, [user]);
@@ -53,7 +51,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       const stored = await AsyncStorage.getItem(SUBSCRIPTION_STORAGE_KEY);
       if (stored) {
         const parsedSubscription = JSON.parse(stored);
-        console.log('SubscriptionContext: Loaded subscription from storage:', parsedSubscription.status);
         setSubscription(parsedSubscription);
         setHasActiveSubscription(parsedSubscription.status === 'active');
       }
@@ -68,10 +65,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     try {
       if (sub) {
         await AsyncStorage.setItem(SUBSCRIPTION_STORAGE_KEY, JSON.stringify(sub));
-        console.log('SubscriptionContext: Saved subscription to storage');
       } else {
         await AsyncStorage.removeItem(SUBSCRIPTION_STORAGE_KEY);
-        console.log('SubscriptionContext: Removed subscription from storage');
       }
     } catch (error) {
       console.error('SubscriptionContext: Error saving subscription to storage:', error);
@@ -83,7 +78,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       setLoading(true);
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) {
-        console.log('SubscriptionContext: No user found');
         clearSubscription();
         return;
       }
@@ -98,7 +92,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
       if (error) {
         if (error.code === 'PGRST116') {
-          console.log('SubscriptionContext: No subscription found for user');
           clearSubscription();
         } else {
           console.error('SubscriptionContext: Error fetching subscription:', error);
@@ -107,7 +100,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       }
 
       if (data) {
-        console.log('SubscriptionContext: Fetched subscription:', data.status);
         const isActive = data.status === 'active';
         setSubscription(data);
         setHasActiveSubscription(isActive);
@@ -124,7 +116,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   };
 
   const clearSubscription = () => {
-    console.log('SubscriptionContext: Clearing subscription');
     setSubscription(null);
     setHasActiveSubscription(false);
     saveSubscriptionToStorage(null);
@@ -132,7 +123,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   };
 
   const refreshSubscription = async () => {
-    console.log('SubscriptionContext: Refreshing subscription');
     await fetchSubscription();
   };
 
@@ -142,8 +132,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       if (!currentUser) {
         throw new Error('No user found');
       }
-
-      console.log('SubscriptionContext: Activating subscription for user');
 
       // Check if user already has a subscription
       const { data: existingSub } = await supabase
@@ -170,7 +158,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
         if (error) throw error;
 
-        console.log('SubscriptionContext: Updated subscription to active');
         setSubscription(data);
         setHasActiveSubscription(true);
         await saveSubscriptionToStorage(data);
@@ -189,7 +176,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
         if (error) throw error;
 
-        console.log('SubscriptionContext: Created new active subscription');
         setSubscription(data);
         setHasActiveSubscription(true);
         await saveSubscriptionToStorage(data);

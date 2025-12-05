@@ -72,14 +72,13 @@ export default function AIAssistantScreen() {
   // Reset to Quick Actions page whenever the screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      console.log('AI Assistant: Screen focused, resetting to Quick Actions');
       setShowQuickActions(true);
       setMessages([]);
       setInputText('');
       setSelectedImage(null);
       setLoading(false);
       return () => {
-        console.log('AI Assistant: Screen unfocused');
+        // Cleanup on unfocus
       };
     }, [])
   );
@@ -295,7 +294,6 @@ export default function AIAssistantScreen() {
 
     // Check if this is an advanced query and user is not Pro
     if (!isPro && isAdvancedQuery(text)) {
-      console.log('AI Assistant: Advanced query detected, user is not Pro, showing paywall');
       Alert.alert(
         'Upgrade to Farm Copilot Pro',
         'This advanced feature requires a Pro subscription. Upgrade now to get personalized recommendations based on your farm data!',
@@ -512,21 +510,15 @@ export default function AIAssistantScreen() {
   };
 
   const handleQuickAction = async (type: 'crop' | 'diagnosis' | 'weather' | 'advice') => {
-    console.log('AI Assistant: Quick action pressed:', type);
-    
     // Check if user is Pro
     if (!isPro) {
-      console.log('AI Assistant: User is not Pro, showing paywall');
       handleUpgradePress();
       return;
     }
     
     // User is Pro - build and send the appropriate prompt
-    console.log('AI Assistant: User is Pro, building prompt for:', type);
-    
     try {
       const prompt = await buildQuickActionPrompt(type);
-      console.log('AI Assistant: Sending quick action prompt');
       
       // For diagnosis, if there's a selected image, include it
       if (type === 'diagnosis' && selectedImage) {
@@ -557,7 +549,6 @@ export default function AIAssistantScreen() {
               await supabase.from('ai_conversations').delete().eq('user_id', user.id);
               setMessages([]);
               setShowQuickActions(true);
-              console.log('AI Assistant: Conversation cleared, returned to quick actions');
             } catch (error) {
               console.error('Error clearing conversation:', error);
               Alert.alert('Error', 'Failed to clear conversation');
@@ -569,7 +560,6 @@ export default function AIAssistantScreen() {
   };
 
   const handleSignOut = async () => {
-    console.log('AI Assistant: Sign out button pressed');
     Alert.alert(
       'Sign Out',
       'Are you sure you want to sign out?',
@@ -583,9 +573,7 @@ export default function AIAssistantScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              console.log('AI Assistant: User confirmed sign out, calling signOut');
               await signOut();
-              console.log('AI Assistant: Sign out completed successfully');
               // Navigation will be handled automatically by _layout.tsx
             } catch (error: any) {
               console.error('AI Assistant: Sign out error:', error);

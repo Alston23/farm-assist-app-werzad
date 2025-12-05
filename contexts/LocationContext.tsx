@@ -31,16 +31,12 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
   const initializeLocationState = async () => {
     try {
-      console.log('LocationContext: Initializing location state');
-      
       // Check if we've asked before
       const asked = await AsyncStorage.getItem(LOCATION_ASKED_KEY);
       setHasAskedForLocation(asked === 'true');
-      console.log('LocationContext: Has asked for location before:', asked === 'true');
 
       // Check current permission status
       const { status } = await Location.getForegroundPermissionsAsync();
-      console.log('LocationContext: Current permission status:', status);
       setLocationPermissionStatus(status);
       setHasLocationPermission(status === Location.PermissionStatus.GRANTED);
     } catch (error) {
@@ -52,9 +48,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
   const checkLocationPermission = async (): Promise<boolean> => {
     try {
-      console.log('LocationContext: Checking location permission');
       const { status } = await Location.getForegroundPermissionsAsync();
-      console.log('LocationContext: Permission status:', status);
       setLocationPermissionStatus(status);
       const granted = status === Location.PermissionStatus.GRANTED;
       setHasLocationPermission(granted);
@@ -67,9 +61,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
   const requestLocationPermission = async (): Promise<boolean> => {
     try {
-      console.log('LocationContext: Requesting location permission');
       const { status } = await Location.requestForegroundPermissionsAsync();
-      console.log('LocationContext: Permission request result:', status);
       
       setLocationPermissionStatus(status);
       const granted = status === Location.PermissionStatus.GRANTED;
@@ -89,14 +81,12 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     try {
       await AsyncStorage.setItem(LOCATION_ASKED_KEY, 'true');
       setHasAskedForLocation(true);
-      console.log('LocationContext: Marked location as asked');
     } catch (error) {
       console.error('LocationContext: Error marking location as asked:', error);
     }
   };
 
   const openSettings = () => {
-    console.log('LocationContext: Opening app settings');
     if (Platform.OS === 'ios') {
       Linking.openURL('app-settings:');
     } else {

@@ -33,7 +33,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('NotificationContext: Initializing notification state');
     initializeNotificationState();
   }, []);
 
@@ -41,7 +40,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     try {
       // Check if we've asked before
       const asked = await AsyncStorage.getItem(NOTIFICATION_ASKED_KEY);
-      console.log('NotificationContext: Has asked for notifications:', asked);
       setHasAskedForNotifications(asked === 'true');
 
       // Check current permission status
@@ -56,9 +54,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   const checkNotificationPermission = async (): Promise<boolean> => {
     try {
-      console.log('NotificationContext: Checking notification permissions');
       const { status } = await Notifications.getPermissionsAsync();
-      console.log('NotificationContext: Current permission status:', status);
       
       const granted = status === 'granted';
       setNotificationPermissionGranted(granted);
@@ -71,8 +67,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   const requestNotificationPermission = async (): Promise<boolean> => {
     try {
-      console.log('NotificationContext: Requesting notification permissions');
-      
       // On Android, we need to create a notification channel first (Android 13+)
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {
@@ -84,7 +78,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       }
 
       const { status } = await Notifications.requestPermissionsAsync();
-      console.log('NotificationContext: Permission request result:', status);
       
       const granted = status === 'granted';
       setNotificationPermissionGranted(granted);
@@ -102,7 +95,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   const markNotificationsAsked = async () => {
     try {
-      console.log('NotificationContext: Marking notifications as asked');
       await AsyncStorage.setItem(NOTIFICATION_ASKED_KEY, 'true');
       setHasAskedForNotifications(true);
     } catch (error) {
@@ -111,7 +103,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   };
 
   const openSettings = () => {
-    console.log('NotificationContext: Opening app settings');
     if (Platform.OS === 'ios') {
       Linking.openURL('app-settings:');
     } else {

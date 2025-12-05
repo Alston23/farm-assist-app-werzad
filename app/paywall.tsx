@@ -27,15 +27,11 @@ export default function PaywallScreen() {
   const handlePurchase = async () => {
     setPurchasing(true);
     try {
-      console.log('Paywall: Starting purchase process');
-      
       // Call the purchase function from lib/subscriptions.ts
       await purchasePro();
       
       // Refresh the profile to get the updated Pro status
       await refreshProfile();
-      
-      console.log('Paywall: Purchase flow completed');
     } catch (error) {
       console.error('Paywall: Purchase error:', error);
       Alert.alert(
@@ -51,15 +47,11 @@ export default function PaywallScreen() {
   const handleRestore = async () => {
     setRestoring(true);
     try {
-      console.log('Paywall: Starting restore process');
-      
       // Call the restore function from lib/subscriptions.ts
       await restoreProStatus();
       
       // Refresh the profile to get the updated Pro status
       await refreshProfile();
-      
-      console.log('Paywall: Restore flow completed');
     } catch (error) {
       console.error('Paywall: Restore error:', error);
       Alert.alert(
@@ -73,7 +65,6 @@ export default function PaywallScreen() {
   };
 
   const handleMaybeLater = () => {
-    console.log('Paywall: Maybe later button pressed');
     // Navigate back to the previous screen
     router.back();
   };

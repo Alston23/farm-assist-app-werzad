@@ -18,9 +18,7 @@ export default function HomeScreen() {
             style={styles.signOutButton} 
             onPress={async () => {
               try {
-                console.log("Sign out button pressed");
                 await supabase.auth.signOut();
-                console.log("User signed out");
                 router.replace("/auth");
               } catch (err) {
                 console.error("Logout error", err);

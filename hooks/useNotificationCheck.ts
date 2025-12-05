@@ -11,21 +11,17 @@ export function useNotificationCheck() {
   const [showModal, setShowModal] = useState(false);
 
   const checkAndShowModal = async (): Promise<boolean> => {
-    console.log('useNotificationCheck: Checking notification permission');
     const granted = await checkNotificationPermission();
     
     if (!granted) {
-      console.log('useNotificationCheck: Permission not granted, showing modal');
       setShowModal(true);
       return false;
     }
     
-    console.log('useNotificationCheck: Permission granted');
     return true;
   };
 
   const closeModal = () => {
-    console.log('useNotificationCheck: Closing modal');
     setShowModal(false);
   };
 
