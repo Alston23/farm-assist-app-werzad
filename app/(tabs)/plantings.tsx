@@ -27,7 +27,6 @@ export default function PlantingsScreen() {
   const [plantings, setPlantings] = useState<Planting[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPlantings();
@@ -73,16 +72,16 @@ export default function PlantingsScreen() {
     fetchPlantings();
   };
 
-  const handleDeletePlanting = (planting: Planting) => {
+  const handleDeletePlanting = (plantingId: string) => {
     Alert.alert(
       "Delete Planting",
-      `Are you sure you want to delete ${planting.crop_name} from ${planting.field_bed.name}?`,
+      "Are you sure you want to delete this planting?",
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => confirmDelete(planting.id),
+          onPress: () => confirmDelete(plantingId),
         },
       ]
     );
@@ -90,37 +89,23 @@ export default function PlantingsScreen() {
 
   const confirmDelete = async (plantingId: string) => {
     try {
-      setDeletingId(plantingId);
-
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        Alert.alert("Error", "User not found.");
-        return;
-      }
-
-      const { error: deleteError } = await supabase
+      console.log("Deleting planting", plantingId);
+      const { error } = await supabase
         .from("plantings")
         .delete()
-        .eq("id", plantingId)
-        .eq("user_id", user.id);
+        .eq("id", plantingId);
 
-      if (deleteError) {
-        console.error(deleteError);
+      if (error) {
+        console.error("Delete error:", error);
         Alert.alert("Error", "Failed to delete planting.");
         return;
       }
 
-      // update local state so UI refreshes
-      setPlantings((prev) => prev.filter((p) => p.id !== plantingId));
+      // reload list from Supabase
+      await fetchPlantings();
     } catch (err) {
-      console.error(err);
+      console.error("Unexpected delete error:", err);
       Alert.alert("Error", "Something went wrong while deleting.");
-    } finally {
-      setDeletingId(null);
     }
   };
 
@@ -210,18 +195,10 @@ export default function PlantingsScreen() {
                         </Text>
                       </View>
                       <TouchableOpacity
-                        style={[
-                          styles.deleteButton,
-                          deletingId === planting.id && styles.deleteButtonDisabled,
-                        ]}
-                        disabled={deletingId === planting.id}
-                        onPress={() => handleDeletePlanting(planting)}
+                        style={styles.deleteButton}
+                        onPress={() => handleDeletePlanting(planting.id)}
                       >
-                        <Ionicons
-                          name="trash-outline"
-                          size={22}
-                          color={deletingId === planting.id ? "#ccc" : "#d32f2f"}
-                        />
+                        <Ionicons name="trash-outline" size={22} color="#d32f2f" />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -334,10 +311,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(211, 47, 47, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  deleteButtonDisabled: {
-    backgroundColor: 'rgba(211, 47, 47, 0.05)',
-    opacity: 0.5,
   },
   divider: {
     height: 1,
