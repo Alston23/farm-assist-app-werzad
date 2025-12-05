@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, RefreshControl, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import PageHeader from '../../components/PageHeader';
 import { supabase } from '../../lib/supabase';
 
@@ -26,6 +27,7 @@ export default function PlantingsScreen() {
   const [plantings, setPlantings] = useState<Planting[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPlantings();
@@ -65,6 +67,54 @@ export default function PlantingsScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     fetchPlantings();
+  };
+
+  const handleDeletePlanting = (planting: Planting) => {
+    Alert.alert(
+      'Delete Planting',
+      `Are you sure you want to delete ${planting.crop_name} from ${planting.field_bed.name}?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => confirmDelete(planting.id),
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const confirmDelete = async (plantingId: string) => {
+    try {
+      setDeletingId(plantingId);
+      console.log('Deleting planting:', plantingId);
+
+      const { error } = await supabase
+        .from('plantings')
+        .delete()
+        .eq('id', plantingId);
+
+      if (error) {
+        console.error('Error deleting planting:', error);
+        Alert.alert('Error', 'Failed to delete planting. Please try again.');
+      } else {
+        console.log('Planting deleted successfully');
+        // Remove the deleted planting from the local state
+        setPlantings((prevPlantings) => 
+          prevPlantings.filter((p) => p.id !== plantingId)
+        );
+        Alert.alert('Success', 'Planting deleted successfully');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      Alert.alert('Error', 'An unexpected error occurred');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -141,15 +191,28 @@ export default function PlantingsScreen() {
                         {planting.field_bed.name} ({planting.field_bed.type})
                       </Text>
                     </View>
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        { backgroundColor: getStatusColor(planting.planting_date, planting.harvest_date) },
-                      ]}
-                    >
-                      <Text style={styles.statusText}>
-                        {getStatusText(planting.planting_date, planting.harvest_date)}
-                      </Text>
+                    <View style={styles.headerRight}>
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          { backgroundColor: getStatusColor(planting.planting_date, planting.harvest_date) },
+                        ]}
+                      >
+                        <Text style={styles.statusText}>
+                          {getStatusText(planting.planting_date, planting.harvest_date)}
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => handleDeletePlanting(planting)}
+                        disabled={deletingId === planting.id}
+                      >
+                        <Ionicons 
+                          name="trash-outline" 
+                          size={22} 
+                          color={deletingId === planting.id ? '#ccc' : '#d32f2f'} 
+                        />
+                      </TouchableOpacity>
                     </View>
                   </View>
 
@@ -230,6 +293,11 @@ const styles = StyleSheet.create({
   headerLeft: {
     flex: 1,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   cropName: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -244,12 +312,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    marginLeft: 12,
   },
   statusText: {
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  deleteButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(211, 47, 47, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   divider: {
     height: 1,
