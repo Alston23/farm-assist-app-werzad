@@ -387,76 +387,14 @@ export default function AIAssistantScreen() {
     }
   };
 
-  /**
-   * Unified handler for all Pro feature quick action cards
-   * For free users: Shows paywall
-   * For Pro users: Navigates to the specific Pro screen
-   */
-  const handleProFeaturePress = (target: 'crop' | 'identify' | 'weather' | 'advice') => {
-    console.log('AI Assistant: Pro feature pressed:', target, 'isPro:', isPro);
-    
-    // If user is not Pro, show the paywall
-    if (!isPro) {
-      console.log('AI Assistant: User is not Pro, showing paywall');
-      Alert.alert(
-        'Upgrade to Farm Copilot Pro',
-        'This advanced feature requires a Pro subscription. Upgrade now to unlock personalized recommendations!',
-        [
-          {
-            text: 'Maybe Later',
-            style: 'cancel',
-          },
-          {
-            text: 'Upgrade Now',
-            onPress: () => {
-              router.push('/paywall');
-            },
-          },
-        ]
-      );
-      return;
-    }
-
-    // Pro user: Navigate to the correct screen for each feature
-    console.log('AI Assistant: User is Pro, navigating to screen for:', target);
-    switch (target) {
-      case 'crop':
-        router.push('/(tabs)/ai-crop-recommendations');
-        break;
-      case 'identify':
-        router.push('/(tabs)/ai-problem-diagnosis');
-        break;
-      case 'weather':
-        router.push('/(tabs)/ai-weather-insights');
-        break;
-      case 'advice':
-        router.push('/(tabs)/ai-personalized-advice');
-        break;
-      default:
-        console.log('Unknown Pro feature target:', target);
-    }
+  const handleUpgradePress = () => {
+    router.push('/paywall');
   };
 
   const handleQuickAction = (action: QuickAction) => {
     console.log('AI Assistant: Quick action pressed:', action.title);
-    
-    // Map action IDs to the handleProFeaturePress targets
-    switch (action.id) {
-      case 'crop-recommendation':
-        handleProFeaturePress('crop');
-        break;
-      case 'identify-plant-issues':
-        handleProFeaturePress('identify');
-        break;
-      case 'weather-insights':
-        handleProFeaturePress('weather');
-        break;
-      case 'personalized-advice':
-        handleProFeaturePress('advice');
-        break;
-      default:
-        console.log('Unknown quick action:', action.id);
-    }
+    // All tiles now open the paywall (same as the Upgrade button)
+    handleUpgradePress();
   };
 
   const clearConversation = async () => {
@@ -526,7 +464,7 @@ export default function AIAssistantScreen() {
           {!proLoading && !isPro && (
             <TouchableOpacity 
               style={styles.upgradeButton} 
-              onPress={() => router.push('/paywall')}
+              onPress={handleUpgradePress}
               activeOpacity={0.7}
             >
               <Text style={styles.upgradeButtonText}>⭐ Upgrade</Text>
