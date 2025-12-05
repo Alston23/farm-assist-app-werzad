@@ -293,6 +293,85 @@ export default function InventoryScreen() {
     );
   };
 
+  const handleEditStorage = (storage: StorageLocation) => {
+    setEditingStorage(storage);
+    setStorageModalVisible(true);
+  };
+
+  const handleEditFertilizer = (fertilizer: Fertilizer) => {
+    setEditingFertilizer(fertilizer);
+    setFertilizerModalVisible(true);
+  };
+
+  const handleEditSeed = (seed: Seed) => {
+    setEditingSeed(seed);
+    setSeedModalVisible(true);
+  };
+
+  const handleEditTransplant = (transplant: Transplant) => {
+    setEditingTransplant(transplant);
+    setTransplantModalVisible(true);
+  };
+
+  const handleEditPackaging = (pkg: Packaging) => {
+    setEditingPackaging(pkg);
+    setPackagingModalVisible(true);
+  };
+
+  const showEditOptions = (items: any[], type: string) => {
+    if (items.length === 0) {
+      Alert.alert('No Items', `No ${type} items to edit. Please add some first.`);
+      return;
+    }
+
+    const options = items.map((item, index) => {
+      let label = '';
+      switch (type) {
+        case 'storage':
+          label = `${item.type.charAt(0).toUpperCase() + item.type.slice(1)} Storage`;
+          break;
+        case 'fertilizer':
+          label = item.name;
+          break;
+        case 'seed':
+          label = item.name;
+          break;
+        case 'transplant':
+          label = item.crop_name;
+          break;
+        case 'packaging':
+          label = item.name;
+          break;
+      }
+      return {
+        text: label,
+        onPress: () => {
+          switch (type) {
+            case 'storage':
+              handleEditStorage(item);
+              break;
+            case 'fertilizer':
+              handleEditFertilizer(item);
+              break;
+            case 'seed':
+              handleEditSeed(item);
+              break;
+            case 'transplant':
+              handleEditTransplant(item);
+              break;
+            case 'packaging':
+              handleEditPackaging(item);
+              break;
+          }
+        },
+      };
+    });
+
+    options.push({ text: 'Cancel', onPress: () => {}, style: 'cancel' } as any);
+
+    Alert.alert(`Edit ${type.charAt(0).toUpperCase() + type.slice(1)}`, 'Select an item to edit:', options);
+  };
+
   const getStoragePercentage = (storage: StorageLocation) => {
     if (storage.capacity === 0) return 0;
     return Math.round((storage.used / storage.capacity) * 100);
@@ -316,15 +395,23 @@ export default function InventoryScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>🏪 Storage Space</Text>
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => {
-                  setEditingStorage(undefined);
-                  setStorageModalVisible(true);
-                }}
-              >
-                <Text style={styles.addButtonText}>+ Add</Text>
-              </TouchableOpacity>
+              <View style={styles.headerButtons}>
+                <TouchableOpacity
+                  style={styles.editHeaderButton}
+                  onPress={() => showEditOptions(storageLocations, 'storage')}
+                >
+                  <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={() => {
+                    setEditingStorage(undefined);
+                    setStorageModalVisible(true);
+                  }}
+                >
+                  <Text style={styles.addButtonText}>+ Add</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {storageLocations.length === 0 ? (
@@ -341,10 +428,7 @@ export default function InventoryScreen() {
                       </Text>
                       <View style={styles.cardActions}>
                         <TouchableOpacity
-                          onPress={() => {
-                            setEditingStorage(storage);
-                            setStorageModalVisible(true);
-                          }}
+                          onPress={() => handleEditStorage(storage)}
                           style={styles.actionButton}
                         >
                           <Text style={styles.actionButtonText}>Edit</Text>
@@ -381,15 +465,23 @@ export default function InventoryScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>🌱 Fertilizers</Text>
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => {
-                  setEditingFertilizer(undefined);
-                  setFertilizerModalVisible(true);
-                }}
-              >
-                <Text style={styles.addButtonText}>+ Add</Text>
-              </TouchableOpacity>
+              <View style={styles.headerButtons}>
+                <TouchableOpacity
+                  style={styles.editHeaderButton}
+                  onPress={() => showEditOptions(fertilizers, 'fertilizer')}
+                >
+                  <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={() => {
+                    setEditingFertilizer(undefined);
+                    setFertilizerModalVisible(true);
+                  }}
+                >
+                  <Text style={styles.addButtonText}>+ Add</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {fertilizers.length === 0 ? (
@@ -404,10 +496,7 @@ export default function InventoryScreen() {
                       <Text style={styles.cardTitle}>{fertilizer.name}</Text>
                       <View style={styles.cardActions}>
                         <TouchableOpacity
-                          onPress={() => {
-                            setEditingFertilizer(fertilizer);
-                            setFertilizerModalVisible(true);
-                          }}
+                          onPress={() => handleEditFertilizer(fertilizer)}
                           style={styles.actionButton}
                         >
                           <Text style={styles.actionButtonText}>Edit</Text>
@@ -434,15 +523,23 @@ export default function InventoryScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>🌾 Seeds</Text>
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => {
-                  setEditingSeed(undefined);
-                  setSeedModalVisible(true);
-                }}
-              >
-                <Text style={styles.addButtonText}>+ Add</Text>
-              </TouchableOpacity>
+              <View style={styles.headerButtons}>
+                <TouchableOpacity
+                  style={styles.editHeaderButton}
+                  onPress={() => showEditOptions(seeds, 'seed')}
+                >
+                  <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={() => {
+                    setEditingSeed(undefined);
+                    setSeedModalVisible(true);
+                  }}
+                >
+                  <Text style={styles.addButtonText}>+ Add</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {seeds.length === 0 ? (
@@ -457,10 +554,7 @@ export default function InventoryScreen() {
                       <Text style={styles.cardTitle}>{seed.name}</Text>
                       <View style={styles.cardActions}>
                         <TouchableOpacity
-                          onPress={() => {
-                            setEditingSeed(seed);
-                            setSeedModalVisible(true);
-                          }}
+                          onPress={() => handleEditSeed(seed)}
                           style={styles.actionButton}
                         >
                           <Text style={styles.actionButtonText}>Edit</Text>
@@ -486,15 +580,23 @@ export default function InventoryScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>🌿 Transplants</Text>
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => {
-                  setEditingTransplant(undefined);
-                  setTransplantModalVisible(true);
-                }}
-              >
-                <Text style={styles.addButtonText}>+ Add</Text>
-              </TouchableOpacity>
+              <View style={styles.headerButtons}>
+                <TouchableOpacity
+                  style={styles.editHeaderButton}
+                  onPress={() => showEditOptions(transplants, 'transplant')}
+                >
+                  <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={() => {
+                    setEditingTransplant(undefined);
+                    setTransplantModalVisible(true);
+                  }}
+                >
+                  <Text style={styles.addButtonText}>+ Add</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {transplants.length === 0 ? (
@@ -509,10 +611,7 @@ export default function InventoryScreen() {
                       <Text style={styles.cardTitle}>{transplant.crop_name}</Text>
                       <View style={styles.cardActions}>
                         <TouchableOpacity
-                          onPress={() => {
-                            setEditingTransplant(transplant);
-                            setTransplantModalVisible(true);
-                          }}
+                          onPress={() => handleEditTransplant(transplant)}
                           style={styles.actionButton}
                         >
                           <Text style={styles.actionButtonText}>Edit</Text>
@@ -539,15 +638,23 @@ export default function InventoryScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>📦 Packaging</Text>
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => {
-                  setEditingPackaging(undefined);
-                  setPackagingModalVisible(true);
-                }}
-              >
-                <Text style={styles.addButtonText}>+ Add</Text>
-              </TouchableOpacity>
+              <View style={styles.headerButtons}>
+                <TouchableOpacity
+                  style={styles.editHeaderButton}
+                  onPress={() => showEditOptions(packaging, 'packaging')}
+                >
+                  <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={() => {
+                    setEditingPackaging(undefined);
+                    setPackagingModalVisible(true);
+                  }}
+                >
+                  <Text style={styles.addButtonText}>+ Add</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {packaging.length === 0 ? (
@@ -569,10 +676,7 @@ export default function InventoryScreen() {
                       </View>
                       <View style={styles.cardActions}>
                         <TouchableOpacity
-                          onPress={() => {
-                            setEditingPackaging(pkg);
-                            setPackagingModalVisible(true);
-                          }}
+                          onPress={() => handleEditPackaging(pkg)}
                           style={styles.actionButton}
                         >
                           <Text style={styles.actionButtonText}>Edit</Text>
@@ -684,6 +788,24 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
+    flex: 1,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  editHeaderButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#4A7C2C',
+  },
+  editHeaderButtonText: {
+    color: '#2D5016',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
   addButton: {
     backgroundColor: '#fff',
