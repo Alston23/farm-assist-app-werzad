@@ -39,14 +39,14 @@ const quickActions: QuickAction[] = [
     icon: '🔍',
     title: 'Identify Plant Issues',
     prompt: 'I need help diagnosing a problem with my crops. Can you help me identify what might be wrong?',
-    isPremium: false,
+    isPremium: true,
   },
   {
     id: 'weather-insights',
     icon: '🌤️',
     title: 'Weather Insights',
     prompt: 'Show me the weather forecast and suggest tasks I should complete based on upcoming conditions.',
-    isPremium: false,
+    isPremium: true,
   },
   {
     id: 'personalized-advice',
@@ -387,12 +387,17 @@ export default function AIAssistantScreen() {
     }
   };
 
-  const handleQuickAction = (action: QuickAction) => {
-    console.log('AI Assistant: Quick action pressed:', action.title);
+  /**
+   * Unified handler for all Pro feature quick action cards
+   * For free users: Shows paywall
+   * For Pro users: Navigates to the specific Pro screen
+   */
+  const handleProFeaturePress = (target: 'crop' | 'identify' | 'weather' | 'advice') => {
+    console.log('AI Assistant: Pro feature pressed:', target, 'isPro:', isPro);
     
-    // Check if this is a premium action and user is not Pro
-    if (action.isPremium && !isPro) {
-      console.log('AI Assistant: Premium action, user is not Pro, showing paywall');
+    // If user is not Pro, show the paywall
+    if (!isPro) {
+      console.log('AI Assistant: User is not Pro, showing paywall');
       Alert.alert(
         'Upgrade to Farm Copilot Pro',
         'This advanced feature requires a Pro subscription. Upgrade now to unlock personalized recommendations!',
@@ -412,30 +417,45 @@ export default function AIAssistantScreen() {
       return;
     }
 
-    // Navigate to dedicated pages for premium actions (if Pro)
-    if (action.isPremium) {
-      switch (action.id) {
-        case 'crop-recommendation':
-          router.push('/(tabs)/ai-crop-recommendations');
-          break;
-        case 'personalized-advice':
-          router.push('/(tabs)/ai-personalized-advice');
-          break;
-        default:
-          console.log('Unknown premium action:', action.id);
-      }
-    } else {
-      // For non-premium actions, navigate to their respective pages
-      switch (action.id) {
-        case 'identify-plant-issues':
-          router.push('/(tabs)/ai-problem-diagnosis');
-          break;
-        case 'weather-insights':
-          router.push('/(tabs)/ai-weather-insights');
-          break;
-        default:
-          console.log('Unknown quick action:', action.id);
-      }
+    // Pro user: Navigate to the correct screen for each feature
+    console.log('AI Assistant: User is Pro, navigating to screen for:', target);
+    switch (target) {
+      case 'crop':
+        router.push('/(tabs)/ai-crop-recommendations');
+        break;
+      case 'identify':
+        router.push('/(tabs)/ai-problem-diagnosis');
+        break;
+      case 'weather':
+        router.push('/(tabs)/ai-weather-insights');
+        break;
+      case 'advice':
+        router.push('/(tabs)/ai-personalized-advice');
+        break;
+      default:
+        console.log('Unknown Pro feature target:', target);
+    }
+  };
+
+  const handleQuickAction = (action: QuickAction) => {
+    console.log('AI Assistant: Quick action pressed:', action.title);
+    
+    // Map action IDs to the handleProFeaturePress targets
+    switch (action.id) {
+      case 'crop-recommendation':
+        handleProFeaturePress('crop');
+        break;
+      case 'identify-plant-issues':
+        handleProFeaturePress('identify');
+        break;
+      case 'weather-insights':
+        handleProFeaturePress('weather');
+        break;
+      case 'personalized-advice':
+        handleProFeaturePress('advice');
+        break;
+      default:
+        console.log('Unknown quick action:', action.id);
     }
   };
 
