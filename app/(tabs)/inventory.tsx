@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import PageHeader from '../../components/PageHeader';
 import AddStorageModal from '../../components/AddStorageModal';
@@ -54,6 +55,7 @@ interface Packaging {
 }
 
 export default function InventoryScreen() {
+  const router = useRouter();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   
@@ -318,60 +320,6 @@ export default function InventoryScreen() {
     setPackagingModalVisible(true);
   };
 
-  const showEditOptions = (items: any[], type: string) => {
-    if (items.length === 0) {
-      Alert.alert('No Items', `No ${type} items to edit. Please add some first.`);
-      return;
-    }
-
-    const options = items.map((item, index) => {
-      let label = '';
-      switch (type) {
-        case 'storage':
-          label = `${item.type.charAt(0).toUpperCase() + item.type.slice(1)} Storage`;
-          break;
-        case 'fertilizer':
-          label = item.name;
-          break;
-        case 'seed':
-          label = item.name;
-          break;
-        case 'transplant':
-          label = item.crop_name;
-          break;
-        case 'packaging':
-          label = item.name;
-          break;
-      }
-      return {
-        text: label,
-        onPress: () => {
-          switch (type) {
-            case 'storage':
-              handleEditStorage(item);
-              break;
-            case 'fertilizer':
-              handleEditFertilizer(item);
-              break;
-            case 'seed':
-              handleEditSeed(item);
-              break;
-            case 'transplant':
-              handleEditTransplant(item);
-              break;
-            case 'packaging':
-              handleEditPackaging(item);
-              break;
-          }
-        },
-      };
-    });
-
-    options.push({ text: 'Cancel', onPress: () => {}, style: 'cancel' } as any);
-
-    Alert.alert(`Edit ${type.charAt(0).toUpperCase() + type.slice(1)}`, 'Select an item to edit:', options);
-  };
-
   const getStoragePercentage = (storage: StorageLocation) => {
     if (storage.capacity === 0) return 0;
     return Math.round((storage.used / storage.capacity) * 100);
@@ -398,7 +346,7 @@ export default function InventoryScreen() {
               <View style={styles.headerButtons}>
                 <TouchableOpacity
                   style={styles.editHeaderButton}
-                  onPress={() => showEditOptions(storageLocations, 'storage')}
+                  onPress={() => router.push('/storage-locations')}
                 >
                   <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
                 </TouchableOpacity>
@@ -468,7 +416,7 @@ export default function InventoryScreen() {
               <View style={styles.headerButtons}>
                 <TouchableOpacity
                   style={styles.editHeaderButton}
-                  onPress={() => showEditOptions(fertilizers, 'fertilizer')}
+                  onPress={() => router.push('/fertilizers')}
                 >
                   <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
                 </TouchableOpacity>
@@ -526,7 +474,7 @@ export default function InventoryScreen() {
               <View style={styles.headerButtons}>
                 <TouchableOpacity
                   style={styles.editHeaderButton}
-                  onPress={() => showEditOptions(seeds, 'seed')}
+                  onPress={() => router.push('/seeds')}
                 >
                   <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
                 </TouchableOpacity>
@@ -583,7 +531,7 @@ export default function InventoryScreen() {
               <View style={styles.headerButtons}>
                 <TouchableOpacity
                   style={styles.editHeaderButton}
-                  onPress={() => showEditOptions(transplants, 'transplant')}
+                  onPress={() => router.push('/transplants')}
                 >
                   <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
                 </TouchableOpacity>
@@ -641,7 +589,18 @@ export default function InventoryScreen() {
               <View style={styles.headerButtons}>
                 <TouchableOpacity
                   style={styles.editHeaderButton}
-                  onPress={() => showEditOptions(packaging, 'packaging')}
+                  onPress={() => {
+                    if (packaging.length === 0) {
+                      Alert.alert('No Items', 'No packaging items to edit. Please add some first.');
+                      return;
+                    }
+                    const options = packaging.map((item) => ({
+                      text: item.name,
+                      onPress: () => handleEditPackaging(item),
+                    }));
+                    options.push({ text: 'Cancel', onPress: () => {}, style: 'cancel' } as any);
+                    Alert.alert('Edit Packaging', 'Select an item to edit:', options);
+                  }}
                 >
                   <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
                 </TouchableOpacity>
