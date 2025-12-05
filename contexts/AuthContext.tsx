@@ -97,53 +97,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     console.log('AuthContext: Starting sign out process');
     try {
-      console.log('AuthContext: Calling Supabase signOut()');
+      // Clear local state first
+      console.log('AuthContext: Clearing local state');
+      setUser(null);
+      setSession(null);
       
-      // Sign out from Supabase
+      // Then sign out from Supabase
+      console.log('AuthContext: Calling Supabase signOut()');
       const { error } = await supabase.auth.signOut();
       
       if (error) {
         console.error('AuthContext: Sign out error:', error);
-        // Even with an error, clear local state and redirect
-        setUser(null);
-        setSession(null);
-        
-        // Show error but still redirect
-        Alert.alert('Notice', 'You have been signed out.');
-        
-        // Navigate to auth screen
-        setTimeout(() => {
-          router.replace('/auth');
-        }, 100);
-        
-        return;
+        // Even with an error, we already cleared local state
+        // Just log it and continue with navigation
+      } else {
+        console.log('AuthContext: Supabase sign out successful');
       }
       
-      console.log('AuthContext: Sign out successful, clearing local state');
-      // Clear local state
-      setUser(null);
-      setSession(null);
-      
-      console.log('AuthContext: Redirecting to auth screen');
       // Navigate to auth screen
-      setTimeout(() => {
-        router.replace('/auth');
-      }, 100);
+      console.log('AuthContext: Redirecting to /auth');
+      router.replace('/auth');
       
       console.log('AuthContext: Sign out complete');
     } catch (error) {
       console.error('AuthContext: Sign out exception:', error);
+      
       // Always clear local state even if there's an error
       setUser(null);
       setSession(null);
       
       // Show error message
-      Alert.alert('Error', 'Failed to sign out, but local session has been cleared.');
+      Alert.alert('Notice', 'You have been signed out. If you experience issues, please restart the app.');
       
       // Navigate to auth screen anyway
-      setTimeout(() => {
-        router.replace('/auth');
-      }, 100);
+      router.replace('/auth');
     }
   };
 
