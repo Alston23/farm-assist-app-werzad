@@ -6,6 +6,7 @@ import { SubscriptionProvider } from '../contexts/SubscriptionContext';
 import { LocationProvider, useLocation } from '../contexts/LocationContext';
 import { NotificationProvider, useNotification } from '../contexts/NotificationContext';
 import * as SplashScreen from 'expo-splash-screen';
+import { initSubscriptions, syncProFromProfile } from '../lib/subscriptions';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -16,6 +17,23 @@ function RootLayoutNav() {
   const { hasAskedForNotifications, loading: notificationLoading } = useNotification();
   const segments = useSegments();
   const router = useRouter();
+
+  // Initialize subscriptions when user logs in
+  useEffect(() => {
+    if (user && !authLoading) {
+      console.log('RootLayoutNav: User authenticated, initializing subscriptions');
+      
+      // Initialize IAP
+      initSubscriptions().catch((error) => {
+        console.error('RootLayoutNav: Error initializing subscriptions:', error);
+      });
+      
+      // Sync Pro status from Supabase
+      syncProFromProfile().catch((error) => {
+        console.error('RootLayoutNav: Error syncing Pro status:', error);
+      });
+    }
+  }, [user, authLoading]);
 
   useEffect(() => {
     console.log('RootLayoutNav: Auth state - loading:', authLoading, 'user:', user ? 'exists' : 'none', 'segments:', segments);

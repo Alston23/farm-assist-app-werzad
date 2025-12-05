@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import PageHeader from '../../components/PageHeader';
 import AddCustomCropModal from '../../components/AddCustomCropModal';
+import SubscriptionDebugPanel from '../../components/SubscriptionDebugPanel';
 import { vegetables, fruits, flowers, herbs, searchCrops, Crop } from '../../data/crops';
 import { supabase } from '../../lib/supabase';
 
@@ -202,6 +203,9 @@ export default function CropsScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" />
           }
         >
+          {/* Debug Panel - REMOVE BEFORE PRODUCTION */}
+          <SubscriptionDebugPanel />
+
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => setShowAddModal(true)}

@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useSubscription } from '../contexts/SubscriptionContext';
+import { purchasePro, restoreProStatus } from '../lib/subscriptions';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Feature {
   text: string;
@@ -19,50 +20,22 @@ const features: Feature[] = [
 
 export default function PaywallScreen() {
   const router = useRouter();
-  const { activateSubscription, refreshSubscription } = useSubscription();
+  const { refreshProfile } = useAuth();
   const [purchasing, setPurchasing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
   const handlePurchase = async () => {
     setPurchasing(true);
     try {
       console.log('Paywall: Starting purchase process');
       
-      // TODO: In a real app, this would integrate with:
-      // - Natively's built-in subscription system
-      // - Expo In-App Purchases (expo-in-app-purchases)
-      // - Or a payment provider like Stripe/RevenueCat
+      // Call the purchase function from lib/subscriptions.ts
+      await purchasePro();
       
-      // For now, we'll simulate the purchase process
-      // In production, you would:
-      // 1. Call the native store (App Store / Play Store) to initiate purchase
-      // 2. Verify the purchase receipt with your backend
-      // 3. Activate the subscription in your database
+      // Refresh the profile to get the updated Pro status
+      await refreshProfile();
       
-      // Simulate a delay for the purchase process
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Activate the subscription
-      await activateSubscription();
-      
-      // Refresh subscription status to update the UI
-      await refreshSubscription();
-      
-      console.log('Paywall: Purchase successful, subscription activated');
-      
-      Alert.alert(
-        'Welcome to Farm Copilot Pro! 🎉',
-        'Your subscription is now active. Enjoy all premium features!',
-        [
-          {
-            text: 'Get Started',
-            onPress: () => {
-              console.log('Paywall: User acknowledged purchase success');
-              // The PremiumGuard will automatically show the protected content
-              // since hasActiveSubscription is now true
-            },
-          },
-        ]
-      );
+      console.log('Paywall: Purchase flow completed');
     } catch (error) {
       console.error('Paywall: Purchase error:', error);
       Alert.alert(
@@ -72,6 +45,30 @@ export default function PaywallScreen() {
       );
     } finally {
       setPurchasing(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    setRestoring(true);
+    try {
+      console.log('Paywall: Starting restore process');
+      
+      // Call the restore function from lib/subscriptions.ts
+      await restoreProStatus();
+      
+      // Refresh the profile to get the updated Pro status
+      await refreshProfile();
+      
+      console.log('Paywall: Restore flow completed');
+    } catch (error) {
+      console.error('Paywall: Restore error:', error);
+      Alert.alert(
+        'Restore Failed',
+        'There was an error restoring your purchases. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setRestoring(false);
     }
   };
 
@@ -124,7 +121,7 @@ export default function PaywallScreen() {
           <TouchableOpacity
             style={[styles.upgradeButton, purchasing && styles.upgradeButtonDisabled]}
             onPress={handlePurchase}
-            disabled={purchasing}
+            disabled={purchasing || restoring}
             activeOpacity={0.8}
           >
             {purchasing ? (
@@ -139,11 +136,28 @@ export default function PaywallScreen() {
             )}
           </TouchableOpacity>
 
+          {/* Restore Purchases Button */}
+          <TouchableOpacity
+            style={styles.restoreButton}
+            onPress={handleRestore}
+            disabled={purchasing || restoring}
+            activeOpacity={0.7}
+          >
+            {restoring ? (
+              <View style={styles.purchasingContainer}>
+                <ActivityIndicator color="#FFFFFF" size="small" />
+                <Text style={styles.restoreButtonText}>Restoring...</Text>
+              </View>
+            ) : (
+              <Text style={styles.restoreButtonText}>Restore Purchases</Text>
+            )}
+          </TouchableOpacity>
+
           {/* Secondary Button */}
           <TouchableOpacity
             style={styles.maybeLaterButton}
             onPress={handleMaybeLater}
-            disabled={purchasing}
+            disabled={purchasing || restoring}
             activeOpacity={0.7}
           >
             <Text style={styles.maybeLaterButtonText}>Maybe later</Text>
@@ -301,7 +315,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -321,6 +335,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
     textAlign: 'center',
+  },
+  restoreButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  restoreButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   maybeLaterButton: {
     backgroundColor: 'transparent',

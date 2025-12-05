@@ -5,13 +5,21 @@ import { Alert } from 'react-native';
 import { router } from 'expo-router';
 import { supabase } from '../lib/supabase';
 
+interface UserProfile {
+  id: string;
+  is_pro: boolean;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isPro: boolean;
+  profile: UserProfile | null;
   signUp: (email: string, password: string) => Promise<{ error: any; data: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any; data: any }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,6 +28,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isPro, setIsPro] = useState(false);
 
   useEffect(() => {
     console.log('AuthContext: Initializing auth state');
@@ -29,7 +39,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('AuthContext: Initial session:', session ? 'exists' : 'none');
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
+      
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
     }).catch((error) => {
       console.error('AuthContext: Error getting initial session:', error);
       setLoading(false);
@@ -40,7 +55,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('AuthContext: Auth state changed:', _event, session ? 'session exists' : 'no session');
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
+      
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+        setIsPro(false);
+        setLoading(false);
+      }
     });
 
     return () => {
@@ -48,6 +70,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
+
+  const fetchProfile = async (userId: string) => {
+    try {
+      console.log('AuthContext: Fetching profile for user:', userId);
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, is_pro')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('AuthContext: Error fetching profile:', error);
+        
+        // If profile doesn't exist, create it
+        if (error.code === 'PGRST116') {
+          console.log('AuthContext: Profile not found, creating one');
+          const { data: newProfile, error: insertError } = await supabase
+            .from('profiles')
+            .insert({ id: userId, is_pro: false })
+            .select('id, is_pro')
+            .single();
+          
+          if (insertError) {
+            console.error('AuthContext: Error creating profile:', insertError);
+          } else {
+            console.log('AuthContext: Profile created successfully');
+            setProfile(newProfile);
+            setIsPro(newProfile?.is_pro ?? false);
+          }
+        }
+      } else {
+        console.log('AuthContext: Profile fetched:', data);
+        setProfile(data);
+        setIsPro(data?.is_pro ?? false);
+      }
+    } catch (error) {
+      console.error('AuthContext: Exception fetching profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshProfile = async () => {
+    if (user) {
+      console.log('AuthContext: Manually refreshing profile');
+      await fetchProfile(user.id);
+    }
+  };
 
   const signUp = async (email: string, password: string) => {
     console.log('AuthContext: Signing up user:', email);
@@ -101,6 +172,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('AuthContext: Clearing local state');
       setUser(null);
       setSession(null);
+      setProfile(null);
+      setIsPro(false);
       
       // Then sign out from Supabase
       console.log('AuthContext: Calling Supabase signOut()');
@@ -125,6 +198,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Always clear local state even if there's an error
       setUser(null);
       setSession(null);
+      setProfile(null);
+      setIsPro(false);
       
       // Show error message
       Alert.alert('Notice', 'You have been signed out. If you experience issues, please restart the app.');
@@ -135,7 +210,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      loading, 
+      isPro,
+      profile,
+      signUp, 
+      signIn, 
+      signOut,
+      refreshProfile 
+    }}>
       {children}
     </AuthContext.Provider>
   );
