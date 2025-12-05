@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
+import PremiumGuard from '../../components/PremiumGuard';
 
 interface Message {
   id: string;
@@ -22,6 +23,7 @@ interface QuickAction {
   title: string;
   prompt: string;
   requiresImage?: boolean;
+  isPremium?: boolean;
 }
 
 const quickActions: QuickAction[] = [
@@ -30,6 +32,7 @@ const quickActions: QuickAction[] = [
     icon: '🌱',
     title: 'Crop Recommendations',
     prompt: 'Based on my farm location and current season, what crops would you recommend I plant?',
+    isPremium: true,
   },
   {
     id: 'identify-plant-issues',
@@ -51,7 +54,7 @@ const quickActions: QuickAction[] = [
   },
 ];
 
-export default function AIAssistantScreen() {
+function AIAssistantContent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -336,22 +339,30 @@ export default function AIAssistantScreen() {
   const handleQuickAction = (action: QuickAction) => {
     console.log('AI Assistant: Quick action pressed:', action.title);
     
-    // Navigate to dedicated pages for each quick action
-    switch (action.id) {
-      case 'crop-recommendation':
-        router.push('/(tabs)/ai-crop-recommendations');
-        break;
-      case 'identify-plant-issues':
-        router.push('/(tabs)/ai-problem-diagnosis');
-        break;
-      case 'weather-insights':
-        router.push('/(tabs)/ai-weather-insights');
-        break;
-      case 'personalized-advice':
-        router.push('/(tabs)/ai-personalized-advice');
-        break;
-      default:
-        console.log('Unknown quick action:', action.id);
+    // Navigate to dedicated pages for premium actions
+    if (action.isPremium) {
+      switch (action.id) {
+        case 'crop-recommendation':
+          router.push('/(tabs)/ai-crop-recommendations');
+          break;
+        default:
+          console.log('Unknown premium action:', action.id);
+      }
+    } else {
+      // For non-premium actions, navigate to their respective pages
+      switch (action.id) {
+        case 'identify-plant-issues':
+          router.push('/(tabs)/ai-problem-diagnosis');
+          break;
+        case 'weather-insights':
+          router.push('/(tabs)/ai-weather-insights');
+          break;
+        case 'personalized-advice':
+          router.push('/(tabs)/ai-personalized-advice');
+          break;
+        default:
+          console.log('Unknown quick action:', action.id);
+      }
     }
   };
 
@@ -446,10 +457,18 @@ export default function AIAssistantScreen() {
                   {quickActions.map((action) => (
                     <TouchableOpacity
                       key={action.id}
-                      style={styles.quickActionCard}
+                      style={[
+                        styles.quickActionCard,
+                        action.isPremium && styles.premiumActionCard,
+                      ]}
                       onPress={() => handleQuickAction(action)}
                       activeOpacity={0.7}
                     >
+                      {action.isPremium && (
+                        <View style={styles.premiumBadge}>
+                          <Text style={styles.premiumBadgeText}>PRO</Text>
+                        </View>
+                      )}
                       <Text style={styles.quickActionIcon}>{action.icon}</Text>
                       <Text style={styles.quickActionTitle}>{action.title}</Text>
                     </TouchableOpacity>
@@ -566,6 +585,14 @@ export default function AIAssistantScreen() {
   );
 }
 
+export default function AIAssistantScreen() {
+  return (
+    <PremiumGuard>
+      <AIAssistantContent />
+    </PremiumGuard>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -656,6 +683,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#4A7C2C',
+    position: 'relative',
+  },
+  premiumActionCard: {
+    borderColor: '#FFD700',
+    backgroundColor: '#FFFEF0',
+  },
+  premiumBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  premiumBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#2D5016',
   },
   quickActionIcon: {
     fontSize: 32,

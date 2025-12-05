@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
+import { SubscriptionProvider } from '../contexts/SubscriptionContext';
 import * as SplashScreen from 'expo-splash-screen';
 
 // Keep the splash screen visible while we fetch resources
@@ -33,7 +34,7 @@ function RootLayoutNav() {
         // Redirect to tabs if authenticated and on auth screen
         console.log('RootLayoutNav: User authenticated, redirecting to /(tabs)/crops');
         router.replace('/(tabs)/crops');
-      } else if (user && !inTabsGroup && segments[0] !== 'crop' && segments[0] !== 'marketplace' && segments[0] !== 'home') {
+      } else if (user && !inTabsGroup && segments[0] !== 'crop' && segments[0] !== 'marketplace' && segments[0] !== 'home' && segments[0] !== 'paywall' && segments[0] !== 'fertilizers' && segments[0] !== 'seeds' && segments[0] !== 'storage-locations' && segments[0] !== 'transplants') {
         // Redirect to tabs if authenticated but not in a valid route
         console.log('RootLayoutNav: User authenticated but in invalid route, redirecting to /(tabs)/crops');
         router.replace('/(tabs)/crops');
@@ -49,6 +50,11 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="crop" />
       <Stack.Screen name="marketplace" />
+      <Stack.Screen name="paywall" />
+      <Stack.Screen name="fertilizers" />
+      <Stack.Screen name="seeds" />
+      <Stack.Screen name="storage-locations" />
+      <Stack.Screen name="transplants" />
     </Stack>
   );
 }
@@ -56,7 +62,9 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <SubscriptionProvider>
+        <RootLayoutNav />
+      </SubscriptionProvider>
     </AuthProvider>
   );
 }

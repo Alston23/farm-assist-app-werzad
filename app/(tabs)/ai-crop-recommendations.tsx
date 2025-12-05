@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import CropRecommendationModal from '../../components/CropRecommendationModal';
+import PremiumGuard from '../../components/PremiumGuard';
 import { useFocusEffect } from '@react-navigation/native';
 
 interface Message {
@@ -14,7 +15,7 @@ interface Message {
   timestamp: Date;
 }
 
-export default function AICropRecommendationsScreen() {
+function AICropRecommendationsContent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -244,6 +245,14 @@ Please provide detailed crop recommendations including expected yields, revenue 
         onSubmit={handleModalSubmit}
       />
     </View>
+  );
+}
+
+export default function AICropRecommendationsScreen() {
+  return (
+    <PremiumGuard>
+      <AICropRecommendationsContent />
+    </PremiumGuard>
   );
 }
 

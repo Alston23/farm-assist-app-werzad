@@ -4,8 +4,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import PageHeader from '../../components/PageHeader';
+import PremiumGuard from '../../components/PremiumGuard';
 
-export default function MarketplaceScreen() {
+function MarketplaceContent() {
   const router = useRouter();
 
   return (
@@ -57,6 +58,14 @@ export default function MarketplaceScreen() {
         </ScrollView>
       </LinearGradient>
     </View>
+  );
+}
+
+export default function MarketplaceScreen() {
+  return (
+    <PremiumGuard>
+      <MarketplaceContent />
+    </PremiumGuard>
   );
 }
 
