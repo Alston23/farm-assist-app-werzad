@@ -6,42 +6,15 @@ import { useRouter } from 'expo-router';
 import { useSubscription } from '../contexts/SubscriptionContext';
 
 interface Feature {
-  icon: string;
-  title: string;
-  description: string;
+  text: string;
 }
 
 const features: Feature[] = [
-  {
-    icon: '🌟',
-    title: 'Advanced Recommendations',
-    description: 'Get AI-powered crop recommendations tailored to your farm conditions',
-  },
-  {
-    icon: '🤖',
-    title: 'AI Farm Copilot',
-    description: 'Chat with your personal AI assistant for farming advice and insights',
-  },
-  {
-    icon: '🛒',
-    title: 'Sales & Marketplace Tools',
-    description: 'Access marketplace features to sell produce and equipment',
-  },
-  {
-    icon: '📊',
-    title: 'Space & Yield Optimizer',
-    description: 'Optimize your field layouts and maximize crop yields',
-  },
-  {
-    icon: '📈',
-    title: 'Inventory Analytics',
-    description: 'Advanced analytics for seeds, fertilizers, and storage management',
-  },
-  {
-    icon: '🔔',
-    title: 'Smart Notifications',
-    description: 'Get timely alerts for planting, harvesting, and task reminders',
-  },
+  { text: 'Advanced planting & fertilizer recommendations' },
+  { text: 'AI Farm Copilot for your own farm data' },
+  { text: 'Sales & revenue tracking with automatic inventory updates' },
+  { text: 'Space & yield optimization' },
+  { text: 'Smart alerts and analytics' },
 ];
 
 export default function PaywallScreen() {
@@ -54,8 +27,16 @@ export default function PaywallScreen() {
     try {
       console.log('Paywall: Starting purchase process');
       
-      // In a real app, this would integrate with Expo In-App Purchases
-      // or a payment provider like Stripe. For now, we'll simulate the purchase.
+      // TODO: In a real app, this would integrate with:
+      // - Natively's built-in subscription system
+      // - Expo In-App Purchases (expo-in-app-purchases)
+      // - Or a payment provider like Stripe/RevenueCat
+      
+      // For now, we'll simulate the purchase process
+      // In production, you would:
+      // 1. Call the native store (App Store / Play Store) to initiate purchase
+      // 2. Verify the purchase receipt with your backend
+      // 3. Activate the subscription in your database
       
       // Simulate a delay for the purchase process
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -90,8 +71,8 @@ export default function PaywallScreen() {
     }
   };
 
-  const handleBack = () => {
-    console.log('Paywall: Back button pressed');
+  const handleMaybeLater = () => {
+    console.log('Paywall: Maybe later button pressed');
     router.back();
   };
 
@@ -99,6 +80,7 @@ export default function PaywallScreen() {
     <View style={styles.container}>
       <LinearGradient colors={['#2D5016', '#4A7C2C', '#6BA542']} style={styles.gradient}>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+          {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Unlock Farm Copilot Pro</Text>
             <Text style={styles.subtitle}>
@@ -106,31 +88,34 @@ export default function PaywallScreen() {
             </Text>
           </View>
 
+          {/* Features List */}
           <View style={styles.featuresContainer}>
             {features.map((feature, index) => (
-              <View key={index} style={styles.featureCard}>
-                <View style={styles.featureIcon}>
-                  <Text style={styles.featureIconText}>{feature.icon}</Text>
+              <View key={index} style={styles.featureItem}>
+                <View style={styles.bulletPoint}>
+                  <Text style={styles.bulletText}>✓</Text>
                 </View>
-                <View style={styles.featureContent}>
-                  <Text style={styles.featureTitle}>{feature.title}</Text>
-                  <Text style={styles.featureDescription}>{feature.description}</Text>
-                </View>
+                <Text style={styles.featureText}>{feature.text}</Text>
               </View>
             ))}
           </View>
 
+          {/* Pricing Card */}
           <View style={styles.pricingCard}>
+            <View style={styles.pricingBadge}>
+              <Text style={styles.pricingBadgeText}>BEST VALUE</Text>
+            </View>
             <Text style={styles.pricingTitle}>Farm Copilot Pro</Text>
             <View style={styles.priceContainer}>
               <Text style={styles.priceAmount}>$12.99</Text>
-              <Text style={styles.pricePeriod}>/month</Text>
+              <Text style={styles.pricePeriod}> / month</Text>
             </View>
             <Text style={styles.pricingDescription}>
-              Cancel anytime. No hidden fees.
+              Cancel anytime • No hidden fees • Full access to all features
             </Text>
           </View>
 
+          {/* Primary Button */}
           <TouchableOpacity
             style={[styles.upgradeButton, purchasing && styles.upgradeButtonDisabled]}
             onPress={handlePurchase}
@@ -144,20 +129,22 @@ export default function PaywallScreen() {
               </View>
             ) : (
               <Text style={styles.upgradeButtonText}>
-                Upgrade to Farm Copilot Pro — $12.99/month
+                Upgrade to Farm Copilot Pro — $12.99 / month
               </Text>
             )}
           </TouchableOpacity>
 
+          {/* Secondary Button */}
           <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleBack}
+            style={styles.maybeLaterButton}
+            onPress={handleMaybeLater}
             disabled={purchasing}
             activeOpacity={0.7}
           >
-            <Text style={styles.backButtonText}>Maybe Later</Text>
+            <Text style={styles.maybeLaterButtonText}>Maybe later</Text>
           </TouchableOpacity>
 
+          {/* Free Plan Info */}
           <View style={styles.freeAccessContainer}>
             <Text style={styles.freeAccessTitle}>Free Plan Includes:</Text>
             <Text style={styles.freeAccessItem}>• Basic crop recommendations</Text>
@@ -165,6 +152,13 @@ export default function PaywallScreen() {
             <Text style={styles.freeAccessItem}>• Fields and plantings tracking</Text>
             <Text style={styles.freeAccessItem}>• Task management</Text>
           </View>
+
+          {/* Legal Text */}
+          <Text style={styles.legalText}>
+            By subscribing, you agree to our Terms of Service and Privacy Policy. 
+            Subscription automatically renews unless cancelled at least 24 hours before 
+            the end of the current period.
+          </Text>
         </ScrollView>
       </LinearGradient>
     </View>
@@ -189,7 +183,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 40,
   },
   title: {
     fontSize: 32,
@@ -205,46 +199,41 @@ const styles = StyleSheet.create({
     lineHeight: 26,
   },
   featuresContainer: {
-    marginBottom: 32,
-  },
-  featureCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
+    padding: 24,
+    marginBottom: 32,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
   },
-  featureIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#E8F5E9',
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  bulletPoint: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#4A7C2C',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 12,
+    marginTop: 2,
   },
-  featureIconText: {
-    fontSize: 28,
-  },
-  featureContent: {
-    flex: 1,
-  },
-  featureTitle: {
+  bulletText: {
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#2D5016',
-    marginBottom: 4,
   },
-  featureDescription: {
-    fontSize: 14,
-    color: '#555',
-    lineHeight: 20,
+  featureText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    lineHeight: 24,
   },
   pricingCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
@@ -259,11 +248,27 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 8,
+    position: 'relative',
+  },
+  pricingBadge: {
+    position: 'absolute',
+    top: -12,
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  pricingBadgeText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#2D5016',
+    letterSpacing: 1,
   },
   pricingTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#2D5016',
+    marginTop: 8,
     marginBottom: 12,
   },
   priceContainer: {
@@ -279,12 +284,12 @@ const styles = StyleSheet.create({
   pricePeriod: {
     fontSize: 20,
     color: '#666',
-    marginLeft: 4,
   },
   pricingDescription: {
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
+    lineHeight: 20,
   },
   upgradeButton: {
     backgroundColor: '#4A7C2C',
@@ -312,24 +317,24 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     textAlign: 'center',
   },
-  backButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  maybeLaterButton: {
+    backgroundColor: 'transparent',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     marginBottom: 32,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
-  backButtonText: {
+  maybeLaterButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+    textDecorationLine: 'underline',
   },
   freeAccessContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 20,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
@@ -344,5 +349,11 @@ const styles = StyleSheet.create({
     color: '#E8F5E9',
     marginBottom: 6,
     lineHeight: 20,
+  },
+  legalText: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });
