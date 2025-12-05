@@ -1,5 +1,4 @@
 
-import * as InAppPurchases from "expo-in-app-purchases";
 import { Platform, Alert } from "react-native";
 import { supabase } from "./supabase";
 import Constants from 'expo-constants';
@@ -8,14 +7,29 @@ import Constants from 'expo-constants';
 export const PRO_SUBSCRIPTION_ID = 'farmcopilot_pro_monthly';
 
 let isInitialized = false;
-let purchaseUpdateSubscription: InAppPurchases.Subscription | null = null;
+let purchaseUpdateSubscription: any | null = null;
+
+// Dynamic IAP module loader
+let IAP: typeof import('expo-in-app-purchases') | null = null;
+
+async function getIAP() {
+  // When running in Expo Go / Natively preview, do NOT load the native module
+  if (Constants.appOwnership === 'expo') {
+    return null;
+  }
+  if (!IAP) {
+    IAP = await import('expo-in-app-purchases');
+  }
+  return IAP;
+}
 
 /**
  * Initialize the in-app purchase library and listen for purchase updates
  */
 export async function initSubscriptions(): Promise<void> {
-  // Guard: Disable IAP in Expo Go
-  if (Constants.appOwnership === 'expo') {
+  const InAppPurchases = await getIAP();
+  if (!InAppPurchases) {
+    // Running in Expo Go → skip IAP logic
     console.log('IAP disabled in Expo Go');
     return;
   }
@@ -73,7 +87,7 @@ export async function initSubscriptions(): Promise<void> {
 /**
  * Handle a successful purchase by updating the user's Pro status in Supabase
  */
-async function handleSuccessfulPurchase(purchase: InAppPurchases.InAppPurchase): Promise<void> {
+async function handleSuccessfulPurchase(purchase: any): Promise<void> {
   try {
     console.log('Subscriptions: Handling successful purchase');
     
@@ -113,8 +127,9 @@ async function handleSuccessfulPurchase(purchase: InAppPurchases.InAppPurchase):
  * Start the purchase flow for the Pro subscription
  */
 export async function purchasePro(): Promise<void> {
-  // Guard: Disable IAP in Expo Go / Natively preview
-  if (Constants.appOwnership === 'expo') {
+  const InAppPurchases = await getIAP();
+  if (!InAppPurchases) {
+    // Running in Expo Go → skip IAP logic
     console.log('IAP disabled in Expo Go');
     return;
   }
@@ -168,8 +183,9 @@ export async function purchasePro(): Promise<void> {
  * Restore previous purchases and update Pro status if subscription is active
  */
 export async function restoreProStatus(): Promise<void> {
-  // Guard: Disable IAP in Expo Go / Natively preview
-  if (Constants.appOwnership === 'expo') {
+  const InAppPurchases = await getIAP();
+  if (!InAppPurchases) {
+    // Running in Expo Go → skip IAP logic
     console.log('IAP disabled in Expo Go');
     return;
   }
@@ -286,8 +302,9 @@ export async function syncProFromProfile(): Promise<void> {
  * Disconnect from the store (call on app cleanup)
  */
 export async function disconnectSubscriptions(): Promise<void> {
-  // Guard: Disable IAP in Expo Go / Natively preview
-  if (Constants.appOwnership === 'expo') {
+  const InAppPurchases = await getIAP();
+  if (!InAppPurchases) {
+    // Running in Expo Go → skip IAP logic
     console.log('IAP disabled in Expo Go');
     return;
   }
