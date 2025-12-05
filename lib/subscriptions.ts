@@ -1,6 +1,7 @@
 
 import * as InAppPurchases from 'expo-in-app-purchases';
 import { Platform, Alert } from 'react-native';
+import Constants from 'expo-constants';
 import { supabase } from './supabase';
 
 // Product ID for the Pro subscription
@@ -13,6 +14,12 @@ let purchaseUpdateSubscription: InAppPurchases.Subscription | null = null;
  * Initialize the in-app purchase library and listen for purchase updates
  */
 export async function initSubscriptions(): Promise<void> {
+  // Guard: Disable IAP in Expo Go
+  if (Constants.appOwnership === 'expo') {
+    console.log('IAP disabled in Expo Go');
+    return;
+  }
+
   try {
     console.log('Subscriptions: Initializing IAP library');
     
