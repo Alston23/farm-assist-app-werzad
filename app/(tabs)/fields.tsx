@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import PageHeader from '../../components/PageHeader';
 import AddFieldBedModal from '../../components/AddFieldBedModal';
 import { supabase } from '../../lib/supabase';
@@ -57,6 +58,31 @@ export default function FieldsScreen() {
     fetchFieldsBeds();
   };
 
+  const deleteFieldBed = async (id: string | number) => {
+    try {
+      // Optimistically update UI by removing the field/bed from local state
+      setFieldsBeds(prev => prev.filter(fb => String(fb.id) !== String(id)));
+
+      // Delete from Supabase
+      const { error } = await supabase
+        .from("fields_beds")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        Alert.alert("Error", "Failed to delete field/bed from server.");
+        // Reload data to restore the item if delete failed
+        await fetchFieldsBeds();
+      }
+    } catch (e) {
+      console.error(e);
+      Alert.alert("Error", "Unexpected error deleting field/bed.");
+      // Reload data to restore the item if delete failed
+      await fetchFieldsBeds();
+    }
+  };
+
   return (
     <View style={styles.container}>
       <PageHeader title="🏞️ Fields/Beds" />
@@ -86,10 +112,18 @@ export default function FieldsScreen() {
                 <View key={index} style={styles.card}>
                   <View style={styles.cardHeader}>
                     <Text style={styles.cardTitle}>{item.name}</Text>
-                    <View style={[styles.typeBadge, item.type === 'field' ? styles.fieldBadge : styles.bedBadge]}>
-                      <Text style={styles.typeBadgeText}>
-                        {item.type === 'field' ? 'Field' : 'Bed'}
-                      </Text>
+                    <View style={styles.headerRight}>
+                      <View style={[styles.typeBadge, item.type === 'field' ? styles.fieldBadge : styles.bedBadge]}>
+                        <Text style={styles.typeBadgeText}>
+                          {item.type === 'field' ? 'Field' : 'Bed'}
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => deleteFieldBed(item.id)}
+                      >
+                        <Ionicons name="trash-outline" size={22} color="#d32f2f" />
+                      </TouchableOpacity>
                     </View>
                   </View>
                   <View style={styles.infoRow}>
@@ -177,6 +211,11 @@ const styles = StyleSheet.create({
     color: '#2D5016',
     flex: 1,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   typeBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -192,6 +231,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  deleteButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(211, 47, 47, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   infoRow: {
     flexDirection: 'row',
