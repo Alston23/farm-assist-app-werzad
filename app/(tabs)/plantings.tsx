@@ -37,9 +37,12 @@ export default function PlantingsScreen() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+        console.log('No user found, skipping fetch');
         setLoading(false);
         return;
       }
+
+      console.log('Fetching plantings for user:', user.id);
 
       const { data, error } = await supabase
         .from('plantings')
@@ -54,6 +57,7 @@ export default function PlantingsScreen() {
         console.error('Error fetching plantings:', error);
         Alert.alert('Error', 'Failed to load plantings');
       } else {
+        console.log('Fetched plantings:', data?.length || 0);
         setPlantings(data || []);
       }
     } catch (error) {
@@ -70,6 +74,8 @@ export default function PlantingsScreen() {
   };
 
   const handleDeletePlanting = (planting: Planting) => {
+    console.log('Delete button pressed for planting:', planting.id, planting.crop_name);
+    
     Alert.alert(
       'Delete Planting',
       `Are you sure you want to delete ${planting.crop_name} from ${planting.field_bed.name}?`,
@@ -77,11 +83,15 @@ export default function PlantingsScreen() {
         {
           text: 'Cancel',
           style: 'cancel',
+          onPress: () => console.log('Delete cancelled'),
         },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => confirmDelete(planting.id),
+          onPress: () => {
+            console.log('Delete confirmed, proceeding...');
+            confirmDelete(planting.id);
+          },
         },
       ],
       { cancelable: true }
@@ -89,13 +99,20 @@ export default function PlantingsScreen() {
   };
 
   const confirmDelete = async (plantingId: string) => {
+    console.log('=== Starting delete operation for planting:', plantingId, '===');
     setDeletingId(plantingId);
     
     try {
-      console.log('Attempting to delete planting:', plantingId);
-
       // Get the current user to ensure we're authenticated
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('Error getting user:', userError);
+        Alert.alert('Error', 'Authentication error. Please try logging in again.');
+        setDeletingId(null);
+        return;
+      }
+
       if (!user) {
         console.error('No authenticated user found');
         Alert.alert('Error', 'You must be logged in to delete plantings');
@@ -104,30 +121,37 @@ export default function PlantingsScreen() {
       }
 
       console.log('User authenticated:', user.id);
+      console.log('Attempting to delete planting:', plantingId, 'for user:', user.id);
 
       // Perform the delete operation
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('plantings')
         .delete()
         .eq('id', plantingId)
         .eq('user_id', user.id);
 
-      console.log('Delete response - data:', data, 'error:', error);
-
       if (error) {
-        console.error('Error deleting planting:', error);
+        console.error('Supabase delete error:', error);
         Alert.alert('Error', `Failed to delete planting: ${error.message}`);
-      } else {
-        console.log('Planting deleted successfully');
-        // Remove the deleted planting from the local state
-        setPlantings((prevPlantings) => 
-          prevPlantings.filter((p) => p.id !== plantingId)
-        );
-        Alert.alert('Success', 'Planting deleted successfully');
+        setDeletingId(null);
+        return;
       }
+
+      console.log('Delete operation successful');
+      
+      // Remove the deleted planting from the local state
+      setPlantings((prevPlantings) => {
+        const filtered = prevPlantings.filter((p) => p.id !== plantingId);
+        console.log('Updated plantings count:', filtered.length);
+        return filtered;
+      });
+      
+      console.log('=== Delete operation completed successfully ===');
+      Alert.alert('Success', 'Planting deleted successfully');
+      
     } catch (error) {
       console.error('Unexpected error during delete:', error);
-      Alert.alert('Error', 'An unexpected error occurred');
+      Alert.alert('Error', 'An unexpected error occurred while deleting the planting');
     } finally {
       setDeletingId(null);
     }
