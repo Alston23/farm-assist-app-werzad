@@ -57,10 +57,12 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
   const [daysToMaturity, setDaysToMaturity] = useState<number | null>(null);
   const [irrigationType, setIrrigationType] = useState('');
   const [showIrrigationDropdown, setShowIrrigationDropdown] = useState(false);
-  const [plantingDate, setPlantingDate] = useState<Date>(new Date());
-  const [harvestDate, setHarvestDate] = useState<Date>(new Date());
+  const [plantingDate, setPlantingDate] = useState<Date | null>(new Date());
+  const [harvestDate, setHarvestDate] = useState<Date | null>(new Date());
   const [showPlantingDatePicker, setShowPlantingDatePicker] = useState(false);
   const [showHarvestDatePicker, setShowHarvestDatePicker] = useState(false);
+  const [plantingDateInput, setPlantingDateInput] = useState('');
+  const [harvestDateInput, setHarvestDateInput] = useState('');
   const [saving, setSaving] = useState(false);
 
   const filteredCrops = cropSearchQuery
@@ -70,10 +72,11 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
     : allCrops;
 
   useEffect(() => {
-    if (daysToMaturity !== null) {
+    if (daysToMaturity !== null && plantingDate) {
       const newHarvestDate = new Date(plantingDate);
       newHarvestDate.setDate(newHarvestDate.getDate() + daysToMaturity);
       setHarvestDate(newHarvestDate);
+      setHarvestDateInput(formatDateForInput(newHarvestDate));
       console.log('Auto-calculated harvest date based on days to maturity:', newHarvestDate);
     }
   }, [plantingDate, daysToMaturity]);
@@ -104,11 +107,13 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
     if (event.type === 'set' && selectedDate) {
       console.log('Setting planting date to:', selectedDate);
       setPlantingDate(selectedDate);
+      setPlantingDateInput(formatDateForInput(selectedDate));
       
       // If harvest date is before the new planting date, adjust it
-      if (harvestDate < selectedDate) {
+      if (harvestDate && harvestDate < selectedDate) {
         console.log('Adjusting harvest date to match planting date');
         setHarvestDate(selectedDate);
+        setHarvestDateInput(formatDateForInput(selectedDate));
       }
     }
   };
@@ -125,29 +130,39 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
     if (event.type === 'set' && selectedDate) {
       console.log('Setting harvest date to:', selectedDate);
       setHarvestDate(selectedDate);
+      setHarvestDateInput(formatDateForInput(selectedDate));
     }
   };
 
   // Web-specific date change handlers
   const handleWebPlantingDateChange = (dateString: string) => {
     console.log('Web planting date change:', dateString);
-    if (dateString) {
+    setPlantingDateInput(dateString);
+    
+    if (dateString && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
       const newDate = new Date(dateString + 'T00:00:00');
-      setPlantingDate(newDate);
-      
-      // If harvest date is before the new planting date, adjust it
-      if (harvestDate < newDate) {
-        console.log('Adjusting harvest date to match planting date');
-        setHarvestDate(newDate);
+      if (!isNaN(newDate.getTime())) {
+        setPlantingDate(newDate);
+        
+        // If harvest date is before the new planting date, adjust it
+        if (harvestDate && harvestDate < newDate) {
+          console.log('Adjusting harvest date to match planting date');
+          setHarvestDate(newDate);
+          setHarvestDateInput(dateString);
+        }
       }
     }
   };
 
   const handleWebHarvestDateChange = (dateString: string) => {
     console.log('Web harvest date change:', dateString);
-    if (dateString) {
+    setHarvestDateInput(dateString);
+    
+    if (dateString && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
       const newDate = new Date(dateString + 'T00:00:00');
-      setHarvestDate(newDate);
+      if (!isNaN(newDate.getTime())) {
+        setHarvestDate(newDate);
+      }
     }
   };
 
@@ -184,6 +199,14 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
     }
     if (!irrigationType) {
       Alert.alert('Error', 'Please select an irrigation type');
+      return;
+    }
+    if (!plantingDate || isNaN(plantingDate.getTime())) {
+      Alert.alert('Error', 'Please select a valid planting date');
+      return;
+    }
+    if (!harvestDate || isNaN(harvestDate.getTime())) {
+      Alert.alert('Error', 'Please select a valid harvest date');
       return;
     }
 
@@ -277,6 +300,8 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
     const now = new Date();
     setPlantingDate(now);
     setHarvestDate(now);
+    setPlantingDateInput('');
+    setHarvestDateInput('');
     setShowPlantingDatePicker(false);
     setShowHarvestDatePicker(false);
   };
@@ -287,14 +312,20 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
     onClose();
   };
 
-  const formatDate = (date: Date): string => {
+  const formatDate = (date: Date | null): string => {
+    if (!date || isNaN(date.getTime())) {
+      return 'Select date';
+    }
     const month = date.getMonth() + 1;
     const day = date.getDate();
     const year = date.getFullYear();
     return `${month}/${day}/${year}`;
   };
 
-  const formatDateForInput = (date: Date): string => {
+  const formatDateForInput = (date: Date | null): string => {
+    if (!date || isNaN(date.getTime())) {
+      return '';
+    }
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -549,7 +580,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               {showPlantingDatePicker && Platform.OS === 'ios' && (
                 <View style={styles.datePickerContainer}>
                   <DateTimePicker
-                    value={plantingDate}
+                    value={plantingDate || new Date()}
                     mode="date"
                     display="spinner"
                     onChange={handlePlantingDateChange}
@@ -571,7 +602,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                 <View style={styles.webDatePickerContainer}>
                   <TextInput
                     style={styles.webDateInput}
-                    value={formatDateForInput(plantingDate)}
+                    value={plantingDateInput || formatDateForInput(plantingDate)}
                     onChangeText={handleWebPlantingDateChange}
                     placeholder="YYYY-MM-DD"
                     placeholderTextColor="#999"
@@ -599,11 +630,11 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
               {showHarvestDatePicker && Platform.OS === 'ios' && (
                 <View style={styles.datePickerContainer}>
                   <DateTimePicker
-                    value={harvestDate}
+                    value={harvestDate || new Date()}
                     mode="date"
                     display="spinner"
                     onChange={handleHarvestDateChange}
-                    minimumDate={plantingDate}
+                    minimumDate={plantingDate || undefined}
                     themeVariant="light"
                     style={styles.datePicker}
                   />
@@ -622,7 +653,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                 <View style={styles.webDatePickerContainer}>
                   <TextInput
                     style={styles.webDateInput}
-                    value={formatDateForInput(harvestDate)}
+                    value={harvestDateInput || formatDateForInput(harvestDate)}
                     onChangeText={handleWebHarvestDateChange}
                     placeholder="YYYY-MM-DD"
                     placeholderTextColor="#999"
@@ -630,9 +661,11 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                   <Text style={styles.webDateHint}>
                     Enter date in format: YYYY-MM-DD (e.g., 2024-06-15)
                   </Text>
-                  <Text style={styles.webDateHint}>
-                    Must be on or after planting date: {formatDateForInput(plantingDate)}
-                  </Text>
+                  {plantingDate && (
+                    <Text style={styles.webDateHint}>
+                      Must be on or after planting date: {formatDateForInput(plantingDate)}
+                    </Text>
+                  )}
                 </View>
               )}
             </View>
@@ -654,7 +687,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
       {/* Android date pickers - rendered outside modal content to avoid z-index issues */}
       {showPlantingDatePicker && Platform.OS === 'android' && (
         <DateTimePicker
-          value={plantingDate}
+          value={plantingDate || new Date()}
           mode="date"
           display="default"
           onChange={handlePlantingDateChange}
@@ -663,11 +696,11 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
       
       {showHarvestDatePicker && Platform.OS === 'android' && (
         <DateTimePicker
-          value={harvestDate}
+          value={harvestDate || new Date()}
           mode="date"
           display="default"
           onChange={handleHarvestDateChange}
-          minimumDate={plantingDate}
+          minimumDate={plantingDate || undefined}
         />
       )}
     </Modal>
