@@ -89,18 +89,34 @@ export default function PlantingsScreen() {
   };
 
   const confirmDelete = async (plantingId: string) => {
+    setDeletingId(plantingId);
+    
     try {
-      setDeletingId(plantingId);
-      console.log('Deleting planting:', plantingId);
+      console.log('Attempting to delete planting:', plantingId);
 
-      const { error } = await supabase
+      // Get the current user to ensure we're authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('No authenticated user found');
+        Alert.alert('Error', 'You must be logged in to delete plantings');
+        setDeletingId(null);
+        return;
+      }
+
+      console.log('User authenticated:', user.id);
+
+      // Perform the delete operation
+      const { data, error } = await supabase
         .from('plantings')
         .delete()
-        .eq('id', plantingId);
+        .eq('id', plantingId)
+        .eq('user_id', user.id);
+
+      console.log('Delete response - data:', data, 'error:', error);
 
       if (error) {
         console.error('Error deleting planting:', error);
-        Alert.alert('Error', 'Failed to delete planting. Please try again.');
+        Alert.alert('Error', `Failed to delete planting: ${error.message}`);
       } else {
         console.log('Planting deleted successfully');
         // Remove the deleted planting from the local state
@@ -110,7 +126,7 @@ export default function PlantingsScreen() {
         Alert.alert('Success', 'Planting deleted successfully');
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Unexpected error during delete:', error);
       Alert.alert('Error', 'An unexpected error occurred');
     } finally {
       setDeletingId(null);
@@ -203,7 +219,10 @@ export default function PlantingsScreen() {
                         </Text>
                       </View>
                       <TouchableOpacity
-                        style={styles.deleteButton}
+                        style={[
+                          styles.deleteButton,
+                          deletingId === planting.id && styles.deleteButtonDisabled
+                        ]}
                         onPress={() => handleDeletePlanting(planting)}
                         disabled={deletingId === planting.id}
                       >
@@ -324,6 +343,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(211, 47, 47, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  deleteButtonDisabled: {
+    backgroundColor: 'rgba(211, 47, 47, 0.05)',
+    opacity: 0.5,
   },
   divider: {
     height: 1,
