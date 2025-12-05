@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
+import PremiumGuard from '../../components/PremiumGuard';
 import ProUpsellBanner from '../../components/ProUpsellBanner';
 
 interface Message {
@@ -15,7 +16,7 @@ interface Message {
   timestamp: Date;
 }
 
-export default function AIProblemDiagnosisScreen() {
+function AIProblemDiagnosisContent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -396,6 +397,14 @@ export default function AIProblemDiagnosisScreen() {
         </View>
       </LinearGradient>
     </View>
+  );
+}
+
+export default function AIProblemDiagnosisScreen() {
+  return (
+    <PremiumGuard>
+      <AIProblemDiagnosisContent />
+    </PremiumGuard>
   );
 }
 

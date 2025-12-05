@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platfo
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import PremiumGuard from '../../components/PremiumGuard';
 import ProUpsellBanner from '../../components/ProUpsellBanner';
 
 interface Message {
@@ -13,7 +14,7 @@ interface Message {
   timestamp: Date;
 }
 
-export default function AIPersonalizedAdviceScreen() {
+function AIPersonalizedAdviceContent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -242,6 +243,14 @@ export default function AIPersonalizedAdviceScreen() {
         </View>
       </LinearGradient>
     </View>
+  );
+}
+
+export default function AIPersonalizedAdviceScreen() {
+  return (
+    <PremiumGuard>
+      <AIPersonalizedAdviceContent />
+    </PremiumGuard>
   );
 }
 

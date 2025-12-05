@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import * as Location from 'expo-location';
+import PremiumGuard from '../../components/PremiumGuard';
 import ProUpsellBanner from '../../components/ProUpsellBanner';
 
 interface Message {
@@ -24,7 +25,7 @@ interface WeatherDay {
   precipitation: number;
 }
 
-export default function AIWeatherInsightsScreen() {
+function AIWeatherInsightsContent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -402,6 +403,14 @@ Now, let me provide you with specific farming tasks and recommendations based on
         )}
       </LinearGradient>
     </View>
+  );
+}
+
+export default function AIWeatherInsightsScreen() {
+  return (
+    <PremiumGuard>
+      <AIWeatherInsightsContent />
+    </PremiumGuard>
   );
 }
 
