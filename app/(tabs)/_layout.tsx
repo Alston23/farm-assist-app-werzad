@@ -118,6 +118,20 @@ export default function TabsLayout() {
           href: null,
         }}
       />
+      {/* Hide old messages folder from tab bar */}
+      <Tabs.Screen
+        name="messages"
+        options={{
+          href: null,
+        }}
+      />
+      {/* Hide marketplace-messages from tab bar */}
+      <Tabs.Screen
+        name="marketplace-messages"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
