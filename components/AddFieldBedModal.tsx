@@ -128,6 +128,29 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
     }
   };
 
+  // Web-specific date change handlers
+  const handleWebPlantingDateChange = (dateString: string) => {
+    console.log('Web planting date change:', dateString);
+    if (dateString) {
+      const newDate = new Date(dateString + 'T00:00:00');
+      setPlantingDate(newDate);
+      
+      // If harvest date is before the new planting date, adjust it
+      if (harvestDate < newDate) {
+        console.log('Adjusting harvest date to match planting date');
+        setHarvestDate(newDate);
+      }
+    }
+  };
+
+  const handleWebHarvestDateChange = (dateString: string) => {
+    console.log('Web harvest date change:', dateString);
+    if (dateString) {
+      const newDate = new Date(dateString + 'T00:00:00');
+      setHarvestDate(newDate);
+    }
+  };
+
   const closePlantingDatePicker = () => {
     console.log('Closing planting date picker');
     setShowPlantingDatePicker(false);
@@ -271,14 +294,33 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
     return `${month}/${day}/${year}`;
   };
 
+  const formatDateForInput = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const handlePlantingDatePress = () => {
-    console.log('Planting date button pressed - setting showPlantingDatePicker to true');
-    setShowPlantingDatePicker(true);
+    console.log('Planting date button pressed - Platform:', Platform.OS);
+    if (Platform.OS === 'web') {
+      console.log('Web platform - date input will be shown inline');
+      setShowPlantingDatePicker(!showPlantingDatePicker);
+    } else {
+      console.log('Native platform - setting showPlantingDatePicker to true');
+      setShowPlantingDatePicker(true);
+    }
   };
 
   const handleHarvestDatePress = () => {
-    console.log('Harvest date button pressed - setting showHarvestDatePicker to true');
-    setShowHarvestDatePicker(true);
+    console.log('Harvest date button pressed - Platform:', Platform.OS);
+    if (Platform.OS === 'web') {
+      console.log('Web platform - date input will be shown inline');
+      setShowHarvestDatePicker(!showHarvestDatePicker);
+    } else {
+      console.log('Native platform - setting showHarvestDatePicker to true');
+      setShowHarvestDatePicker(true);
+    }
   };
 
   return (
@@ -503,6 +545,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                 </Text>
               </TouchableOpacity>
               
+              {/* iOS Native Date Picker */}
               {showPlantingDatePicker && Platform.OS === 'ios' && (
                 <View style={styles.datePickerContainer}>
                   <DateTimePicker
@@ -522,6 +565,22 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                   </TouchableOpacity>
                 </View>
               )}
+
+              {/* Web Date Picker Fallback */}
+              {showPlantingDatePicker && Platform.OS === 'web' && (
+                <View style={styles.webDatePickerContainer}>
+                  <TextInput
+                    style={styles.webDateInput}
+                    value={formatDateForInput(plantingDate)}
+                    onChangeText={handleWebPlantingDateChange}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#999"
+                  />
+                  <Text style={styles.webDateHint}>
+                    Enter date in format: YYYY-MM-DD (e.g., 2024-03-15)
+                  </Text>
+                </View>
+              )}
             </View>
 
             <View style={styles.section}>
@@ -536,6 +595,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                 </Text>
               </TouchableOpacity>
               
+              {/* iOS Native Date Picker */}
               {showHarvestDatePicker && Platform.OS === 'ios' && (
                 <View style={styles.datePickerContainer}>
                   <DateTimePicker
@@ -554,6 +614,25 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess }: AddFie
                   >
                     <Text style={styles.datePickerDoneText}>Done</Text>
                   </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Web Date Picker Fallback */}
+              {showHarvestDatePicker && Platform.OS === 'web' && (
+                <View style={styles.webDatePickerContainer}>
+                  <TextInput
+                    style={styles.webDateInput}
+                    value={formatDateForInput(harvestDate)}
+                    onChangeText={handleWebHarvestDateChange}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#999"
+                  />
+                  <Text style={styles.webDateHint}>
+                    Enter date in format: YYYY-MM-DD (e.g., 2024-06-15)
+                  </Text>
+                  <Text style={styles.webDateHint}>
+                    Must be on or after planting date: {formatDateForInput(plantingDate)}
+                  </Text>
                 </View>
               )}
             </View>
@@ -803,6 +882,30 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  webDatePickerContainer: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#4A7C2C',
+  },
+  webDateInput: {
+    borderWidth: 1,
+    borderColor: '#4A7C2C',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#fff',
+    color: '#333',
+    marginBottom: 8,
+  },
+  webDateHint: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   saveButton: {
     backgroundColor: '#4A7C2C',
