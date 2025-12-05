@@ -14,7 +14,11 @@ import { syncProFromProfile } from '../lib/subscriptions';
  * - Manually set Pro status to false (for testing)
  * - Refresh Pro status from Supabase
  * 
- * IMPORTANT: Remove this component or hide it before production release!
+ * IMPORTANT: This component is only visible in development builds (__DEV__ = true)
+ * It will not appear in production builds.
+ * 
+ * Usage: Wrap this component in a __DEV__ check:
+ * {__DEV__ && <SubscriptionDebugPanel />}
  */
 export default function SubscriptionDebugPanel() {
   const { user, isPro, profile, refreshProfile } = useAuth();
@@ -91,7 +95,7 @@ export default function SubscriptionDebugPanel() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>🔧 Subscription Debug Panel</Text>
-      <Text style={styles.warning}>⚠️ Remove before production!</Text>
+      <Text style={styles.warning}>⚠️ Development Only (Hidden in Production)</Text>
       
       <View style={styles.statusContainer}>
         <Text style={styles.statusLabel}>Current Status:</Text>

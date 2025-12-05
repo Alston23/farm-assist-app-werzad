@@ -203,8 +203,8 @@ export default function CropsScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" />
           }
         >
-          {/* Debug Panel - REMOVE BEFORE PRODUCTION */}
-          <SubscriptionDebugPanel />
+          {/* Debug Panel - Only visible in development builds */}
+          {__DEV__ && <SubscriptionDebugPanel />}
 
           <TouchableOpacity
             style={styles.addButton}
