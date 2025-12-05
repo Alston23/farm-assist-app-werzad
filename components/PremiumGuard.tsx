@@ -1,23 +1,24 @@
 
-import React, { useEffect } from 'react';
-import { useRouter } from 'expo-router';
+import React from 'react';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import PaywallScreen from '../app/paywall';
 
 interface PremiumGuardProps {
   children: React.ReactNode;
 }
 
+/**
+ * PremiumGuard component that protects premium content
+ * 
+ * If the user has an active subscription, renders the children
+ * If not, shows the paywall inline instead of redirecting
+ * 
+ * This provides a better UX as users can upgrade and immediately
+ * access the content without navigation issues
+ */
 export default function PremiumGuard({ children }: PremiumGuardProps) {
   const { hasActiveSubscription, loading } = useSubscription();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && !hasActiveSubscription) {
-      console.log('PremiumGuard: No active subscription, redirecting to paywall');
-      router.replace('/paywall');
-    }
-  }, [hasActiveSubscription, loading, router]);
 
   if (loading) {
     return (
@@ -27,10 +28,13 @@ export default function PremiumGuard({ children }: PremiumGuardProps) {
     );
   }
 
+  // Show paywall inline if user doesn't have active subscription
   if (!hasActiveSubscription) {
-    return null;
+    console.log('PremiumGuard: No active subscription, showing paywall');
+    return <PaywallScreen />;
   }
 
+  // User has active subscription, show protected content
   return <>{children}</>;
 }
 

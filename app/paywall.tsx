@@ -19,7 +19,7 @@ const features: Feature[] = [
 
 export default function PaywallScreen() {
   const router = useRouter();
-  const { activateSubscription } = useSubscription();
+  const { activateSubscription, refreshSubscription } = useSubscription();
   const [purchasing, setPurchasing] = useState(false);
 
   const handlePurchase = async () => {
@@ -44,7 +44,10 @@ export default function PaywallScreen() {
       // Activate the subscription
       await activateSubscription();
       
-      console.log('Paywall: Purchase successful');
+      // Refresh subscription status to update the UI
+      await refreshSubscription();
+      
+      console.log('Paywall: Purchase successful, subscription activated');
       
       Alert.alert(
         'Welcome to Farm Copilot Pro! 🎉',
@@ -53,8 +56,9 @@ export default function PaywallScreen() {
           {
             text: 'Get Started',
             onPress: () => {
-              console.log('Paywall: Navigating back after purchase');
-              router.back();
+              console.log('Paywall: User acknowledged purchase success');
+              // The PremiumGuard will automatically show the protected content
+              // since hasActiveSubscription is now true
             },
           },
         ]
@@ -73,7 +77,7 @@ export default function PaywallScreen() {
 
   const handleMaybeLater = () => {
     console.log('Paywall: Maybe later button pressed');
-    // Just dismiss the paywall and go back to the main tabs
+    // Navigate back to the Crops tab
     router.replace("/(tabs)/crops");
   };
 

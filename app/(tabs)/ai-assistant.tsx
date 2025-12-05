@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
-import PremiumGuard from '../../components/PremiumGuard';
+import { useProStatus } from '../../hooks/useProStatus';
 
 interface Message {
   id: string;
@@ -39,22 +39,25 @@ const quickActions: QuickAction[] = [
     icon: '🔍',
     title: 'Identify Plant Issues',
     prompt: 'I need help diagnosing a problem with my crops. Can you help me identify what might be wrong?',
+    isPremium: false,
   },
   {
     id: 'weather-insights',
     icon: '🌤️',
     title: 'Weather Insights',
     prompt: 'Show me the weather forecast and suggest tasks I should complete based on upcoming conditions.',
+    isPremium: false,
   },
   {
     id: 'personalized-advice',
     icon: '👨‍🌾',
     title: 'Personalized Advice',
     prompt: 'Can you provide personalized advice for my farm based on my current crops and fields?',
+    isPremium: true,
   },
 ];
 
-function AIAssistantContent() {
+export default function AIAssistantScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -64,6 +67,7 @@ function AIAssistantContent() {
   const scrollViewRef = useRef<ScrollView>(null);
   const { signOut } = useAuth();
   const router = useRouter();
+  const { isPro, loading: proLoading } = useProStatus();
 
   // Reset to Quick Actions page whenever the screen comes into focus
   useFocusEffect(
@@ -262,8 +266,54 @@ function AIAssistantContent() {
     }
   };
 
+  const isAdvancedQuery = (text: string): boolean => {
+    // Check if the query is asking for advanced features
+    const advancedKeywords = [
+      'recommend crop',
+      'crop recommendation',
+      'yield optimization',
+      'optimize yield',
+      'planting plan',
+      'fertilizer plan',
+      'revenue',
+      'profit',
+      'market price',
+      'sales forecast',
+      'personalized',
+      'my farm data',
+      'my fields',
+      'my crops',
+      'rotation plan',
+    ];
+
+    const lowerText = text.toLowerCase();
+    return advancedKeywords.some(keyword => lowerText.includes(keyword));
+  };
+
   const sendMessage = async (text: string, imageUri?: string) => {
     if ((!text.trim() && !imageUri) || loading) return;
+
+    // Check if this is an advanced query and user is not Pro
+    if (!isPro && isAdvancedQuery(text)) {
+      console.log('AI Assistant: Advanced query detected, user is not Pro, showing paywall');
+      Alert.alert(
+        'Upgrade to Farm Copilot Pro',
+        'This advanced feature requires a Pro subscription. Upgrade now to get personalized recommendations based on your farm data!',
+        [
+          {
+            text: 'Maybe Later',
+            style: 'cancel',
+          },
+          {
+            text: 'Upgrade Now',
+            onPress: () => {
+              router.push('/paywall');
+            },
+          },
+        ]
+      );
+      return;
+    }
 
     let imageUrl: string | null = null;
 
@@ -304,6 +354,7 @@ function AIAssistantContent() {
           })),
           userContext: context,
           imageUrl: imageUrl,
+          isPro: isPro, // Pass Pro status to the AI function
         },
       });
 
@@ -339,11 +390,36 @@ function AIAssistantContent() {
   const handleQuickAction = (action: QuickAction) => {
     console.log('AI Assistant: Quick action pressed:', action.title);
     
-    // Navigate to dedicated pages for premium actions
+    // Check if this is a premium action and user is not Pro
+    if (action.isPremium && !isPro) {
+      console.log('AI Assistant: Premium action, user is not Pro, showing paywall');
+      Alert.alert(
+        'Upgrade to Farm Copilot Pro',
+        'This advanced feature requires a Pro subscription. Upgrade now to unlock personalized recommendations!',
+        [
+          {
+            text: 'Maybe Later',
+            style: 'cancel',
+          },
+          {
+            text: 'Upgrade Now',
+            onPress: () => {
+              router.push('/paywall');
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    // Navigate to dedicated pages for premium actions (if Pro)
     if (action.isPremium) {
       switch (action.id) {
         case 'crop-recommendation':
           router.push('/(tabs)/ai-crop-recommendations');
+          break;
+        case 'personalized-advice':
+          router.push('/(tabs)/ai-personalized-advice');
           break;
         default:
           console.log('Unknown premium action:', action.id);
@@ -356,9 +432,6 @@ function AIAssistantContent() {
           break;
         case 'weather-insights':
           router.push('/(tabs)/ai-weather-insights');
-          break;
-        case 'personalized-advice':
-          router.push('/(tabs)/ai-personalized-advice');
           break;
         default:
           console.log('Unknown quick action:', action.id);
@@ -429,9 +502,20 @@ function AIAssistantContent() {
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>🤖 AI Assistant</Text>
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.7}>
-          <Text style={styles.signOutButtonText}>Sign Out</Text>
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          {!proLoading && !isPro && (
+            <TouchableOpacity 
+              style={styles.upgradeButton} 
+              onPress={() => router.push('/paywall')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.upgradeButtonText}>⭐ Upgrade</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.7}>
+            <Text style={styles.signOutButtonText}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       <LinearGradient colors={['#2D5016', '#4A7C2C', '#6BA542']} style={styles.gradient}>
         <KeyboardAvoidingView
@@ -451,6 +535,13 @@ function AIAssistantContent() {
                 <Text style={styles.welcomeText}>
                   I&apos;m here to help you with crop recommendations, plant issue diagnosis, weather insights, and personalized farming advice. You can also upload images to identify weeds, pests, or diseases!
                 </Text>
+                {!isPro && (
+                  <View style={styles.freeUserNotice}>
+                    <Text style={styles.freeUserNoticeText}>
+                      🆓 Free users can ask basic questions. Upgrade to Pro for advanced recommendations based on your farm data!
+                    </Text>
+                  </View>
+                )}
                 <Text style={styles.welcomeSubtext}>Choose a quick action below or ask me anything:</Text>
 
                 <View style={styles.quickActionsGrid}>
@@ -585,14 +676,6 @@ function AIAssistantContent() {
   );
 }
 
-export default function AIAssistantScreen() {
-  return (
-    <PremiumGuard>
-      <AIAssistantContent />
-    </PremiumGuard>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -611,6 +694,21 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  upgradeButton: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  upgradeButtonText: {
+    color: '#2D5016',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
   signOutButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -662,6 +760,20 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     textAlign: 'center',
     marginBottom: 16,
+  },
+  freeUserNotice: {
+    backgroundColor: '#FFF9E6',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FFD700',
+  },
+  freeUserNoticeText: {
+    fontSize: 14,
+    color: '#2D5016',
+    textAlign: 'center',
+    lineHeight: 20,
   },
   welcomeSubtext: {
     fontSize: 14,
