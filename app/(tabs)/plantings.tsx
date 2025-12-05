@@ -72,40 +72,28 @@ export default function PlantingsScreen() {
     fetchPlantings();
   };
 
-  const handleDeletePlanting = (plantingId: string) => {
-    Alert.alert(
-      "Delete Planting",
-      "Are you sure you want to delete this planting?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => confirmDelete(plantingId),
-        },
-      ]
-    );
-  };
-
-  const confirmDelete = async (plantingId: string) => {
+  const deletePlanting = async (id: string | number) => {
     try {
-      console.log("Deleting planting", plantingId);
+      // Optimistically update UI by removing the planting from local state
+      setPlantings(prev => prev.filter(p => String(p.id) !== String(id)));
+
+      // Delete from Supabase
       const { error } = await supabase
         .from("plantings")
         .delete()
-        .eq("id", plantingId);
+        .eq("id", id);
 
       if (error) {
-        console.error("Delete error:", error);
-        Alert.alert("Error", "Failed to delete planting.");
-        return;
+        console.error(error);
+        Alert.alert("Error", "Failed to delete planting from server.");
+        // Reload data to restore the item if delete failed
+        await fetchPlantings();
       }
-
-      // reload list from Supabase
+    } catch (e) {
+      console.error(e);
+      Alert.alert("Error", "Unexpected error deleting planting.");
+      // Reload data to restore the item if delete failed
       await fetchPlantings();
-    } catch (err) {
-      console.error("Unexpected delete error:", err);
-      Alert.alert("Error", "Something went wrong while deleting.");
     }
   };
 
@@ -196,7 +184,7 @@ export default function PlantingsScreen() {
                       </View>
                       <TouchableOpacity
                         style={styles.deleteButton}
-                        onPress={() => handleDeletePlanting(planting.id)}
+                        onPress={() => deletePlanting(planting.id)}
                       >
                         <Ionicons name="trash-outline" size={22} color="#d32f2f" />
                       </TouchableOpacity>
