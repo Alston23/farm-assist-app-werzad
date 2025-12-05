@@ -351,6 +351,11 @@ export default function AIAssistantScreen() {
     try {
       const context = await getUserContext();
 
+      console.log('Sending message to AI assistant...');
+      console.log('Message:', text.trim() || 'Please analyze this image.');
+      console.log('Has image:', !!imageUrl);
+      console.log('Is Pro:', isPro);
+
       const { data, error } = await supabase.functions.invoke('ai-assistant', {
         body: {
           message: text.trim() || 'Please analyze this image and help me identify any weeds, pest damage, or plant diseases.',
@@ -361,13 +366,24 @@ export default function AIAssistantScreen() {
           })),
           userContext: context,
           imageUrl: imageUrl,
-          isPro: isPro, // Pass Pro status to the AI function
+          isPro: isPro,
         },
       });
 
       if (error) {
+        console.error('Error from AI assistant edge function:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         throw error;
       }
+
+      if (!data || !data.response) {
+        console.error('No response data from AI assistant');
+        console.error('Full data object:', JSON.stringify(data, null, 2));
+        throw new Error('No response received from AI assistant');
+      }
+
+      console.log('Successfully received AI response');
+      console.log('Response length:', data.response.length);
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -379,16 +395,41 @@ export default function AIAssistantScreen() {
       setMessages((prev) => [...prev, assistantMessage]);
       await saveMessage('assistant', data.response);
     } catch (error: any) {
-      console.error('Error sending message:', error);
-      Alert.alert('Error', 'Failed to get response from AI assistant. Please try again.');
+      console.error('Error sending message to AI assistant:', error);
+      console.error('Error name:', error?.name);
+      console.error('Error message:', error?.message);
+      console.error('Error stack:', error?.stack);
+      
+      let errorMessage = 'I apologize, but I encountered an error processing your request. Please try again.';
+      let shouldShowAlert = true;
 
-      const errorMessage: Message = {
+      // Check for specific error types
+      if (error?.message?.includes('AI service is not configured')) {
+        errorMessage = 'The AI service is currently not configured. Please contact support.';
+        Alert.alert('Configuration Error', 'The AI assistant is not properly configured. Please contact support for assistance.');
+        shouldShowAlert = false;
+      } else if (error?.message?.includes('Unauthorized')) {
+        errorMessage = 'Authentication error. Please try signing out and back in.';
+        Alert.alert('Authentication Error', 'There was an authentication issue. Please try signing out and back in.');
+        shouldShowAlert = false;
+      } else if (error?.message?.includes('AI service error')) {
+        errorMessage = 'The AI service encountered an error. Please try again in a moment.';
+      }
+
+      if (shouldShowAlert) {
+        Alert.alert(
+          'Error', 
+          'Failed to get response from AI assistant. Please check your internet connection and try again.'
+        );
+      }
+
+      const errorMessageObj: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'I apologize, but I encountered an error processing your request. Please try again.',
+        content: errorMessage,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessageObj]);
     } finally {
       setLoading(false);
     }
