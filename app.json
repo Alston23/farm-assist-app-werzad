@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "FarmAssist",
@@ -18,10 +19,11 @@
       "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "This app uses the camera to take photos of your crops for AI-powered plant health analysis.",
-        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select crop images for analysis.",
-        "NSPhotoLibraryAddUsageDescription": "This app needs permission to save crop photos to your photo library.",
-        "NSLocationWhenInUseUsageDescription": "This app needs your location to provide accurate weather forecasts and farming recommendations for your area."
+        "NSCameraUsageDescription": "Farm Copilot uses the camera to identify plant issues and attach photos to AI questions.",
+        "NSPhotoLibraryUsageDescription": "Farm Copilot needs access to your photo library to select crop images for AI-powered plant health analysis.",
+        "NSPhotoLibraryAddUsageDescription": "Farm Copilot needs permission to save crop photos to your photo library.",
+        "NSLocationWhenInUseUsageDescription": "Farm Copilot uses your location for weather-aware recommendations and alerts.",
+        "NSUserNotificationsUsageDescription": "Farm Copilot sends reminders for tasks, planting dates, and weather alerts."
       },
       "icon": "./assets/images/icon.png"
     },
@@ -53,14 +55,14 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "This app uses your photos to analyze crop health and conditions.",
-          "cameraPermission": "This app uses the camera to take photos of your crops for AI-powered analysis."
+          "photosPermission": "Farm Copilot uses your photos to analyze crop health and conditions.",
+          "cameraPermission": "Farm Copilot uses the camera to identify plant issues and attach photos to AI questions."
         }
       ],
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow FarmAssist to use your location to provide accurate weather forecasts and farming recommendations for your area."
+          "locationAlwaysAndWhenInUsePermission": "Farm Copilot uses your location for weather-aware recommendations and alerts."
         }
       ],
       [
