@@ -113,6 +113,12 @@ async function handleSuccessfulPurchase(purchase: InAppPurchases.InAppPurchase):
  * Start the purchase flow for the Pro subscription
  */
 export async function purchasePro(): Promise<void> {
+  // Guard: Disable IAP in Expo Go / Natively preview
+  if (Constants.appOwnership === 'expo') {
+    console.log('IAP disabled in Expo Go');
+    return;
+  }
+
   try {
     console.log('Subscriptions: Starting purchase flow');
     
@@ -162,6 +168,12 @@ export async function purchasePro(): Promise<void> {
  * Restore previous purchases and update Pro status if subscription is active
  */
 export async function restoreProStatus(): Promise<void> {
+  // Guard: Disable IAP in Expo Go / Natively preview
+  if (Constants.appOwnership === 'expo') {
+    console.log('IAP disabled in Expo Go');
+    return;
+  }
+
   try {
     console.log('Subscriptions: Restoring purchases');
     
@@ -274,6 +286,12 @@ export async function syncProFromProfile(): Promise<void> {
  * Disconnect from the store (call on app cleanup)
  */
 export async function disconnectSubscriptions(): Promise<void> {
+  // Guard: Disable IAP in Expo Go / Natively preview
+  if (Constants.appOwnership === 'expo') {
+    console.log('IAP disabled in Expo Go');
+    return;
+  }
+
   try {
     if (purchaseUpdateSubscription) {
       purchaseUpdateSubscription.remove();
