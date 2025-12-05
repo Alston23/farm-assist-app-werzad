@@ -57,6 +57,14 @@ const quickActions: QuickAction[] = [
   },
 ];
 
+// Mapping for quick action prompts as specified in the requirements
+const AI_PROMPT_MAP: Record<string, string> = {
+  'crop-recommendation': "Use my farm's data to recommend what crops I should plant next.",
+  'identify-plant-issues': "Help me diagnose plant problems.",
+  'weather-insights': "Give me weather insights for my farm this week.",
+  'personalized-advice': "Give me personalized farm advice.",
+};
+
 export default function AIAssistantScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -65,6 +73,7 @@ export default function AIAssistantScreen() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  const inputRef = useRef<TextInput>(null);
   const { signOut } = useAuth();
   const router = useRouter();
   const { isPro, loading: proLoading } = useProStatus();
@@ -389,146 +398,30 @@ export default function AIAssistantScreen() {
     router.push('/paywall');
   };
 
-  const buildQuickActionPrompt = async (type: 'crop' | 'diagnosis' | 'weather' | 'advice'): Promise<string> => {
-    const context = await getUserContext();
+  const handleQuickAction = (actionId: string) => {
+    console.log('AI Assistant: Quick action pressed:', actionId);
     
-    switch (type) {
-      case 'crop':
-        // Advanced crop planning prompt using the user's farm data
-        let cropPrompt = 'Based on my farm data, please provide advanced crop recommendations:\n\n';
-        
-        if (context?.fields && context.fields.length > 0) {
-          cropPrompt += 'My Fields:\n';
-          context.fields.forEach((field: any) => {
-            cropPrompt += `- ${field.name}: ${field.area_value} ${field.area_unit}, ${field.soil_type} soil, ${field.irrigation_type} irrigation\n`;
-          });
-          cropPrompt += '\n';
-        }
-        
-        if (context?.plantings && context.plantings.length > 0) {
-          cropPrompt += 'Current/Recent Plantings:\n';
-          context.plantings.forEach((planting: any) => {
-            cropPrompt += `- ${planting.crop_name}: planted ${planting.planting_date}, harvest ${planting.harvest_date}\n`;
-          });
-          cropPrompt += '\n';
-        }
-        
-        cropPrompt += 'Please recommend:\n';
-        cropPrompt += '1. What crops I should plant next based on my soil types and irrigation\n';
-        cropPrompt += '2. Optimal planting schedule for the upcoming season\n';
-        cropPrompt += '3. Crop rotation suggestions to maintain soil health\n';
-        cropPrompt += '4. Expected yields and space optimization tips';
-        
-        return cropPrompt;
-        
-      case 'diagnosis':
-        // Plant-problem diagnosis prompt
-        let diagnosisPrompt = 'I need help diagnosing potential issues with my crops.\n\n';
-        
-        if (selectedImage) {
-          diagnosisPrompt += 'I have attached an image of the plant showing the problem. ';
-        }
-        
-        if (context?.plantings && context.plantings.length > 0) {
-          diagnosisPrompt += 'My current crops include:\n';
-          context.plantings.forEach((planting: any) => {
-            diagnosisPrompt += `- ${planting.crop_name}\n`;
-          });
-          diagnosisPrompt += '\n';
-        }
-        
-        diagnosisPrompt += 'Please help me:\n';
-        diagnosisPrompt += '1. Identify any visible pests, diseases, or nutrient deficiencies\n';
-        diagnosisPrompt += '2. Suggest immediate treatment options\n';
-        diagnosisPrompt += '3. Recommend preventive measures for the future\n';
-        diagnosisPrompt += '4. Advise on whether this issue might affect other crops';
-        
-        return diagnosisPrompt;
-        
-      case 'weather':
-        // Weather risk + irrigation/planting adjustment prompt
-        let weatherPrompt = 'Please provide weather-based farming insights for my operation:\n\n';
-        
-        if (context?.fields && context.fields.length > 0) {
-          weatherPrompt += 'My irrigation systems:\n';
-          const irrigationTypes = new Set(context.fields.map((f: any) => f.irrigation_type));
-          irrigationTypes.forEach((type: any) => {
-            weatherPrompt += `- ${type}\n`;
-          });
-          weatherPrompt += '\n';
-        }
-        
-        if (context?.plantings && context.plantings.length > 0) {
-          weatherPrompt += 'Current crops:\n';
-          context.plantings.forEach((planting: any) => {
-            weatherPrompt += `- ${planting.crop_name}\n`;
-          });
-          weatherPrompt += '\n';
-        }
-        
-        weatherPrompt += 'Please advise on:\n';
-        weatherPrompt += '1. Weather risks I should prepare for this week\n';
-        weatherPrompt += '2. Irrigation adjustments based on forecasted conditions\n';
-        weatherPrompt += '3. Optimal timing for planting or harvesting activities\n';
-        weatherPrompt += '4. Protective measures I should take for my crops';
-        
-        return weatherPrompt;
-        
-      case 'advice':
-        // Top 3-5 priorities for the farm this week
-        let advicePrompt = 'Based on my complete farm data, what are the top 3-5 priorities I should focus on this week?\n\n';
-        
-        if (context?.fields && context.fields.length > 0) {
-          advicePrompt += 'My Fields:\n';
-          context.fields.forEach((field: any) => {
-            advicePrompt += `- ${field.name}: ${field.area_value} ${field.area_unit}\n`;
-          });
-          advicePrompt += '\n';
-        }
-        
-        if (context?.plantings && context.plantings.length > 0) {
-          advicePrompt += 'Current Plantings:\n';
-          context.plantings.forEach((planting: any) => {
-            const daysUntilHarvest = Math.ceil((new Date(planting.harvest_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-            advicePrompt += `- ${planting.crop_name}: ${daysUntilHarvest > 0 ? `${daysUntilHarvest} days until harvest` : 'ready to harvest'}\n`;
-          });
-          advicePrompt += '\n';
-        }
-        
-        advicePrompt += 'Please provide:\n';
-        advicePrompt += '1. Urgent tasks that need immediate attention\n';
-        advicePrompt += '2. Maintenance activities I should schedule\n';
-        advicePrompt += '3. Opportunities to optimize yields or revenue\n';
-        advicePrompt += '4. Preparation tasks for upcoming planting or harvest\n';
-        advicePrompt += '5. Any seasonal considerations specific to my crops';
-        
-        return advicePrompt;
-        
-      default:
-        return 'How can I help you with your farm today?';
-    }
-  };
-
-  const handleQuickAction = async (type: 'crop' | 'diagnosis' | 'weather' | 'advice') => {
     // Check if user is Pro
     if (!isPro) {
+      console.log('AI Assistant: User is not Pro, navigating to paywall');
       handleUpgradePress();
       return;
     }
     
-    // User is Pro - build and send the appropriate prompt
-    try {
-      const prompt = await buildQuickActionPrompt(type);
+    // User is Pro - pre-fill the chat input with the appropriate prompt
+    console.log('AI Assistant: User is Pro, pre-filling chat input');
+    const prompt = AI_PROMPT_MAP[actionId];
+    
+    if (prompt) {
+      setInputText(prompt);
+      setShowQuickActions(false);
       
-      // For diagnosis, if there's a selected image, include it
-      if (type === 'diagnosis' && selectedImage) {
-        await sendMessage(prompt, selectedImage);
-      } else {
-        await sendMessage(prompt);
-      }
-    } catch (error) {
-      console.error('AI Assistant: Error handling quick action:', error);
-      Alert.alert('Error', 'Failed to process your request. Please try again.');
+      // Focus the input after a short delay to ensure the UI has updated
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    } else {
+      console.error('AI Assistant: No prompt found for action:', actionId);
     }
   };
 
@@ -648,17 +541,7 @@ export default function AIAssistantScreen() {
                         styles.quickActionCard,
                         action.isPremium && styles.premiumActionCard,
                       ]}
-                      onPress={() => {
-                        if (action.id === 'crop-recommendation') {
-                          handleQuickAction('crop');
-                        } else if (action.id === 'identify-plant-issues') {
-                          handleQuickAction('diagnosis');
-                        } else if (action.id === 'weather-insights') {
-                          handleQuickAction('weather');
-                        } else if (action.id === 'personalized-advice') {
-                          handleQuickAction('advice');
-                        }
-                      }}
+                      onPress={() => handleQuickAction(action.id)}
                       activeOpacity={0.7}
                     >
                       {action.isPremium && !isPro && (
@@ -750,6 +633,7 @@ export default function AIAssistantScreen() {
                 <Text style={styles.imageButtonText}>📷</Text>
               </TouchableOpacity>
               <TextInput
+                ref={inputRef}
                 style={styles.input}
                 placeholder="Ask me anything about farming..."
                 placeholderTextColor="#999"
