@@ -84,6 +84,23 @@ export default function InventoryScreen() {
   const [packagingModalVisible, setPackagingModalVisible] = useState(false);
   const [editingPackaging, setEditingPackaging] = useState<Packaging | undefined>();
 
+  // Navigation handlers for section header Edit buttons
+  const handleEditStorageSection = () => {
+    router.push('/storage-locations');
+  };
+
+  const handleEditFertilizersSection = () => {
+    router.push('/fertilizers');
+  };
+
+  const handleEditSeedsSection = () => {
+    router.push('/seeds');
+  };
+
+  const handleEditTransplantsSection = () => {
+    router.push('/transplants');
+  };
+
   const fetchAllData = async () => {
     if (!user) return;
 
@@ -346,7 +363,7 @@ export default function InventoryScreen() {
               <View style={styles.headerButtons}>
                 <TouchableOpacity
                   style={styles.editHeaderButton}
-                  onPress={() => router.push('/storage-locations')}
+                  onPress={handleEditStorageSection}
                 >
                   <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
                 </TouchableOpacity>
@@ -416,7 +433,7 @@ export default function InventoryScreen() {
               <View style={styles.headerButtons}>
                 <TouchableOpacity
                   style={styles.editHeaderButton}
-                  onPress={() => router.push('/fertilizers')}
+                  onPress={handleEditFertilizersSection}
                 >
                   <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
                 </TouchableOpacity>
@@ -474,7 +491,7 @@ export default function InventoryScreen() {
               <View style={styles.headerButtons}>
                 <TouchableOpacity
                   style={styles.editHeaderButton}
-                  onPress={() => router.push('/seeds')}
+                  onPress={handleEditSeedsSection}
                 >
                   <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
                 </TouchableOpacity>
@@ -531,7 +548,7 @@ export default function InventoryScreen() {
               <View style={styles.headerButtons}>
                 <TouchableOpacity
                   style={styles.editHeaderButton}
-                  onPress={() => router.push('/transplants')}
+                  onPress={handleEditTransplantsSection}
                 >
                   <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
                 </TouchableOpacity>
