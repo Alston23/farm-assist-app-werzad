@@ -383,20 +383,6 @@ export default function AIAssistantScreen() {
     );
   };
 
-  const handleBack = () => {
-    console.log('AI Assistant: Back button pressed');
-    
-    // If we're in a chat conversation, go back to Quick Actions
-    if (!showQuickActions && messages.length > 0) {
-      console.log('AI Assistant: Navigating back to Quick Actions from chat');
-      setShowQuickActions(true);
-      // Don't clear messages - just show the Quick Actions overlay
-    } else {
-      // Already on Quick Actions page
-      console.log('AI Assistant: Already on Quick Actions page');
-    }
-  };
-
   const handleSignOut = async () => {
     console.log('AI Assistant: Sign out button pressed');
     Alert.alert(
@@ -431,9 +417,6 @@ export default function AIAssistantScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>🤖 AI Assistant</Text>
         <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.7}>
           <Text style={styles.signOutButtonText}>Sign Out</Text>
@@ -596,17 +579,6 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? 48 : 60,
     paddingBottom: 16,
     backgroundColor: '#2D5016',
-  },
-  backButton: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  backButtonText: {
-    color: '#2D5016',
-    fontWeight: '600',
-    fontSize: 14,
   },
   headerTitle: {
     fontSize: 20,
