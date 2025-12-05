@@ -1,50 +1,30 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useAuth } from '../contexts/AuthContext';
+import { router } from 'expo-router';
+import { supabase } from '../lib/supabase';
 
 interface PageHeaderProps {
   title: string;
 }
 
 export default function PageHeader({ title }: PageHeaderProps) {
-  const { signOut } = useAuth();
-
-  const handleSignOut = async () => {
-    console.log('PageHeader: Sign out button pressed');
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-          onPress: () => console.log('PageHeader: Sign out cancelled'),
-        },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              console.log('PageHeader: User confirmed sign out, calling signOut');
-              await signOut();
-              console.log('PageHeader: Sign out complete');
-            } catch (error: any) {
-              console.error('PageHeader: Sign out failed:', error);
-              Alert.alert('Notice', 'You have been signed out. If you experience issues, please restart the app.');
-            }
-          },
-        },
-      ]
-    );
-  };
-
   return (
     <View style={styles.header}>
       <Text style={styles.title}>{title}</Text>
       <TouchableOpacity 
         style={styles.signOutButton} 
-        onPress={handleSignOut}
+        onPress={async () => {
+          try {
+            console.log("Sign out button pressed");
+            await supabase.auth.signOut();
+            console.log("User signed out");
+            router.replace("/auth");
+          } catch (err) {
+            console.error("Logout error", err);
+            Alert.alert("Error", "Failed to sign out.");
+          }
+        }}
         activeOpacity={0.7}
       >
         <Text style={styles.signOutButtonText}>Sign Out</Text>
