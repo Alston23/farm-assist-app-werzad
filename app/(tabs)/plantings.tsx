@@ -5,7 +5,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import PageHeader from '../../components/PageHeader';
 import EditPlantingModal from '../../components/EditPlantingModal';
+import NotificationPermissionModal from '../../components/NotificationPermissionModal';
 import { supabase } from '../../lib/supabase';
+import { useNotificationCheck } from '../../hooks/useNotificationCheck';
+import { scheduleHarvestReminder } from '../../utils/notificationScheduler';
 
 interface Planting {
   id: string;
@@ -30,6 +33,12 @@ export default function PlantingsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingPlanting, setEditingPlanting] = useState<Planting | null>(null);
+  
+  const {
+    showNotificationModal,
+    checkAndShowModal,
+    closeNotificationModal,
+  } = useNotificationCheck();
 
   useEffect(() => {
     fetchPlantings();
@@ -84,6 +93,34 @@ export default function PlantingsScreen() {
   const handleCloseEditModal = () => {
     setEditModalVisible(false);
     setEditingPlanting(null);
+  };
+
+  const handleSetReminder = async (planting: Planting) => {
+    console.log('Setting reminder for planting:', planting.crop_name);
+    
+    // Check if notifications are enabled
+    const hasPermission = await checkAndShowModal();
+    
+    if (!hasPermission) {
+      console.log('Notification permission not granted, modal shown');
+      return;
+    }
+
+    // Schedule the harvest reminder
+    const harvestDate = new Date(planting.harvest_date);
+    const identifier = await scheduleHarvestReminder(planting.crop_name, harvestDate, 3);
+    
+    if (identifier) {
+      Alert.alert(
+        'Reminder Set',
+        `You'll receive a reminder 3 days before ${planting.crop_name} is ready to harvest.`
+      );
+    } else {
+      Alert.alert(
+        'Unable to Set Reminder',
+        'The harvest date may be too close or in the past.'
+      );
+    }
   };
 
   const deletePlanting = async (id: string | number) => {
@@ -197,6 +234,12 @@ export default function PlantingsScreen() {
                         </Text>
                       </View>
                       <TouchableOpacity
+                        style={styles.reminderButton}
+                        onPress={() => handleSetReminder(planting)}
+                      >
+                        <Ionicons name="notifications-outline" size={22} color="#4A7C2C" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
                         style={styles.editButton}
                         onPress={() => handleEdit(planting)}
                       >
@@ -258,6 +301,12 @@ export default function PlantingsScreen() {
           planting={editingPlanting}
         />
       )}
+
+      <NotificationPermissionModal
+        visible={showNotificationModal}
+        onClose={closeNotificationModal}
+        featureName="harvest reminders"
+      />
     </View>
   );
 }
@@ -321,6 +370,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  reminderButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(74, 124, 44, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   editButton: {
     padding: 8,

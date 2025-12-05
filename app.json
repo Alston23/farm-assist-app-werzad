@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "FarmAssist",
@@ -38,7 +39,8 @@
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "POST_NOTIFICATIONS"
       ],
       "icon": "./assets/images/icon.png"
     },
@@ -60,6 +62,15 @@
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Allow FarmAssist to use your location to provide accurate weather forecasts and farming recommendations for your area."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#2D5016",
+          "defaultChannel": "default",
+          "sounds": []
         }
       ]
     ],
