@@ -1,6 +1,8 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
+import { Alert } from 'react-native';
+import { router } from 'expo-router';
 import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
@@ -102,10 +104,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (error) {
         console.error('AuthContext: Sign out error:', error);
-        // Even with an error, clear local state
+        // Even with an error, clear local state and redirect
         setUser(null);
         setSession(null);
-        throw error;
+        
+        // Show error but still redirect
+        Alert.alert('Notice', 'You have been signed out.');
+        
+        // Navigate to auth screen
+        setTimeout(() => {
+          router.replace('/auth');
+        }, 100);
+        
+        return;
       }
       
       console.log('AuthContext: Sign out successful, clearing local state');
@@ -113,13 +124,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setSession(null);
       
+      console.log('AuthContext: Redirecting to auth screen');
+      // Navigate to auth screen
+      setTimeout(() => {
+        router.replace('/auth');
+      }, 100);
+      
       console.log('AuthContext: Sign out complete');
     } catch (error) {
       console.error('AuthContext: Sign out exception:', error);
       // Always clear local state even if there's an error
       setUser(null);
       setSession(null);
-      throw error;
+      
+      // Show error message
+      Alert.alert('Error', 'Failed to sign out, but local session has been cleared.');
+      
+      // Navigate to auth screen anyway
+      setTimeout(() => {
+        router.replace('/auth');
+      }, 100);
     }
   };
 
