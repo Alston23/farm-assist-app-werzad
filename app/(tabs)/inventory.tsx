@@ -84,23 +84,6 @@ export default function InventoryScreen() {
   const [packagingModalVisible, setPackagingModalVisible] = useState(false);
   const [editingPackaging, setEditingPackaging] = useState<Packaging | undefined>();
 
-  // Navigation handlers for section header Edit buttons
-  const handleEditStorageSection = () => {
-    router.push('/storage-locations');
-  };
-
-  const handleEditFertilizersSection = () => {
-    router.push('/fertilizers');
-  };
-
-  const handleEditSeedsSection = () => {
-    router.push('/seeds');
-  };
-
-  const handleEditTransplantsSection = () => {
-    router.push('/transplants');
-  };
-
   const fetchAllData = async () => {
     if (!user) return;
 
@@ -360,23 +343,15 @@ export default function InventoryScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>🏪 Storage Space</Text>
-              <View style={styles.headerButtons}>
-                <TouchableOpacity
-                  style={styles.editHeaderButton}
-                  onPress={handleEditStorageSection}
-                >
-                  <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={() => {
-                    setEditingStorage(undefined);
-                    setStorageModalVisible(true);
-                  }}
-                >
-                  <Text style={styles.addButtonText}>+ Add</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => {
+                  setEditingStorage(undefined);
+                  setStorageModalVisible(true);
+                }}
+              >
+                <Text style={styles.addButtonText}>+ Add</Text>
+              </TouchableOpacity>
             </View>
 
             {storageLocations.length === 0 ? (
@@ -430,23 +405,15 @@ export default function InventoryScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>🌱 Fertilizers</Text>
-              <View style={styles.headerButtons}>
-                <TouchableOpacity
-                  style={styles.editHeaderButton}
-                  onPress={handleEditFertilizersSection}
-                >
-                  <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={() => {
-                    setEditingFertilizer(undefined);
-                    setFertilizerModalVisible(true);
-                  }}
-                >
-                  <Text style={styles.addButtonText}>+ Add</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => {
+                  setEditingFertilizer(undefined);
+                  setFertilizerModalVisible(true);
+                }}
+              >
+                <Text style={styles.addButtonText}>+ Add</Text>
+              </TouchableOpacity>
             </View>
 
             {fertilizers.length === 0 ? (
@@ -488,23 +455,15 @@ export default function InventoryScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>🌾 Seeds</Text>
-              <View style={styles.headerButtons}>
-                <TouchableOpacity
-                  style={styles.editHeaderButton}
-                  onPress={handleEditSeedsSection}
-                >
-                  <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={() => {
-                    setEditingSeed(undefined);
-                    setSeedModalVisible(true);
-                  }}
-                >
-                  <Text style={styles.addButtonText}>+ Add</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => {
+                  setEditingSeed(undefined);
+                  setSeedModalVisible(true);
+                }}
+              >
+                <Text style={styles.addButtonText}>+ Add</Text>
+              </TouchableOpacity>
             </View>
 
             {seeds.length === 0 ? (
@@ -545,23 +504,15 @@ export default function InventoryScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>🌿 Transplants</Text>
-              <View style={styles.headerButtons}>
-                <TouchableOpacity
-                  style={styles.editHeaderButton}
-                  onPress={handleEditTransplantsSection}
-                >
-                  <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={() => {
-                    setEditingTransplant(undefined);
-                    setTransplantModalVisible(true);
-                  }}
-                >
-                  <Text style={styles.addButtonText}>+ Add</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => {
+                  setEditingTransplant(undefined);
+                  setTransplantModalVisible(true);
+                }}
+              >
+                <Text style={styles.addButtonText}>+ Add</Text>
+              </TouchableOpacity>
             </View>
 
             {transplants.length === 0 ? (
@@ -603,34 +554,15 @@ export default function InventoryScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>📦 Packaging</Text>
-              <View style={styles.headerButtons}>
-                <TouchableOpacity
-                  style={styles.editHeaderButton}
-                  onPress={() => {
-                    if (packaging.length === 0) {
-                      Alert.alert('No Items', 'No packaging items to edit. Please add some first.');
-                      return;
-                    }
-                    const options = packaging.map((item) => ({
-                      text: item.name,
-                      onPress: () => handleEditPackaging(item),
-                    }));
-                    options.push({ text: 'Cancel', onPress: () => {}, style: 'cancel' } as any);
-                    Alert.alert('Edit Packaging', 'Select an item to edit:', options);
-                  }}
-                >
-                  <Text style={styles.editHeaderButtonText}>✏️ Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={() => {
-                    setEditingPackaging(undefined);
-                    setPackagingModalVisible(true);
-                  }}
-                >
-                  <Text style={styles.addButtonText}>+ Add</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => {
+                  setEditingPackaging(undefined);
+                  setPackagingModalVisible(true);
+                }}
+              >
+                <Text style={styles.addButtonText}>+ Add</Text>
+              </TouchableOpacity>
             </View>
 
             {packaging.length === 0 ? (
@@ -765,23 +697,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     flex: 1,
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  editHeaderButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#4A7C2C',
-  },
-  editHeaderButtonText: {
-    color: '#2D5016',
-    fontWeight: 'bold',
-    fontSize: 14,
   },
   addButton: {
     backgroundColor: '#fff',
