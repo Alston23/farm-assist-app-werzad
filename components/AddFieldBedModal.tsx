@@ -203,38 +203,49 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
       editMode: !!editItem,
     });
 
-    console.log('Save button pressed');
-    console.log('Edit mode:', !!editItem);
-    
-    if (!name.trim()) {
-      Alert.alert('Error', 'Please enter a name');
+    // Validate required fields
+    const trimmedName = name.trim();
+    const parsedAreaValue = parseFloat(areaValue);
+
+    if (!trimmedName) {
+      console.log('Fields: validation failed', { name: trimmedName, size: areaValue });
+      Alert.alert('Missing information', 'Please enter a name and size for this field/bed.');
       return;
     }
-    if (!areaValue || parseFloat(areaValue) <= 0) {
-      Alert.alert('Error', 'Please enter a valid area');
+
+    if (!areaValue || isNaN(parsedAreaValue) || parsedAreaValue <= 0) {
+      console.log('Fields: validation failed', { name: trimmedName, size: areaValue });
+      Alert.alert('Missing information', 'Please enter a name and size for this field/bed.');
       return;
     }
+
     if (!soilType) {
-      Alert.alert('Error', 'Please select a soil type');
+      console.log('Fields: validation failed - missing soil type');
+      Alert.alert('Missing information', 'Please select a soil type.');
       return;
     }
+
     if (!irrigationType) {
-      Alert.alert('Error', 'Please select an irrigation type');
+      console.log('Fields: validation failed - missing irrigation type');
+      Alert.alert('Missing information', 'Please select an irrigation type.');
       return;
     }
 
     // If editing, we don't need crop/planting info
     if (!editItem) {
       if (!cropId) {
-        Alert.alert('Error', 'Please select a crop');
+        console.log('Fields: validation failed - missing crop');
+        Alert.alert('Missing information', 'Please select a crop.');
         return;
       }
       if (!plantingDate || isNaN(plantingDate.getTime())) {
-        Alert.alert('Error', 'Please select a valid planting date');
+        console.log('Fields: validation failed - invalid planting date');
+        Alert.alert('Missing information', 'Please select a valid planting date.');
         return;
       }
       if (!harvestDate || isNaN(harvestDate.getTime())) {
-        Alert.alert('Error', 'Please select a valid harvest date');
+        console.log('Fields: validation failed - invalid harvest date');
+        Alert.alert('Missing information', 'Please select a valid harvest date.');
         return;
       }
     }
@@ -249,32 +260,46 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
         return;
       }
 
-      const fieldBedData = {
-        user_id: user.id,
+      // Build payload for fields_beds table
+      const payload: any = {
         type,
-        name: name.trim(),
-        area_value: parseFloat(areaValue),
+        name: trimmedName,
+        area_value: parsedAreaValue,
         area_unit: areaUnit,
         soil_type: soilType,
         irrigation_type: irrigationType,
       };
 
-      if (editItem) {
-        // Update existing field/bed
-        console.log('Updating field/bed...');
-        const { error: updateError } = await supabase
-          .from('fields_beds')
-          .update(fieldBedData)
-          .eq('id', editItem.id);
+      // Only include user_id for insert operations
+      if (!editItem) {
+        payload.user_id = user.id;
+      }
 
-        if (updateError) {
-          console.error('Error updating field/bed:', updateError);
-          Alert.alert('Error', 'Failed to update field/bed');
+      // Add id for update operations
+      if (editItem?.id) {
+        payload.id = editItem.id;
+      }
+
+      console.log('Fields: Saving with payload', payload);
+
+      if (editItem?.id) {
+        // Update existing field/bed
+        console.log('Fields: Updating field/bed with id:', editItem.id);
+        const { data, error } = await supabase
+          .from('fields_beds')
+          .update(payload)
+          .eq('id', editItem.id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Fields: Save error', error);
+          Alert.alert('Error saving field', error.message || 'Something went wrong saving this field/bed.');
           setSaving(false);
           return;
         }
 
-        console.log('Success! Field/bed updated');
+        console.log('Fields: Save success', data);
         Alert.alert(
           'Success',
           `${type === 'field' ? 'Field' : 'Bed'} updated successfully!`,
@@ -286,21 +311,23 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
         );
       } else {
         // Create new field/bed with planting
-        console.log('Creating field/bed...');
+        console.log('Fields: Creating new field/bed');
         const { data: newFieldBed, error: fieldBedError } = await supabase
           .from('fields_beds')
-          .insert(fieldBedData)
+          .insert(payload)
           .select()
           .single();
 
         if (fieldBedError) {
-          console.error('Error creating field/bed:', fieldBedError);
-          Alert.alert('Error', 'Failed to create field/bed');
+          console.error('Fields: Save error', fieldBedError);
+          Alert.alert('Error saving field', fieldBedError.message || 'Something went wrong saving this field/bed.');
           setSaving(false);
           return;
         }
 
+        console.log('Fields: Save success', newFieldBed);
         console.log('Field/bed created, creating planting...');
+        
         const plantingDateStr = plantingDate!.toISOString().split('T')[0];
         const harvestDateStr = harvestDate!.toISOString().split('T')[0];
         console.log('Saving planting_date:', plantingDateStr);
@@ -337,9 +364,8 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
         );
       }
     } catch (error) {
-      console.error('Error saving:', error);
-      Alert.alert('Error', 'An unexpected error occurred');
-    } finally {
+      console.error('Fields: Save error', error);
+      Alert.alert('Error saving field', 'An unexpected error occurred');
       setSaving(false);
     }
   };
@@ -363,6 +389,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
     setHarvestDateInput('');
     setShowPlantingDatePicker(false);
     setShowHarvestDatePicker(false);
+    setSaving(false);
   };
 
   const handleClose = () => {
