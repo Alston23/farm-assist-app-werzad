@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { allCrops } from '../../data/crops';
@@ -36,6 +36,7 @@ export default function CropDetailScreen() {
   const router = useRouter();
   const [customCrop, setCustomCrop] = useState<CustomCropDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
   
   const isCustomCrop = typeof id === 'string' && id.startsWith('custom-');
   const crop = !isCustomCrop ? allCrops.find(c => c.id === id) : null;
@@ -106,6 +107,7 @@ export default function CropDetailScreen() {
   const cropName = customCrop?.name || crop?.name || '';
   const category = customCrop?.category || crop?.category || 'vegetable';
   const scientificName = customCrop?.scientific_name || crop?.scientificName;
+  const imageUrl = crop?.imageUrl;
 
   // Get crop-specific guide data
   const cropKey = normalizeCropKey(cropName);
@@ -193,7 +195,19 @@ export default function CropDetailScreen() {
           </TouchableOpacity>
 
           <View style={styles.headerCard}>
-            <Text style={styles.emoji}>{getCategoryEmoji(category)}</Text>
+            {imageUrl && !imageError ? (
+              <Image 
+                source={{ uri: imageUrl }} 
+                style={styles.cropImage}
+                onError={() => {
+                  console.log('Image failed to load:', imageUrl);
+                  setImageError(true);
+                }}
+                resizeMode="cover"
+              />
+            ) : (
+              <Text style={styles.emoji}>{getCategoryEmoji(category)}</Text>
+            )}
             <Text style={styles.cropName}>{cropName}</Text>
             {scientificName && (
               <Text style={styles.scientificName}>{scientificName}</Text>
@@ -303,6 +317,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  cropImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 16,
   },
   emoji: {
     fontSize: 64,
