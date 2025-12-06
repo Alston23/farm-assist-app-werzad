@@ -93,48 +93,39 @@ export default function EquipmentScreen() {
     setIsEquipmentFormOpen(true);
   };
 
-  const handleDeleteEquipment = async (equipment: any) => {
-    console.log('Equipment: Delete pressed for', equipment?.id);
+  const handleDeleteEquipment = async (id: string) => {
+    console.log('Equipment: handleDeleteEquipment called with id', id);
 
-    // Always show a debug alert so we know the button is wired
-    Alert.alert(
-      'Delete equipment?',
-      `Delete "${equipment?.name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from('equipment') // use the SAME table used to load this list
-                .delete()
-                .eq('id', equipment.id); // use the SAME id column used for Edit
+    try {
+      // Use the SAME table name used when fetching equipment for this screen.
+      const { error } = await supabase
+        .from('equipment')
+        .delete()
+        .eq('id', id);
 
-              if (error) {
-                console.error('Equipment: delete error', error);
-                Alert.alert(
-                  'Error deleting',
-                  error.message || 'Could not delete equipment.'
-                );
-                return;
-              }
+      if (error) {
+        console.error('Equipment: delete error', error);
+        Alert.alert(
+          'Error deleting equipment',
+          error.message || 'Something went wrong while deleting.'
+        );
+        return;
+      }
 
-              console.log('Equipment: delete success', equipment.id);
+      console.log('Equipment: delete success for id', id);
 
-              // Remove from local list state so the card disappears
-              setEquipment((prev: any[]) =>
-                prev ? prev.filter(e => e.id !== equipment.id) : prev
-              );
-            } catch (err) {
-              console.error('Equipment: unexpected delete error', err);
-              Alert.alert('Error deleting', 'Something went wrong.');
-            }
-          },
-        },
-      ]
-    );
+      // Update local state so the deleted card disappears immediately
+      setEquipment((prev) => {
+        if (!prev) return prev;
+        return prev.filter((eq) => eq.id !== id);
+      });
+    } catch (err) {
+      console.error('Equipment: unexpected delete error', err);
+      Alert.alert(
+        'Error deleting equipment',
+        'Something went wrong. Please try again.'
+      );
+    }
   };
 
   return (
@@ -205,7 +196,10 @@ export default function EquipmentScreen() {
 
                     <TouchableOpacity
                       style={styles.deleteButton}
-                      onPress={() => handleDeleteEquipment(item)}
+                      onPress={() => {
+                        console.log('Equipment: Delete pressed for id', item.id);
+                        handleDeleteEquipment(item.id);
+                      }}
                     >
                       <Text style={styles.deleteButtonText}>Delete</Text>
                     </TouchableOpacity>
