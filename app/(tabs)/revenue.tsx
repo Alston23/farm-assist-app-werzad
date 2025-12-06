@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import PageHeader from '../../components/PageHeader';
 import AddIncomeModal from '../../components/AddIncomeModal';
@@ -71,7 +71,6 @@ function RevenueContent() {
       setExpenses(expensesResult.data || []);
     } catch (error: any) {
       console.error('Error loading data:', error);
-      Alert.alert('Error', 'Failed to load revenue data');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -86,6 +85,46 @@ function RevenueContent() {
     setRefreshing(true);
     loadData();
   }, []);
+
+  const handleDeleteIncome = async (id: string) => {
+    console.log('Revenue: handleDeleteIncome', id);
+    try {
+      const { error } = await supabase
+        .from('income')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Revenue: income delete error', error);
+        return;
+      }
+
+      console.log('Revenue: income delete success', id);
+      setIncome((prev) => prev.filter((row) => row.id !== id));
+    } catch (err) {
+      console.error('Revenue: income delete unexpected error', err);
+    }
+  };
+
+  const handleDeleteExpense = async (id: string) => {
+    console.log('Revenue: handleDeleteExpense', id);
+    try {
+      const { error } = await supabase
+        .from('expenses')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Revenue: expense delete error', error);
+        return;
+      }
+
+      console.log('Revenue: expense delete success', id);
+      setExpenses((prev) => prev.filter((row) => row.id !== id));
+    } catch (err) {
+      console.error('Revenue: expense delete unexpected error', err);
+    }
+  };
 
   const totalIncome = income.reduce((sum, item) => sum + parseFloat(item.amount.toString()), 0);
   const totalExpenses = expenses.reduce((sum, item) => sum + parseFloat(item.amount.toString()), 0);
@@ -137,54 +176,6 @@ function RevenueContent() {
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
-  };
-
-  const deleteIncome = async (id: string) => {
-    Alert.alert(
-      'Delete Income',
-      'Are you sure you want to delete this income entry?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await supabase.from('income').delete().eq('id', id);
-              if (error) throw error;
-              loadData();
-            } catch (error: any) {
-              console.error('Error deleting income:', error);
-              Alert.alert('Error', 'Failed to delete income');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const deleteExpense = async (id: string) => {
-    Alert.alert(
-      'Delete Expense',
-      'Are you sure you want to delete this expense entry?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await supabase.from('expenses').delete().eq('id', id);
-              if (error) throw error;
-              loadData();
-            } catch (error: any) {
-              console.error('Error deleting expense:', error);
-              Alert.alert('Error', 'Failed to delete expense');
-            }
-          },
-        },
-      ]
-    );
   };
 
   return (
@@ -306,19 +297,26 @@ function RevenueContent() {
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Recent Income</Text>
               {income.slice(0, 5).map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.listItem}
-                  onLongPress={() => deleteIncome(item.id)}
-                >
+                <View key={item.id} style={styles.listItem}>
                   <View style={styles.listItemLeft}>
                     <Text style={styles.listItemTitle}>{item.crop_name}</Text>
                     <Text style={styles.listItemSubtitle}>
                       {formatChannelName(item.sales_channel)} • {new Date(item.sale_date).toLocaleDateString()}
                     </Text>
                   </View>
-                  <Text style={styles.listItemAmount}>{formatCurrency(parseFloat(item.amount.toString()))}</Text>
-                </TouchableOpacity>
+                  <View style={styles.listItemRight}>
+                    <Text style={styles.listItemAmount}>{formatCurrency(parseFloat(item.amount.toString()))}</Text>
+                    <Pressable
+                      style={styles.deleteButton}
+                      onPress={() => {
+                        console.log('Revenue: Delete income pressed for id', item.id);
+                        handleDeleteIncome(item.id);
+                      }}
+                    >
+                      <Text style={styles.deleteButtonText}>Delete</Text>
+                    </Pressable>
+                  </View>
+                </View>
               ))}
               {income.length > 5 && (
                 <Text style={styles.moreText}>+ {income.length - 5} more entries</Text>
@@ -331,21 +329,28 @@ function RevenueContent() {
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Recent Expenses</Text>
               {expenses.slice(0, 5).map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.listItem}
-                  onLongPress={() => deleteExpense(item.id)}
-                >
+                <View key={item.id} style={styles.listItem}>
                   <View style={styles.listItemLeft}>
                     <Text style={styles.listItemTitle}>{item.description}</Text>
                     <Text style={styles.listItemSubtitle}>
                       {formatCategoryName(item.category)} • {new Date(item.expense_date).toLocaleDateString()}
                     </Text>
                   </View>
-                  <Text style={[styles.listItemAmount, styles.expenseAmount]}>
-                    -{formatCurrency(parseFloat(item.amount.toString()))}
-                  </Text>
-                </TouchableOpacity>
+                  <View style={styles.listItemRight}>
+                    <Text style={[styles.listItemAmount, styles.expenseAmount]}>
+                      -{formatCurrency(parseFloat(item.amount.toString()))}
+                    </Text>
+                    <Pressable
+                      style={styles.deleteButton}
+                      onPress={() => {
+                        console.log('Revenue: Delete expense pressed for id', item.id);
+                        handleDeleteExpense(item.id);
+                      }}
+                    >
+                      <Text style={styles.deleteButtonText}>Delete</Text>
+                    </Pressable>
+                  </View>
+                </View>
               ))}
               {expenses.length > 5 && (
                 <Text style={styles.moreText}>+ {expenses.length - 5} more entries</Text>
@@ -629,6 +634,10 @@ const styles = StyleSheet.create({
   listItemLeft: {
     flex: 1,
   },
+  listItemRight: {
+    alignItems: 'flex-end',
+    marginLeft: 12,
+  },
   listItemTitle: {
     fontSize: 16,
     fontWeight: '600',
@@ -643,10 +652,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#4CAF50',
-    marginLeft: 12,
+    marginBottom: 4,
   },
   expenseAmount: {
     color: '#FF5252',
+  },
+  deleteButton: {
+    backgroundColor: '#FF5252',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  deleteButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#fff',
   },
   moreText: {
     fontSize: 14,
