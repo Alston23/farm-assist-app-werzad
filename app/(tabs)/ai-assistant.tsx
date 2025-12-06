@@ -459,20 +459,24 @@ export default function AIAssistantScreen() {
       return;
     }
     
-    // User is Pro - pre-fill the chat input with the appropriate prompt
-    console.log('AI Assistant: User is Pro, pre-filling chat input');
-    const prompt = AI_PROMPT_MAP[actionId];
+    // User is Pro - navigate to the appropriate screen
+    console.log('AI Assistant: User is Pro, navigating to screen');
     
-    if (prompt) {
-      setInputText(prompt);
-      setShowQuickActions(false);
-      
-      // Focus the input after a short delay to ensure the UI has updated
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 100);
-    } else {
-      console.error('AI Assistant: No prompt found for action:', actionId);
+    switch (actionId) {
+      case 'crop-recommendation':
+        router.push('/(tabs)/ai-crop-recommendations');
+        break;
+      case 'identify-plant-issues':
+        router.push('/(tabs)/ai-problem-diagnosis');
+        break;
+      case 'weather-insights':
+        router.push('/(tabs)/ai-weather-insights');
+        break;
+      case 'personalized-advice':
+        router.push('/(tabs)/ai-personalized-advice');
+        break;
+      default:
+        console.error('AI Assistant: Unknown action:', actionId);
     }
   };
 

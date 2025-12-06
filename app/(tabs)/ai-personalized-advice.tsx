@@ -132,18 +132,24 @@ function AIPersonalizedAdviceContent() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <TouchableOpacity
-          onPress={handleBackToAssistant}
-          style={{ paddingHorizontal: 8, paddingVertical: 4 }}
-        >
-          <Text style={{ color: 'white', fontWeight: '600', fontSize: 14 }}>
-            ← Back
-          </Text>
+    <View style={{ flex: 1, backgroundColor: '#0b4f25' }}>
+      <View style={{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingTop: 50,
+        paddingBottom: 12
+      }}>
+        <TouchableOpacity onPress={handleBackToAssistant}>
+          <Text style={{ color: 'white', fontSize: 16 }}>Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Personalized Advice</Text>
-        <View style={styles.placeholder} />
+
+        <Text style={{ color: 'white', fontSize: 18, fontWeight: '600' }}>
+          Personalized Advice
+        </Text>
+
+        <View style={{ width: 50 }} />
       </View>
       <LinearGradient colors={['#2D5016', '#4A7C2C', '#6BA542']} style={styles.gradient}>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
@@ -259,27 +265,6 @@ export default function AIPersonalizedAdviceScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#2D5016',
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 48 : 60,
-    paddingBottom: 16,
-    backgroundColor: '#2D5016',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  placeholder: {
-    width: 80,
-  },
   gradient: {
     flex: 1,
   },
