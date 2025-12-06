@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,10 +14,25 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { supabase } from '../lib/supabase';
 
+interface Equipment {
+  id: string;
+  name: string;
+  type: string;
+  brand?: string;
+  model?: string;
+  year?: number;
+  hours: number;
+  purchase_date?: string;
+  purchase_price?: number;
+  notes?: string;
+  created_at: string;
+}
+
 interface AddEquipmentModalProps {
   visible: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  initialEquipment?: Equipment | null;
 }
 
 const equipmentTypes = [
@@ -35,7 +50,7 @@ const equipmentTypes = [
   'Other',
 ];
 
-export default function AddEquipmentModal({ visible, onClose, onSuccess }: AddEquipmentModalProps) {
+export default function AddEquipmentModal({ visible, onClose, onSuccess, initialEquipment }: AddEquipmentModalProps) {
   const [name, setName] = useState('');
   const [type, setType] = useState('');
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
@@ -48,6 +63,29 @@ export default function AddEquipmentModal({ visible, onClose, onSuccess }: AddEq
   const [purchasePrice, setPurchasePrice] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const isEditMode = !!initialEquipment;
+
+  // Populate form when editing
+  useEffect(() => {
+    if (initialEquipment) {
+      console.log('Equipment: Populating form with', initialEquipment);
+      setName(initialEquipment.name || '');
+      setType(initialEquipment.type || '');
+      setBrand(initialEquipment.brand || '');
+      setModel(initialEquipment.model || '');
+      setYear(initialEquipment.year ? String(initialEquipment.year) : '');
+      setHours(String(initialEquipment.hours || 0));
+      setPurchasePrice(initialEquipment.purchase_price ? String(initialEquipment.purchase_price) : '');
+      setNotes(initialEquipment.notes || '');
+      
+      if (initialEquipment.purchase_date) {
+        setPurchaseDate(new Date(initialEquipment.purchase_date));
+      }
+    } else {
+      resetForm();
+    }
+  }, [initialEquipment, visible]);
 
   const handlePurchaseDateChange = (event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
@@ -62,6 +100,19 @@ export default function AddEquipmentModal({ visible, onClose, onSuccess }: AddEq
   };
 
   const handleSave = async () => {
+    console.log('Equipment: Save button pressed');
+    console.log('Equipment: current form values', {
+      name,
+      type,
+      brand,
+      model,
+      year,
+      hours,
+      purchaseDate,
+      purchasePrice,
+      notes,
+    });
+
     if (!name.trim()) {
       Alert.alert('Error', 'Please enter equipment name');
       return;
@@ -95,18 +146,38 @@ export default function AddEquipmentModal({ visible, onClose, onSuccess }: AddEq
       if (notes.trim()) equipmentData.notes = notes.trim();
       equipmentData.purchase_date = purchaseDate.toISOString().split('T')[0];
 
-      const { error } = await supabase
-        .from('equipment')
-        .insert(equipmentData);
+      let result;
+      if (isEditMode && initialEquipment) {
+        // Update existing equipment
+        console.log('Equipment: Updating equipment with id', initialEquipment.id);
+        result = await supabase
+          .from('equipment')
+          .update(equipmentData)
+          .eq('id', initialEquipment.id)
+          .select()
+          .single();
+      } else {
+        // Insert new equipment
+        console.log('Equipment: Creating new equipment');
+        result = await supabase
+          .from('equipment')
+          .insert(equipmentData)
+          .select()
+          .single();
+      }
+
+      const { data, error } = result;
 
       if (error) {
-        console.error('Error creating equipment:', error);
-        Alert.alert('Error', 'Failed to add equipment');
+        console.error('Equipment: Save error', error);
+        Alert.alert('Error', error.message || 'Failed to save equipment');
         setSaving(false);
         return;
       }
 
-      Alert.alert('Success', 'Equipment added successfully!', [
+      console.log('Equipment: Save success', data);
+
+      Alert.alert('Success', `Equipment ${isEditMode ? 'updated' : 'added'} successfully!`, [
         { text: 'OK', onPress: () => {
           resetForm();
           onSuccess();
@@ -114,9 +185,8 @@ export default function AddEquipmentModal({ visible, onClose, onSuccess }: AddEq
         }}
       ]);
     } catch (error) {
-      console.error('Error saving:', error);
+      console.error('Equipment: Unexpected save error', error);
       Alert.alert('Error', 'An unexpected error occurred');
-    } finally {
       setSaving(false);
     }
   };
@@ -151,7 +221,9 @@ export default function AddEquipmentModal({ visible, onClose, onSuccess }: AddEq
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Add Equipment</Text>
+            <Text style={styles.modalTitle}>
+              {isEditMode ? 'Edit Equipment' : 'Add Equipment'}
+            </Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
@@ -290,7 +362,7 @@ export default function AddEquipmentModal({ visible, onClose, onSuccess }: AddEq
               disabled={saving}
             >
               <Text style={styles.saveButtonText}>
-                {saving ? 'Saving...' : 'Save Equipment'}
+                {saving ? 'Saving...' : isEditMode ? 'Update Equipment' : 'Save Equipment'}
               </Text>
             </TouchableOpacity>
           </ScrollView>

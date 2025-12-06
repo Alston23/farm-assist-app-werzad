@@ -27,6 +27,10 @@ export default function EquipmentScreen() {
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // New state for edit functionality
+  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
+  const [isEquipmentFormOpen, setIsEquipmentFormOpen] = useState(false);
 
   useEffect(() => {
     fetchEquipment();
@@ -63,9 +67,20 @@ export default function EquipmentScreen() {
     fetchEquipment();
   };
 
+  const handleEquipmentSaved = () => {
+    console.log('Equipment: handleEquipmentSaved called');
+    fetchEquipment();
+  };
+
   const handleEquipmentPress = (item: Equipment) => {
     setSelectedEquipment(item);
     setDetailModalVisible(true);
+  };
+
+  const handleEditEquipment = (equipment: Equipment) => {
+    console.log('Equipment: Edit button pressed for', equipment);
+    setEditingEquipment(equipment);
+    setIsEquipmentFormOpen(true);
   };
 
   const handleDeleteEquipment = async (id: string) => {
@@ -123,7 +138,10 @@ export default function EquipmentScreen() {
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
           <TouchableOpacity
             style={styles.addButton}
-            onPress={() => setModalVisible(true)}
+            onPress={() => {
+              setEditingEquipment(null);
+              setModalVisible(true);
+            }}
           >
             <Text style={styles.addButtonText}>+ Add Equipment</Text>
           </TouchableOpacity>
@@ -171,12 +189,21 @@ export default function EquipmentScreen() {
                     </View>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => handleDeleteEquipment(item.id)}
-                  >
-                    <Text style={styles.deleteButtonText}>Delete</Text>
-                  </TouchableOpacity>
+                  <View style={styles.buttonRow}>
+                    <TouchableOpacity
+                      style={styles.editButton}
+                      onPress={() => handleEditEquipment(item)}
+                    >
+                      <Text style={styles.editButtonText}>Edit</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => handleDeleteEquipment(item.id)}
+                    >
+                      <Text style={styles.deleteButtonText}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               ))}
             </React.Fragment>
@@ -189,6 +216,19 @@ export default function EquipmentScreen() {
         onClose={() => setModalVisible(false)}
         onSuccess={handleSuccess}
       />
+
+      {isEquipmentFormOpen && (
+        <AddEquipmentModal
+          visible={isEquipmentFormOpen}
+          initialEquipment={editingEquipment}
+          onClose={() => {
+            console.log('Equipment: closing EquipmentForm');
+            setIsEquipmentFormOpen(false);
+            setEditingEquipment(null);
+          }}
+          onSuccess={handleEquipmentSaved}
+        />
+      )}
 
       {selectedEquipment && (
         <EquipmentDetailModal
@@ -304,13 +344,31 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
   },
-  deleteButton: {
+  buttonRow: {
+    flexDirection: 'row',
     marginTop: 12,
+    gap: 12,
+  },
+  editButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: '#E3F2FD',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  editButtonText: {
+    color: '#1976D2',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  deleteButton: {
+    flex: 1,
     paddingVertical: 10,
     paddingHorizontal: 16,
     backgroundColor: '#ffebee',
     borderRadius: 8,
-    alignSelf: 'flex-start',
+    alignItems: 'center',
   },
   deleteButtonText: {
     color: '#D32F2F',
