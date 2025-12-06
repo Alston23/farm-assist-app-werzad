@@ -93,7 +93,7 @@ export default function EquipmentScreen() {
     setIsEquipmentFormOpen(true);
   };
 
-  const handleDeleteEquipment = async (id: string) => {
+  const handleDeleteEquipment = (id: string) => {
     console.log('Equipment: handleDeleteEquipment called with id', id);
 
     Alert.alert(
@@ -106,23 +106,26 @@ export default function EquipmentScreen() {
           style: 'destructive',
           onPress: async () => {
             console.log('Equipment: confirmed delete for id', id);
+
             try {
+              // Use the SAME table and id column as the Equipment EDIT/SAVE logic
               const { error } = await supabase
                 .from('equipment')
                 .delete()
                 .eq('id', id);
 
               if (error) {
-                console.error('Equipment: Supabase delete error', error);
+                console.error('Equipment: delete error', error);
                 Alert.alert(
-                  'Error deleting',
-                  error.message || 'Could not delete this equipment.'
+                  'Error deleting equipment',
+                  error.message || 'Something went wrong while deleting.'
                 );
                 return;
               }
 
-              console.log('Equipment: delete success, removing from state');
+              console.log('Equipment: delete success for id', id);
 
+              // Update local state to remove the deleted item
               setEquipment((prev) =>
                 Array.isArray(prev) ? prev.filter((e) => e.id !== id) : prev
               );
@@ -131,7 +134,10 @@ export default function EquipmentScreen() {
               await fetchEquipment();
             } catch (err) {
               console.error('Equipment: unexpected delete error', err);
-              Alert.alert('Error deleting', 'Something went wrong. Please try again.');
+              Alert.alert(
+                'Error deleting equipment',
+                'Something went wrong. Please try again.'
+              );
             }
           },
         },
@@ -208,7 +214,7 @@ export default function EquipmentScreen() {
                     <TouchableOpacity
                       style={styles.deleteButton}
                       onPress={() => {
-                        console.log('Equipment: Delete button pressed for', item);
+                        console.log('Equipment: Delete pressed for id', item.id);
                         handleDeleteEquipment(item.id);
                       }}
                     >
