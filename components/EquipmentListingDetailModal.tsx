@@ -98,35 +98,35 @@ export default function EquipmentListingDetailModal({
     }
   };
 
-  const handleDelete = () => {
-    Alert.alert(
-      'Delete Listing',
-      'Are you sure you want to delete this listing?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from('equipment_marketplace_listings')
-                .delete()
-                .eq('id', listing.id);
+  const handleDeleteListing = async () => {
+    console.log('Marketplace: Delete Listing pressed', listing?.id);
 
-              if (error) throw error;
+    if (!listing?.id) {
+      console.warn('Marketplace: No listing id found');
+      return;
+    }
 
-              Alert.alert('Success', 'Listing deleted successfully');
-              onUpdate();
-              onClose();
-            } catch (error) {
-              console.error('Error deleting listing:', error);
-              Alert.alert('Error', 'Failed to delete listing');
-            }
-          },
-        },
-      ]
-    );
+    try {
+      const { error } = await supabase
+        .from('equipment_marketplace_listings')
+        .delete()
+        .eq('id', listing.id);
+
+      if (error) {
+        console.error('Marketplace: delete error', error);
+        Alert.alert('Error deleting listing', error.message);
+        return;
+      }
+
+      console.log('Marketplace: delete success', listing.id);
+
+      // Update parent list and close modal
+      onUpdate();
+      onClose();
+    } catch (err) {
+      console.error('Marketplace: unexpected delete error', err);
+      Alert.alert('Error deleting listing', 'Something went wrong.');
+    }
   };
 
   const handleMessageSeller = async () => {
@@ -366,7 +366,7 @@ export default function EquipmentListingDetailModal({
 
             <View style={styles.footer}>
               {isOwner ? (
-                <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+                <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteListing}>
                   <Text style={styles.deleteButtonText}>Delete Listing</Text>
                 </TouchableOpacity>
               ) : (
