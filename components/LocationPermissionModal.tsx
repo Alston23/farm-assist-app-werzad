@@ -7,6 +7,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   Platform,
+  Alert,
+  Linking,
 } from 'react-native';
 import { useLocation } from '../contexts/LocationContext';
 
@@ -25,7 +27,24 @@ export default function LocationPermissionModal({
 
   const handleOpenSettings = () => {
     console.log('LocationPermissionModal: Opening settings');
-    openSettings();
+    
+    // Detect if running in a web browser
+    const isWeb = typeof window !== 'undefined' && !navigator?.userAgent?.includes('Native');
+    
+    if (isWeb) {
+      // Web browser: Show alert instead of trying to open settings
+      Alert.alert(
+        'Location Settings',
+        'Location settings must be enabled in your device system settings. After enabling, return to the app and refresh.',
+        [{ text: 'OK' }]
+      );
+      console.log('LocationPermissionModal: Web detected, showing alert instead of opening settings');
+    } else {
+      // Native mobile: Use platform API to open app settings
+      console.log('LocationPermissionModal: Native detected, opening app settings');
+      openSettings();
+    }
+    
     onClose();
   };
 
