@@ -71,6 +71,9 @@ export default function FieldsScreen() {
       copy[index] = savedField;
       return copy;
     });
+
+    // Refresh the data to ensure we have the latest information
+    fetchFieldsBeds();
   };
 
   const handleEdit = (item: FieldBed) => {

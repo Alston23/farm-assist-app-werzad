@@ -65,6 +65,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
   const [plantingDateInput, setPlantingDateInput] = useState('');
   const [harvestDateInput, setHarvestDateInput] = useState('');
   const [saving, setSaving] = useState(false);
+  const [existingPlanting, setExistingPlanting] = useState<any>(null);
 
   const filteredCrops = cropSearchQuery
     ? allCrops.filter(crop =>
@@ -81,8 +82,53 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
       setAreaUnit(editItem.area_unit);
       setSoilType(editItem.soil_type);
       setIrrigationType(editItem.irrigation_type);
+      
+      // Fetch existing planting for this field/bed
+      fetchExistingPlanting(editItem.id);
     }
   }, [editItem]);
+
+  const fetchExistingPlanting = async (fieldBedId: string) => {
+    try {
+      console.log('Fetching existing planting for field/bed:', fieldBedId);
+      const { data, error } = await supabase
+        .from('plantings')
+        .select('*')
+        .eq('field_bed_id', fieldBedId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No planting found - this is okay
+          console.log('No existing planting found for this field/bed');
+          setExistingPlanting(null);
+        } else {
+          console.error('Error fetching planting:', error);
+        }
+        return;
+      }
+
+      if (data) {
+        console.log('Found existing planting:', data);
+        setExistingPlanting(data);
+        
+        // Initialize planting fields with existing data
+        setCropId(data.crop_id);
+        setCropName(data.crop_name);
+        setCropSearchQuery(data.crop_name);
+        setDaysToMaturity(data.days_to_maturity);
+        
+        const pDate = new Date(data.planting_date + 'T00:00:00');
+        const hDate = new Date(data.harvest_date + 'T00:00:00');
+        setPlantingDate(pDate);
+        setHarvestDate(hDate);
+        setPlantingDateInput(formatDateForInput(pDate));
+        setHarvestDateInput(formatDateForInput(hDate));
+      }
+    } catch (error) {
+      console.error('Error fetching planting:', error);
+    }
+  };
 
   useEffect(() => {
     if (daysToMaturity !== null && plantingDate) {
@@ -109,6 +155,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
   };
 
   const handlePlantingDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    console.log('Planting Edit: Date picker opened');
     console.log('Planting date change - Event type:', event.type, 'Selected date:', selectedDate);
     
     if (Platform.OS === 'android') {
@@ -129,6 +176,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
   };
 
   const handleHarvestDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    console.log('Planting Edit: Date picker opened');
     console.log('Harvest date change - Event type:', event.type, 'Selected date:', selectedDate);
     
     if (Platform.OS === 'android') {
@@ -143,6 +191,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
   };
 
   const handleWebPlantingDateChange = (dateString: string) => {
+    console.log('Planting Edit: Date picker opened');
     console.log('Web planting date change:', dateString);
     setPlantingDateInput(dateString);
     
@@ -161,6 +210,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
   };
 
   const handleWebHarvestDateChange = (dateString: string) => {
+    console.log('Planting Edit: Date picker opened');
     console.log('Web harvest date change:', dateString);
     setHarvestDateInput(dateString);
     
@@ -201,6 +251,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
       plantingDateInput,
       harvestDateInput,
       editMode: !!editItem,
+      existingPlanting,
     });
 
     // Validate required fields
@@ -231,7 +282,26 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
       return;
     }
 
-    // If editing, we don't need crop/planting info
+    // If editing and there's an existing planting, validate planting fields
+    if (editItem && existingPlanting) {
+      if (!cropId) {
+        console.log('Fields: validation failed - missing crop');
+        Alert.alert('Missing information', 'Please select a crop.');
+        return;
+      }
+      if (!plantingDate || isNaN(plantingDate.getTime())) {
+        console.log('Fields: validation failed - invalid planting date');
+        Alert.alert('Missing information', 'Please select a valid planting date.');
+        return;
+      }
+      if (!harvestDate || isNaN(harvestDate.getTime())) {
+        console.log('Fields: validation failed - invalid harvest date');
+        Alert.alert('Missing information', 'Please select a valid harvest date.');
+        return;
+      }
+    }
+
+    // If creating new, validate planting fields
     if (!editItem) {
       if (!cropId) {
         console.log('Fields: validation failed - missing crop');
@@ -300,6 +370,36 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
         }
 
         console.log('Fields: Save success', data);
+
+        // If there's an existing planting, update it
+        if (existingPlanting) {
+          const plantingDateStr = plantingDate!.toISOString().split('T')[0];
+          const harvestDateStr = harvestDate!.toISOString().split('T')[0];
+          
+          const plantingPayload = {
+            crop_id: cropId,
+            crop_name: cropName,
+            days_to_maturity: daysToMaturity || 0,
+            planting_date: plantingDateStr,
+            harvest_date: harvestDateStr,
+          };
+
+          console.log('Planting Edit: Updated dates payload', plantingPayload);
+
+          const { error: plantingError } = await supabase
+            .from('plantings')
+            .update(plantingPayload)
+            .eq('id', existingPlanting.id);
+
+          if (plantingError) {
+            console.error('Planting Edit: Update error', plantingError);
+            Alert.alert('Error', 'Failed to update planting dates');
+            setSaving(false);
+            return;
+          }
+
+          console.log('Planting Edit: Update success');
+        }
         
         // Show success alert
         Alert.alert('Success', 'Field/bed saved successfully.');
@@ -398,6 +498,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
     setShowPlantingDatePicker(false);
     setShowHarvestDatePicker(false);
     setSaving(false);
+    setExistingPlanting(null);
   };
 
   const handleClose = () => {
@@ -429,6 +530,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
   };
 
   const handlePlantingDatePress = () => {
+    console.log('Planting Edit: Date picker opened');
     console.log('Planting date button pressed - Platform:', Platform.OS);
     if (Platform.OS === 'web') {
       console.log('Web platform - date input will be shown inline');
@@ -440,6 +542,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
   };
 
   const handleHarvestDatePress = () => {
+    console.log('Planting Edit: Date picker opened');
     console.log('Harvest date button pressed - Platform:', Platform.OS);
     if (Platform.OS === 'web') {
       console.log('Web platform - date input will be shown inline');
@@ -449,6 +552,9 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
       setShowHarvestDatePicker(true);
     }
   };
+
+  // Determine if we should show planting fields
+  const showPlantingFields = !editItem || (editItem && existingPlanting);
 
   return (
     <Modal 
@@ -588,7 +694,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
               )}
             </View>
 
-            {!editItem && (
+            {showPlantingFields && (
               <React.Fragment>
                 <View style={styles.section}>
                   <Text style={styles.label}>Crop</Text>
@@ -666,7 +772,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
               )}
             </View>
 
-            {!editItem && (
+            {showPlantingFields && (
               <React.Fragment>
                 <View style={styles.section}>
                   <Text style={styles.label}>Planting Date</Text>
