@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -139,7 +139,6 @@ export default function InventoryScreen() {
       setPackaging(packagingData || []);
     } catch (error: any) {
       console.error('Error fetching inventory data:', error);
-      Alert.alert('Error', 'Failed to load inventory data');
     }
   };
 
@@ -156,6 +155,7 @@ export default function InventoryScreen() {
   };
 
   const handleDeleteStorage = async (id: string) => {
+    console.log('Inventory: Delete pressed for id', id);
     console.log('Inventory: handleDeleteStorage called with id', id);
 
     try {
@@ -165,27 +165,21 @@ export default function InventoryScreen() {
         .eq('id', id);
 
       if (error) {
-        console.error('Inventory: delete error from Supabase', error);
-        Alert.alert(
-          'Error deleting item',
-          error.message || 'Something went wrong while deleting this item.'
-        );
+        console.error('Inventory: delete error', error);
         return;
       }
 
       console.log('Inventory: delete success for id', id);
 
-      // Remove from local state so the item disappears immediately
-      setStorageLocations((prev) =>
-        prev ? prev.filter((item) => item.id !== id) : prev
-      );
+      // Remove from local state so UI updates immediately
+      setStorageLocations((prev) => prev.filter((row) => row.id !== id));
     } catch (err) {
       console.error('Inventory: unexpected delete error', err);
-      Alert.alert('Error deleting item', 'Something went wrong. Please try again.');
     }
   };
 
   const handleDeleteFertilizer = async (id: string) => {
+    console.log('Inventory: Delete pressed for id', id);
     console.log('Inventory: handleDeleteFertilizer called with id', id);
 
     try {
@@ -195,27 +189,21 @@ export default function InventoryScreen() {
         .eq('id', id);
 
       if (error) {
-        console.error('Inventory: delete error from Supabase', error);
-        Alert.alert(
-          'Error deleting item',
-          error.message || 'Something went wrong while deleting this item.'
-        );
+        console.error('Inventory: delete error', error);
         return;
       }
 
       console.log('Inventory: delete success for id', id);
 
-      // Remove from local state so the item disappears immediately
-      setFertilizers((prev) =>
-        prev ? prev.filter((item) => item.id !== id) : prev
-      );
+      // Remove from local state so UI updates immediately
+      setFertilizers((prev) => prev.filter((row) => row.id !== id));
     } catch (err) {
       console.error('Inventory: unexpected delete error', err);
-      Alert.alert('Error deleting item', 'Something went wrong. Please try again.');
     }
   };
 
   const handleDeleteSeed = async (id: string) => {
+    console.log('Inventory: Delete pressed for id', id);
     console.log('Inventory: handleDeleteSeed called with id', id);
 
     try {
@@ -225,27 +213,21 @@ export default function InventoryScreen() {
         .eq('id', id);
 
       if (error) {
-        console.error('Inventory: delete error from Supabase', error);
-        Alert.alert(
-          'Error deleting item',
-          error.message || 'Something went wrong while deleting this item.'
-        );
+        console.error('Inventory: delete error', error);
         return;
       }
 
       console.log('Inventory: delete success for id', id);
 
-      // Remove from local state so the item disappears immediately
-      setSeeds((prev) =>
-        prev ? prev.filter((item) => item.id !== id) : prev
-      );
+      // Remove from local state so UI updates immediately
+      setSeeds((prev) => prev.filter((row) => row.id !== id));
     } catch (err) {
       console.error('Inventory: unexpected delete error', err);
-      Alert.alert('Error deleting item', 'Something went wrong. Please try again.');
     }
   };
 
   const handleDeleteTransplant = async (id: string) => {
+    console.log('Inventory: Delete pressed for id', id);
     console.log('Inventory: handleDeleteTransplant called with id', id);
 
     try {
@@ -255,27 +237,21 @@ export default function InventoryScreen() {
         .eq('id', id);
 
       if (error) {
-        console.error('Inventory: delete error from Supabase', error);
-        Alert.alert(
-          'Error deleting item',
-          error.message || 'Something went wrong while deleting this item.'
-        );
+        console.error('Inventory: delete error', error);
         return;
       }
 
       console.log('Inventory: delete success for id', id);
 
-      // Remove from local state so the item disappears immediately
-      setTransplants((prev) =>
-        prev ? prev.filter((item) => item.id !== id) : prev
-      );
+      // Remove from local state so UI updates immediately
+      setTransplants((prev) => prev.filter((row) => row.id !== id));
     } catch (err) {
       console.error('Inventory: unexpected delete error', err);
-      Alert.alert('Error deleting item', 'Something went wrong. Please try again.');
     }
   };
 
   const handleDeletePackaging = async (id: string) => {
+    console.log('Inventory: Delete pressed for id', id);
     console.log('Inventory: handleDeletePackaging called with id', id);
 
     try {
@@ -285,23 +261,16 @@ export default function InventoryScreen() {
         .eq('id', id);
 
       if (error) {
-        console.error('Inventory: delete error from Supabase', error);
-        Alert.alert(
-          'Error deleting item',
-          error.message || 'Something went wrong while deleting this item.'
-        );
+        console.error('Inventory: delete error', error);
         return;
       }
 
       console.log('Inventory: delete success for id', id);
 
-      // Remove from local state so the item disappears immediately
-      setPackaging((prev) =>
-        prev ? prev.filter((item) => item.id !== id) : prev
-      );
+      // Remove from local state so UI updates immediately
+      setPackaging((prev) => prev.filter((row) => row.id !== id));
     } catch (err) {
       console.error('Inventory: unexpected delete error', err);
-      Alert.alert('Error deleting item', 'Something went wrong. Please try again.');
     }
   };
 
@@ -384,7 +353,10 @@ export default function InventoryScreen() {
                           <Text style={styles.actionButtonText}>Edit</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                          onPress={() => handleDeleteStorage(storage.id)}
+                          onPress={() => {
+                            console.log('Inventory: Delete pressed for id', storage.id);
+                            handleDeleteStorage(storage.id);
+                          }}
                           style={[styles.actionButton, styles.deleteButton]}
                         >
                           <Text style={styles.deleteButtonText}>Delete</Text>
@@ -444,7 +416,10 @@ export default function InventoryScreen() {
                           <Text style={styles.actionButtonText}>Edit</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                          onPress={() => handleDeleteFertilizer(fertilizer.id)}
+                          onPress={() => {
+                            console.log('Inventory: Delete pressed for id', fertilizer.id);
+                            handleDeleteFertilizer(fertilizer.id);
+                          }}
                           style={[styles.actionButton, styles.deleteButton]}
                         >
                           <Text style={styles.deleteButtonText}>Delete</Text>
@@ -494,7 +469,10 @@ export default function InventoryScreen() {
                           <Text style={styles.actionButtonText}>Edit</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                          onPress={() => handleDeleteSeed(seed.id)}
+                          onPress={() => {
+                            console.log('Inventory: Delete pressed for id', seed.id);
+                            handleDeleteSeed(seed.id);
+                          }}
                           style={[styles.actionButton, styles.deleteButton]}
                         >
                           <Text style={styles.deleteButtonText}>Delete</Text>
@@ -543,7 +521,10 @@ export default function InventoryScreen() {
                           <Text style={styles.actionButtonText}>Edit</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                          onPress={() => handleDeleteTransplant(transplant.id)}
+                          onPress={() => {
+                            console.log('Inventory: Delete pressed for id', transplant.id);
+                            handleDeleteTransplant(transplant.id);
+                          }}
                           style={[styles.actionButton, styles.deleteButton]}
                         >
                           <Text style={styles.deleteButtonText}>Delete</Text>
@@ -600,7 +581,10 @@ export default function InventoryScreen() {
                           <Text style={styles.actionButtonText}>Edit</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                          onPress={() => handleDeletePackaging(pkg.id)}
+                          onPress={() => {
+                            console.log('Inventory: Delete pressed for id', pkg.id);
+                            handleDeletePackaging(pkg.id);
+                          }}
                           style={[styles.actionButton, styles.deleteButton]}
                         >
                           <Text style={styles.deleteButtonText}>Delete</Text>
