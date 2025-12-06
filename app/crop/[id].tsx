@@ -176,7 +176,8 @@ export default function CropDetailScreen() {
     storage: 'Not specified',
   };
 
-  // Use guide data for soil, spacing, companions, pests, and harvest sections
+  // Use guide data for growing conditions, soil, spacing, companions, pests, and harvest sections
+  const growingConditionsInfo = guide?.growingConditions || 'Growing condition details are not available for this crop yet.';
   const soilInfo = guide?.soil || `${cropDetails.soilType}, pH ${cropDetails.soilPH}`;
   const spacingInfo = guide?.spacing || `Plant spacing: ${cropDetails.plantSpacing}, Row spacing: ${cropDetails.rowSpacing}, Planting depth: ${cropDetails.plantingDepth}`;
   const companionsInfo = guide?.companions || (cropDetails.companions !== 'Not specified' ? cropDetails.companions : 'No companion planting information available for this crop yet.');
@@ -213,22 +214,7 @@ export default function CropDetailScreen() {
 
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>☀️ Growing Conditions</Text>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Sunlight:</Text>
-              <Text style={styles.detailValue}>{cropDetails.sunlight}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Water:</Text>
-              <Text style={styles.detailValue}>{cropDetails.water}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Temperature:</Text>
-              <Text style={styles.detailValue}>{cropDetails.temperature}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Hardiness:</Text>
-              <Text style={styles.detailValue}>{cropDetails.hardiness}</Text>
-            </View>
+            <Text style={styles.detailValue}>{growingConditionsInfo}</Text>
           </View>
 
           <View style={styles.sectionCard}>

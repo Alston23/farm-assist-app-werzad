@@ -6,11 +6,13 @@ export interface CropGuide {
   pests: string;
   harvest: string;
   notes: string;
+  growingConditions: string;
 }
 
 export const cropGuides: Record<string, CropGuide> = {
   // VEGETABLES
   tomato: {
+    growingConditions: 'Tomatoes are warm-season crops requiring full sun (6–8+ hours daily) and temperatures between 65–85°F (18–29°C). They are highly frost-sensitive and should not be planted until all danger of frost has passed and soil has warmed to at least 60°F. Consistent moisture is essential, especially during fruit development.',
     soil: 'Well-drained loam rich in organic matter, pH 6.0–6.8. Add compost before planting and side-dress with balanced fertilizer during fruiting.',
     spacing: '18–24" between plants, 3–4 ft between rows. Closer spacing for determinate varieties, wider for indeterminate.',
     companions: 'Basil, marigold, onions, carrots, parsley. Avoid planting with potatoes, fennel, or brassicas.',
@@ -19,6 +21,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Indeterminate types need staking or trellising. Prune suckers for larger fruits. Mulch to retain moisture and prevent soil-borne diseases.',
   },
   lettuce: {
+    growingConditions: 'Lettuce thrives in cool weather with temperatures between 45–75°F (7–24°C) and tolerates partial shade, especially in warmer climates. It requires consistent moisture and will bolt (go to seed) rapidly when temperatures exceed 80°F. Spring and fall plantings are most successful in most regions.',
     soil: 'Loose, well-drained soil rich in nitrogen, pH 6.0–7.0. Prefers cool conditions and consistent moisture.',
     spacing: '6–12" between plants depending on variety, 12–18" between rows. Thin seedlings early for best head development.',
     companions: 'Carrots, radishes, strawberries, cucumbers. Avoid planting near cabbage family or parsley.',
@@ -27,6 +30,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Succession plant every 2 weeks for continuous harvest. Provide afternoon shade in hot climates. Bolts quickly in heat.',
   },
   carrot: {
+    growingConditions: 'Carrots prefer cool to moderate temperatures between 60–70°F (15–21°C) and require full sun for best root development. They tolerate light frost and can be grown spring through fall in most climates. Consistent moisture is critical for straight, crack-free roots.',
     soil: 'Deep, loose, sandy loam free of rocks and clods, pH 6.0–6.8. Avoid fresh manure which causes forking.',
     spacing: '2–4" between plants, 12–18" between rows. Thin seedlings to prevent crowding and misshapen roots.',
     companions: 'Onions, leeks, rosemary, sage, tomatoes. Avoid planting with dill or parsnips.',
@@ -35,6 +39,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Seeds germinate slowly (14–21 days). Keep soil consistently moist until germination. Sweetest after light frost.',
   },
   cucumber: {
+    growingConditions: 'Cucumbers are heat-loving plants requiring full sun (6–8 hours daily) and warm temperatures between 70–85°F (21–29°C). They are extremely frost-sensitive and need warm soil (at least 70°F) for germination. High humidity and consistent moisture promote vigorous growth and prevent bitterness.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–7.0. Warm soil temperature (70°F+) essential for germination.',
     spacing: '12–24" between plants in rows, 4–6 ft between rows. Bush varieties can be closer; vining types need more room.',
     companions: 'Beans, peas, radishes, sunflowers, corn. Avoid planting with potatoes, aromatic herbs, or melons.',
@@ -43,6 +48,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Provide trellis for vertical growing to save space and improve air circulation. Consistent watering prevents bitterness.',
   },
   bell_pepper: {
+    growingConditions: 'Bell peppers require warm temperatures between 70–85°F (21–29°C) during the day and above 60°F at night, with full sun exposure (6–8 hours daily). They are very sensitive to cold soils and frost, requiring soil temperatures of at least 65°F before transplanting. Consistent warmth and moisture are essential for fruit set.',
     soil: 'Warm, well-drained soil rich in organic matter, pH 6.0–6.8. Requires consistent moisture and warm temperatures.',
     spacing: '18–24" between plants, 24–36" between rows. Adequate spacing improves air circulation and reduces disease.',
     companions: 'Basil, onions, spinach, tomatoes. Avoid planting with fennel or kohlrabi.',
@@ -51,6 +57,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Very sensitive to cold soils and frost. Wait until soil is 65°F+ before transplanting. Stake plants to support heavy fruit loads.',
   },
   broccoli: {
+    growingConditions: 'Broccoli is a cool-season crop thriving in temperatures between 60–70°F (15–21°C) with full sun to partial shade. It tolerates light frost and actually develops better flavor after exposure to cold. Hot weather (above 80°F) causes premature bolting and bitter flavor.',
     soil: 'Rich, well-drained soil with high nitrogen, pH 6.0–7.0. Benefits from consistent moisture and cool temperatures.',
     spacing: '18–24" between plants, 24–36" between rows. Adequate spacing allows for side shoot development.',
     companions: 'Onions, potatoes, beets, herbs. Avoid planting with tomatoes, peppers, or strawberries.',
@@ -59,6 +66,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Cool-season crop that bolts in heat. Plant in early spring or late summer. Tolerates light frost which improves flavor.',
   },
   cauliflower: {
+    growingConditions: 'Cauliflower requires cool temperatures between 60–65°F (15–18°C) and is more temperature-sensitive than broccoli. It needs full sun and consistent, cool conditions without temperature fluctuations. Heat stress causes poor head formation and bitter flavor, while frost can damage developing heads.',
     soil: 'Rich, moisture-retentive soil with high organic matter, pH 6.5–7.0. Requires consistent moisture and cool temperatures.',
     spacing: '18–24" between plants, 24–36" between rows. Needs room for large leaves that protect developing heads.',
     companions: 'Celery, onions, potatoes, herbs. Avoid planting with tomatoes or strawberries.',
@@ -67,6 +75,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'More finicky than broccoli. Requires steady growth without stress. Self-blanching varieties available.',
   },
   cabbage: {
+    growingConditions: 'Cabbage is a hardy cool-season crop preferring temperatures between 60–70°F (15–21°C) with full sun exposure. It tolerates frost well and can withstand temperatures down to 20°F once established. Consistent moisture and cool weather produce the best quality heads.',
     soil: 'Fertile, well-drained soil with high organic matter, pH 6.5–7.0. Heavy feeder requiring consistent moisture.',
     spacing: '12–24" between plants depending on variety, 24–36" between rows. Early varieties can be closer.',
     companions: 'Beets, celery, onions, potatoes. Avoid planting with tomatoes, peppers, or pole beans.',
@@ -75,6 +84,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Cool-season crop. Spring plantings mature quickly; fall plantings develop better flavor. Tolerates frost.',
   },
   spinach: {
+    growingConditions: 'Spinach thrives in cool temperatures between 50–70°F (10–21°C) and can tolerate light frost. It requires full sun in cool weather but benefits from partial shade in warmer conditions. Temperatures above 75°F and long days trigger rapid bolting, making spring and fall the ideal growing seasons.',
     soil: 'Rich, well-drained soil with high nitrogen, pH 6.5–7.0. Prefers cool temperatures and consistent moisture.',
     spacing: '3–6" between plants, 12–18" between rows. Can be grown more densely for baby leaf production.',
     companions: 'Strawberries, peas, beans, celery. Avoid planting near potatoes.',
@@ -83,6 +93,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Fast-growing cool-season crop. Succession plant every 2 weeks. Bolts quickly in heat and long days.',
   },
   kale: {
+    growingConditions: 'Kale is extremely cold-hardy, thriving in temperatures between 55–75°F (13–24°C) with full sun to partial shade. It tolerates frost exceptionally well and flavor actually improves after exposure to freezing temperatures. Kale can withstand temperatures as low as 10°F and continues growing through mild winters.',
     soil: 'Rich, well-drained soil with moderate nitrogen, pH 6.0–7.5. Tolerates a wide range of conditions.',
     spacing: '12–18" between plants, 18–24" between rows. Closer spacing for baby greens.',
     companions: 'Onions, beets, potatoes, herbs. Avoid planting with tomatoes or pole beans.',
@@ -91,6 +102,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Very cold-hardy. Can overwinter in mild climates. Flavor improves after frost. One of the most nutritious vegetables.',
   },
   zucchini: {
+    growingConditions: 'Zucchini requires warm temperatures between 70–85°F (21–29°C) and full sun (6–8 hours daily). It is frost-sensitive and needs warm soil (at least 70°F) for germination and growth. Hot weather promotes rapid growth and heavy fruit production.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–7.5. Warm soil temperature (70°F+) required.',
     spacing: '24–36" between plants, 3–4 ft between rows. Bush varieties need less space than vining types.',
     companions: 'Beans, corn, peas, radishes. Avoid planting with potatoes.',
@@ -99,6 +111,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Very productive. One or two plants sufficient for most families. Hand-pollinate if bee activity is low.',
   },
   eggplant: {
+    growingConditions: 'Eggplant is a heat-loving crop requiring warm temperatures between 70–85°F (21–29°C) and full sun (6–8 hours daily). It is very frost-sensitive and needs consistently warm conditions, with soil temperatures above 70°F. Cool temperatures below 60°F slow growth and reduce fruit set significantly.',
     soil: 'Rich, well-drained soil with high organic matter, pH 5.5–6.8. Requires warm temperatures and consistent moisture.',
     spacing: '18–24" between plants, 30–36" between rows. Adequate spacing improves air circulation.',
     companions: 'Beans, peppers, potatoes, spinach. Avoid planting with fennel.',
@@ -107,6 +120,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Requires long, warm growing season. Start indoors 8–10 weeks before last frost. Stake plants to support heavy fruit.',
   },
   onion: {
+    growingConditions: 'Onions prefer cool temperatures between 55–75°F (13–24°C) during early growth, followed by warmer temperatures for bulb development. They require full sun (6+ hours daily) and are day-length sensitive, with bulbing triggered by specific day lengths. Most varieties tolerate light frost.',
     soil: 'Loose, well-drained soil with moderate fertility, pH 6.0–7.0. Avoid heavy clay or compacted soil.',
     spacing: '4–6" between plants, 12–18" between rows. Closer spacing produces smaller bulbs.',
     companions: 'Carrots, beets, lettuce, tomatoes. Avoid planting with peas or beans.',
@@ -115,6 +129,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Day-length sensitive. Choose short-day varieties for southern regions, long-day for northern. Plant sets or transplants for easier growing.',
   },
   garlic: {
+    growingConditions: 'Garlic requires a cold period (vernalization) with temperatures below 40°F (4°C) for 4–8 weeks to form proper bulbs. It grows best in full sun and cool to moderate temperatures during spring growth (60–70°F). Plant in fall for summer harvest in most climates.',
     soil: 'Loose, well-drained soil with high organic matter, pH 6.0–7.0. Requires good drainage to prevent rot.',
     spacing: '4–6" between cloves, 12–18" between rows. Plant pointed end up, 2" deep.',
     companions: 'Roses, tomatoes, brassicas. Avoid planting with peas or beans.',
@@ -123,6 +138,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Plant in fall for summer harvest. Hardneck varieties produce scapes (edible flower stalks). Softneck varieties store longer.',
   },
   potato: {
+    growingConditions: 'Potatoes grow best in cool to moderate temperatures between 60–70°F (15–21°C) with full sun. They are frost-sensitive but tolerate light frost once established. Tubers form best when soil temperatures are between 60–70°F; temperatures above 80°F reduce tuber formation and quality.',
     soil: 'Loose, well-drained, slightly acidic soil, pH 5.0–6.0. Avoid heavy clay or alkaline soil.',
     spacing: '12" between seed pieces, 30–36" between rows. Plant 4" deep and hill as plants grow.',
     companions: 'Beans, corn, cabbage, peas. Avoid planting with tomatoes, peppers, or eggplant.',
@@ -131,6 +147,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Use certified disease-free seed potatoes. Hill soil around plants to prevent greening. Rotate crops to prevent disease buildup.',
   },
   sweet_potato: {
+    growingConditions: 'Sweet potatoes are tropical plants requiring hot temperatures between 75–85°F (24–29°C) and full sun. They need a long, warm growing season (100–120 frost-free days) and are extremely frost-sensitive. Soil must be warm (at least 70°F) before planting slips.',
     soil: 'Loose, well-drained, sandy soil, pH 5.5–6.5. Requires warm soil (70°F+) and long growing season.',
     spacing: '12–18" between slips, 3–4 ft between rows. Plant slips 4–6" deep.',
     companions: 'Beans, summer savory. Avoid planting with squash.',
@@ -139,6 +156,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Requires 100–120 frost-free days. Vines spread extensively. Cured roots store for months in cool, dry location.',
   },
   radish: {
+    growingConditions: 'Radishes are cool-season crops thriving in temperatures between 50–65°F (10–18°C) with full sun to partial shade. They mature quickly (20–30 days) and tolerate light frost. Hot weather (above 75°F) causes roots to become pithy, hot, and prone to bolting.',
     soil: 'Loose, well-drained soil, pH 6.0–7.0. Avoid heavy clay or rocky soil which causes misshapen roots.',
     spacing: '1–2" between plants, 6–12" between rows. Thin seedlings early for best root development.',
     companions: 'Lettuce, peas, cucumbers, beans. Avoid planting with hyssop.',
@@ -147,6 +165,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Fast-growing (20–30 days). Succession plant every week. Best in cool weather. Use as trap crop for flea beetles.',
   },
   beet: {
+    growingConditions: 'Beets prefer cool to moderate temperatures between 60–70°F (15–21°C) with full sun. They tolerate light frost and can be grown spring through fall. Hot weather (above 80°F) can cause poor root development and zoning (white rings) in roots.',
     soil: 'Loose, well-drained soil with moderate fertility, pH 6.5–7.5. Avoid acidic soil.',
     spacing: '3–4" between plants, 12–18" between rows. Thin seedlings as each seed produces multiple plants.',
     companions: 'Onions, lettuce, cabbage, bush beans. Avoid planting with pole beans.',
@@ -155,6 +174,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Cool-season crop. Soak seeds overnight for better germination. Tolerates light frost. Stores well in cool, moist conditions.',
   },
   turnip: {
+    growingConditions: 'Turnips are cool-season crops growing best in temperatures between 50–65°F (10–18°C) with full sun. They tolerate frost well and develop sweeter flavor after cold exposure. Hot weather causes roots to become woody and bitter.',
     soil: 'Well-drained, fertile soil, pH 6.0–7.0. Prefers cool temperatures and consistent moisture.',
     spacing: '4–6" between plants, 12–18" between rows. Thin seedlings early.',
     companions: 'Peas, beans, onions. Avoid planting with potatoes.',
@@ -163,6 +183,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Fast-growing cool-season crop. Spring and fall plantings. Flavor improves after light frost. Stores well.',
   },
   peas: {
+    growingConditions: 'Peas are cool-season crops thriving in temperatures between 55–70°F (13–21°C) with full sun. They tolerate frost well and can be planted as soon as soil can be worked in spring. Hot weather (above 75°F) reduces pod set and causes rapid decline.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.5. Avoid high nitrogen which promotes foliage over pods.',
     spacing: '2–4" between plants, 18–24" between rows. Provide support for climbing varieties.',
     companions: 'Carrots, turnips, radishes, cucumbers. Avoid planting with onions or garlic.',
@@ -171,6 +192,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Cool-season crop. Plant as soon as soil can be worked. Inoculate seeds with rhizobia for nitrogen fixation. Tolerates light frost.',
   },
   green_beans: {
+    growingConditions: 'Green beans are warm-season crops requiring temperatures between 70–80°F (21–27°C) and full sun (6+ hours daily). They are frost-sensitive and need warm soil (at least 60°F) for germination. Consistent warmth promotes rapid growth and heavy pod production.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Avoid high nitrogen which delays flowering.',
     spacing: '4–6" between plants, 18–24" between rows. Bush types need less space than pole varieties.',
     companions: 'Corn, cucumbers, radishes, strawberries. Avoid planting with onions or fennel.',
@@ -179,6 +201,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Warm-season crop. Direct seed after frost danger. Pole beans produce longer but need support. Bush beans mature all at once.',
   },
   corn: {
+    growingConditions: 'Corn is a warm-season crop requiring hot temperatures between 75–85°F (24–29°C) and full sun. It is frost-sensitive and needs warm soil (at least 60°F, ideally 65–70°F) for germination. Consistent warmth and moisture during pollination and ear development are critical for good yields.',
     soil: 'Rich, well-drained soil with high nitrogen, pH 6.0–6.8. Heavy feeder requiring consistent moisture.',
     spacing: '8–12" between plants, 30–36" between rows. Plant in blocks for better pollination.',
     companions: 'Beans, squash, peas, cucumbers (Three Sisters). Avoid planting with tomatoes.',
@@ -187,6 +210,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Requires warm soil (60°F+). Wind-pollinated so plant in blocks. Succession plant every 2 weeks. Supersweet varieties need isolation.',
   },
   asparagus: {
+    growingConditions: 'Asparagus is a perennial crop preferring cool to moderate temperatures between 60–75°F (15–24°C) during the growing season, with full sun. It requires a cold dormant period in winter and tolerates frost well. Spears emerge in early spring when soil warms.',
     soil: 'Deep, well-drained, sandy loam, pH 6.5–7.5. Requires excellent drainage and high organic matter.',
     spacing: '12–18" between plants, 4–5 ft between rows. Plant crowns 6–8" deep in trenches.',
     companions: 'Tomatoes, parsley, basil. Avoid planting with onions or potatoes.',
@@ -195,6 +219,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial crop lasting 15–20 years. Requires patience but very productive once established. Allow ferns to grow after harvest to feed crowns.',
   },
   brussels_sprouts: {
+    growingConditions: 'Brussels sprouts are cool-season crops thriving in temperatures between 60–70°F (15–21°C) with full sun. They are very cold-hardy, tolerating frost and temperatures down to 20°F. Flavor improves significantly after exposure to frost, making them ideal for fall and winter harvest.',
     soil: 'Rich, well-drained soil with high nitrogen, pH 6.0–7.5. Requires consistent moisture and cool temperatures.',
     spacing: '18–24" between plants, 24–36" between rows. Needs room for tall growth.',
     companions: 'Onions, potatoes, beets, herbs. Avoid planting with tomatoes or strawberries.',
@@ -203,6 +228,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Long-season crop (90–180 days). Plant in mid-summer for fall harvest. Very cold-hardy. Pinch growing tip in late summer to focus energy on sprouts.',
   },
   celery: {
+    growingConditions: 'Celery requires cool temperatures between 60–70°F (15–21°C) with full sun to partial shade. It is sensitive to temperature extremes, with frost damaging plants and heat causing bolting. Consistent cool conditions and abundant moisture are essential for tender, crisp stalks.',
     soil: 'Rich, moisture-retentive soil with high organic matter, pH 6.0–7.0. Requires consistent moisture and cool temperatures.',
     spacing: '6–10" between plants, 24" between rows. Shallow roots need frequent watering.',
     companions: 'Beans, tomatoes, cabbage. Avoid planting with carrots or parsnips.',
@@ -211,6 +237,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Challenging crop requiring long, cool growing season. Start indoors 10–12 weeks before last frost. Blanch stalks by hilling soil or wrapping for milder flavor.',
   },
   leek: {
+    growingConditions: 'Leeks prefer cool to moderate temperatures between 55–75°F (13–24°C) with full sun. They are very cold-hardy, tolerating frost and even freezing temperatures. Leeks can be left in the ground through winter in many climates with proper mulching.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–7.0. Requires consistent moisture.',
     spacing: '4–6" between plants, 12–18" between rows. Plant in trenches and hill as plants grow.',
     companions: 'Carrots, celery, onions. Avoid planting with beans or peas.',
@@ -219,6 +246,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Long-season crop. Start indoors 8–10 weeks before last frost. Hill soil around plants to blanch and lengthen white portion.',
   },
   swiss_chard: {
+    growingConditions: 'Swiss chard tolerates a wide temperature range from 50–85°F (10–29°C) with full sun to partial shade. It is more heat-tolerant than spinach and can produce through summer in many climates. Light frost is tolerated and can improve flavor.',
     soil: 'Rich, well-drained soil with moderate fertility, pH 6.0–7.0. Tolerates wide range of conditions.',
     spacing: '6–12" between plants, 18" between rows. Thin seedlings as each seed produces multiple plants.',
     companions: 'Beans, onions, lettuce, brassicas. Avoid planting with potatoes.',
@@ -227,6 +255,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Heat-tolerant alternative to spinach. Succession plant for continuous harvest. Colorful varieties make attractive ornamental.',
   },
   arugula: {
+    growingConditions: 'Arugula is a cool-season crop thriving in temperatures between 50–65°F (10–18°C) with full sun to partial shade. It tolerates light frost and grows quickly in cool weather. Hot temperatures (above 75°F) cause rapid bolting and increasingly bitter, peppery flavor.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Prefers cool temperatures.',
     spacing: '4–6" between plants, 12" between rows. Can be grown more densely for baby greens.',
     companions: 'Lettuce, spinach, carrots, beets. Generally compatible with most crops.',
@@ -235,6 +264,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Fast-growing (30–40 days). Succession plant every 2 weeks. Bolts quickly in heat. Self-seeds readily.',
   },
   bok_choy: {
+    growingConditions: 'Bok choy is a cool-season crop growing best in temperatures between 55–70°F (13–21°C) with full sun to partial shade. It tolerates light frost and matures quickly in cool weather. Hot temperatures (above 75°F) trigger rapid bolting.',
     soil: 'Rich, well-drained soil with high nitrogen, pH 6.0–7.5. Requires consistent moisture and cool temperatures.',
     spacing: '6–12" between plants depending on variety, 18" between rows. Baby varieties can be closer.',
     companions: 'Beets, onions, herbs. Avoid planting with tomatoes or strawberries.',
@@ -243,6 +273,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Fast-growing cool-season crop. Bolts quickly in heat. Succession plant every 2 weeks. Very cold-tolerant.',
   },
   collard_greens: {
+    growingConditions: 'Collard greens are very cold-hardy, growing well in temperatures between 60–75°F (15–24°C) with full sun. They tolerate frost exceptionally well and can withstand temperatures down to 10°F. Collards are also more heat-tolerant than other brassicas, producing through summer in many climates.',
     soil: 'Rich, well-drained soil with moderate fertility, pH 6.5–7.5. Tolerates wide range of conditions.',
     spacing: '18–24" between plants, 24–36" between rows. Needs room for large leaves.',
     companions: 'Onions, potatoes, beans. Avoid planting with tomatoes.',
@@ -251,6 +282,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Very cold-hardy. Can overwinter in mild climates. More heat-tolerant than other brassicas. Long harvest season.',
   },
   mustard_greens: {
+    growingConditions: 'Mustard greens are cool-season crops thriving in temperatures between 50–70°F (10–21°C) with full sun to partial shade. They tolerate light frost and mature quickly. Hot weather (above 75°F) causes rapid bolting and increasingly hot, bitter flavor.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.5. Prefers cool temperatures.',
     spacing: '6–12" between plants, 12–18" between rows. Closer spacing for baby greens.',
     companions: 'Peas, beans, onions. Avoid planting with strawberries.',
@@ -259,6 +291,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Fast-growing (30–40 days). Becomes bitter and hot in warm weather. Succession plant in cool seasons.',
   },
   kohlrabi: {
+    growingConditions: 'Kohlrabi is a cool-season crop growing best in temperatures between 60–70°F (15–21°C) with full sun. It tolerates light frost and is more heat-tolerant than other brassicas. Consistent cool temperatures produce the most tender bulbs.',
     soil: 'Rich, well-drained soil with consistent moisture, pH 6.0–7.5. Prefers cool temperatures.',
     spacing: '6–8" between plants, 12–18" between rows. Adequate spacing prevents woody bulbs.',
     companions: 'Beets, onions, cucumbers. Avoid planting with tomatoes or pole beans.',
@@ -267,6 +300,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Fast-growing (50–60 days). Spring and fall plantings. More heat-tolerant than other brassicas. Unique flavor between cabbage and broccoli stem.',
   },
   rutabaga: {
+    growingConditions: 'Rutabagas are cool-season crops thriving in temperatures between 50–65°F (10–18°C) with full sun. They are very cold-hardy, tolerating frost and developing sweeter flavor after cold exposure. They require a longer, cooler growing season than turnips.',
     soil: 'Deep, well-drained soil with moderate fertility, pH 5.5–7.0. Requires consistent moisture.',
     spacing: '6–8" between plants, 18–24" between rows. Thin seedlings early.',
     companions: 'Peas, onions. Avoid planting with potatoes.',
@@ -275,6 +309,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Long-season crop (90–120 days). Plant in mid-summer for fall harvest. Very cold-hardy. Stores well in cool, moist conditions.',
   },
   parsnip: {
+    growingConditions: 'Parsnips are cool-season crops growing best in temperatures between 60–70°F (15–21°C) with full sun. They are extremely cold-hardy and require exposure to frost for best flavor, as cold converts starches to sugars. They can be left in ground all winter.',
     soil: 'Deep, loose, stone-free soil, pH 6.0–7.0. Avoid fresh manure which causes forking.',
     spacing: '3–6" between plants, 18" between rows. Thin seedlings early.',
     companions: 'Peas, beans, peppers, potatoes. Avoid planting with carrots or celery.',
@@ -283,6 +318,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Long-season crop (120+ days). Seeds germinate slowly. Requires cold period for best flavor. Very cold-hardy.',
   },
   butternut_squash: {
+    growingConditions: 'Butternut squash is a warm-season crop requiring hot temperatures between 75–85°F (24–29°C) and full sun. It is frost-sensitive and needs warm soil (at least 70°F) for germination. Consistent warmth throughout the long growing season is essential for fruit development.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–6.8. Warm soil (70°F+) required.',
     spacing: '3–4 ft between plants, 5–6 ft between rows. Vines spread extensively.',
     companions: 'Corn, beans, peas, radishes. Avoid planting with potatoes.',
@@ -291,6 +327,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Long-season crop (100+ days). Fruits store for months in cool, dry location. Very productive.',
   },
   acorn_squash: {
+    growingConditions: 'Acorn squash is a warm-season crop requiring temperatures between 70–85°F (21–29°C) and full sun. It is frost-sensitive and needs warm soil (at least 70°F) for germination. It has a shorter season than butternut squash but still requires consistent warmth.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–6.8. Warm soil (70°F+) required.',
     spacing: '3–4 ft between plants, 5–6 ft between rows. Vines spread extensively.',
     companions: 'Corn, beans, peas, radishes. Avoid planting with potatoes.',
@@ -299,6 +336,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Shorter season than butternut (85 days). Stores for 2–3 months. Bush varieties available for small gardens.',
   },
   pumpkin: {
+    growingConditions: 'Pumpkins are warm-season crops requiring hot temperatures between 75–85°F (24–29°C) and full sun. They are frost-sensitive and need warm soil (at least 70°F) for germination. Consistent warmth and moisture throughout the long growing season produce the largest fruits.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–6.8. Warm soil (70°F+) required.',
     spacing: '3–5 ft between plants, 6–8 ft between rows. Vines spread very extensively.',
     companions: 'Corn, beans, peas. Avoid planting with potatoes.',
@@ -307,6 +345,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Long-season crop (100–120 days). Prune vines and limit fruits for larger pumpkins. Stores for months in cool, dry location.',
   },
   spaghetti_squash: {
+    growingConditions: 'Spaghetti squash is a warm-season crop requiring temperatures between 70–85°F (21–29°C) and full sun. It is frost-sensitive and needs warm soil (at least 70°F) for germination. Consistent warmth promotes healthy vine growth and fruit development.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–6.8. Warm soil (70°F+) required.',
     spacing: '3–4 ft between plants, 5–6 ft between rows. Vines spread extensively.',
     companions: 'Corn, beans, peas, radishes. Avoid planting with potatoes.',
@@ -315,6 +354,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Medium-season crop (90 days). Flesh separates into spaghetti-like strands when cooked. Stores for 2–3 months.',
   },
   summer_squash: {
+    growingConditions: 'Summer squash is a warm-season crop requiring temperatures between 70–85°F (21–29°C) and full sun. It is frost-sensitive and needs warm soil (at least 70°F) for germination. Hot weather promotes rapid growth and heavy fruit production.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–7.0. Warm soil (70°F+) required.',
     spacing: '24–36" between plants, 3–4 ft between rows. Bush varieties need less space.',
     companions: 'Beans, corn, peas, radishes. Avoid planting with potatoes.',
@@ -323,6 +363,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Fast-growing (50 days). Very productive. One or two plants sufficient for most families.',
   },
   okra: {
+    growingConditions: 'Okra is a heat-loving crop requiring hot temperatures between 75–90°F (24–32°C) and full sun. It is very frost-sensitive and needs warm soil (at least 70°F) for germination. Okra thrives in hot, humid conditions where other vegetables struggle.',
     soil: 'Well-drained, fertile soil, pH 6.0–7.0. Requires warm soil (70°F+) and hot weather.',
     spacing: '12–18" between plants, 3–4 ft between rows. Adequate spacing improves air circulation.',
     companions: 'Peppers, eggplant, cucumbers. Avoid planting with squash.',
@@ -331,6 +372,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Heat-loving crop. Very productive in hot weather. Wear gloves when harvesting as plants can be prickly.',
   },
   artichoke: {
+    growingConditions: 'Artichokes are perennial crops preferring cool, mild temperatures between 60–70°F (15–21°C) with full sun. They require a long growing season and are frost-sensitive when young but tolerate light frost once established. Ideal for Mediterranean-type climates with mild winters.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.5–7.5. Requires consistent moisture.',
     spacing: '3–4 ft between plants, 4–6 ft between rows. Large plants need room.',
     companions: 'Sunflowers, tarragon. Generally compatible with most crops.',
@@ -339,6 +381,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial in mild climates, annual elsewhere. Requires long growing season. Very productive once established.',
   },
   fennel: {
+    growingConditions: 'Fennel is a cool-season crop growing best in temperatures between 60–70°F (15–21°C) with full sun. It tolerates light frost but bolts quickly in hot weather (above 75°F). Consistent cool temperatures produce the best bulb development.',
     soil: 'Rich, well-drained soil with consistent moisture, pH 6.0–7.0. Prefers cool temperatures.',
     spacing: '12" between plants, 18–24" between rows. Adequate spacing allows bulb development.',
     companions: 'Generally grows best alone. Inhibits growth of many plants.',
@@ -347,6 +390,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Cool-season crop. Bolts in heat. Plant away from other vegetables as it inhibits growth. All parts are edible.',
   },
   radicchio: {
+    growingConditions: 'Radicchio is a cool-season crop thriving in temperatures between 50–65°F (10–18°C) with full sun to partial shade. It tolerates frost well and develops better color and flavor after cold exposure. Hot weather causes bitterness and bolting.',
     soil: 'Rich, well-drained soil with consistent moisture, pH 6.0–7.0. Prefers cool temperatures.',
     spacing: '8–12" between plants, 12–18" between rows. Adequate spacing allows head formation.',
     companions: 'Lettuce, onions, carrots. Generally compatible with most crops.',
@@ -355,6 +399,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Cool-season crop. Bitter flavor mellows with cooking. More cold-tolerant than lettuce. Attractive red color.',
   },
   endive: {
+    growingConditions: 'Endive is a cool-season crop growing best in temperatures between 60–70°F (15–21°C) with full sun. It tolerates light frost and is more heat-tolerant than lettuce. Consistent cool temperatures produce the most tender leaves.',
     soil: 'Rich, well-drained soil with consistent moisture, pH 6.0–7.0. Prefers cool temperatures.',
     spacing: '8–12" between plants, 12–18" between rows. Adequate spacing allows head formation.',
     companions: 'Lettuce, onions, carrots. Generally compatible with most crops.',
@@ -363,6 +408,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Cool-season crop. More heat-tolerant than lettuce. Slightly bitter flavor. Includes curly and broad-leaved types.',
   },
   watercress: {
+    growingConditions: 'Watercress is a cool-season aquatic plant thriving in temperatures between 50–70°F (10–21°C) with partial shade to full sun. It requires constant moisture or running water and tolerates light frost. Hot weather (above 75°F) causes rapid decline.',
     soil: 'Rich, moisture-retentive soil or shallow water, pH 6.5–7.5. Requires constant moisture or running water.',
     spacing: '4–6" between plants, 12" between rows. Can be grown in water or very wet soil.',
     companions: 'Generally compatible with moisture-loving plants.',
@@ -371,6 +417,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Aquatic or semi-aquatic plant. Grows best in cool, running water. Peppery flavor. Very nutritious.',
   },
   shallot: {
+    growingConditions: 'Shallots prefer cool to moderate temperatures between 55–75°F (13–24°C) with full sun. They are more cold-hardy than onions, tolerating frost well. Bulbs develop best with cool spring growth followed by warmer temperatures for maturation.',
     soil: 'Loose, well-drained soil with moderate fertility, pH 6.0–7.0. Avoid heavy clay.',
     spacing: '4–6" between bulbs, 12" between rows. Plant pointed end up.',
     companions: 'Carrots, beets, lettuce, tomatoes. Avoid planting with peas or beans.',
@@ -379,6 +426,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Plant in fall or early spring. Milder flavor than onions. Stores well. Can be grown from sets or seed.',
   },
   scallion: {
+    growingConditions: 'Scallions tolerate a wide temperature range from 55–75°F (13–24°C) with full sun to partial shade. They are cold-hardy, tolerating frost and light freezing. They can be grown nearly year-round in mild climates.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Tolerates wide range of conditions.',
     spacing: '1–2" between plants, 12" between rows. Can be grown more densely.',
     companions: 'Carrots, beets, lettuce, tomatoes. Avoid planting with peas or beans.',
@@ -387,6 +435,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Fast-growing (60 days). Succession plant every 2–3 weeks. Also called green onions or spring onions.',
   },
   chives: {
+    growingConditions: 'Chives are perennial herbs tolerating a wide temperature range from 50–80°F (10–27°C) with full sun to partial shade. They are very cold-hardy, tolerating frost and freezing temperatures. They go dormant in winter and return in spring.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Tolerates wide range of conditions.',
     spacing: '8–12" between clumps, 12" between rows. Grows in clumps.',
     companions: 'Carrots, tomatoes, roses. Generally compatible with most crops.',
@@ -395,6 +444,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial herb. Very easy to grow. Divide clumps every 3–4 years. Mild onion flavor.',
   },
   horseradish: {
+    growingConditions: 'Horseradish is a very cold-hardy perennial thriving in temperatures between 55–75°F (13–24°C) with full sun to partial shade. It tolerates frost and freezing temperatures well. Roots develop best flavor after exposure to cold temperatures.',
     soil: 'Deep, rich, moist soil, pH 6.0–7.0. Tolerates wide range of conditions.',
     spacing: '18–24" between plants, 30" between rows. Plant root cuttings at 45° angle.',
     companions: 'Potatoes. Generally grows best alone as it can be invasive.',
@@ -403,6 +453,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Very invasive. Plant in contained area. Roots are hottest after frost. Grate fresh for condiment.',
   },
   ginger: {
+    growingConditions: 'Ginger is a tropical plant requiring warm, humid conditions with temperatures between 75–85°F (24–29°C) and partial shade to filtered sun. It is very frost-sensitive and needs a long, warm growing season (8–10 months). High humidity promotes best growth.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–6.5. Requires warm, humid conditions.',
     spacing: '8–12" between rhizomes, 12" between rows. Plant 2–4" deep.',
     companions: 'Generally compatible with tropical crops.',
@@ -411,6 +462,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Tropical plant requiring long, warm growing season. Grow in containers in cool climates. Harvest before frost.',
   },
   jalapeño_pepper: {
+    growingConditions: 'Jalapeño peppers require warm temperatures between 70–85°F (21–29°C) and full sun (6–8 hours daily). They are frost-sensitive and need warm soil (at least 65°F) before transplanting. Consistent warmth promotes heavy fruit production.',
     soil: 'Well-drained soil rich in organic matter, pH 6.0–6.8. Requires warm temperatures.',
     spacing: '18–24" between plants, 24–36" between rows. Adequate spacing improves air circulation.',
     companions: 'Basil, onions, spinach, tomatoes. Avoid planting with fennel.',
@@ -419,6 +471,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Warm-season crop. Wait until soil is 65°F+ before transplanting. Fruits develop corky lines (corking) when mature.',
   },
   habanero_pepper: {
+    growingConditions: 'Habanero peppers require hot temperatures between 75–90°F (24–32°C) and full sun. They are very frost-sensitive and need consistently warm conditions with soil temperatures above 70°F. They require a longer, hotter growing season than jalapeños.',
     soil: 'Well-drained soil rich in organic matter, pH 6.0–6.8. Requires hot temperatures.',
     spacing: '18–24" between plants, 24–36" between rows. Adequate spacing improves air circulation.',
     companions: 'Basil, onions, spinach, tomatoes. Avoid planting with fennel.',
@@ -427,6 +480,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Requires long, hot growing season (90+ days). One of the hottest peppers. Very productive.',
   },
   serrano_pepper: {
+    growingConditions: 'Serrano peppers require warm temperatures between 70–85°F (21–29°C) and full sun. They are frost-sensitive and need warm soil (at least 65°F) before transplanting. They are more heat-tolerant than jalapeños and produce well in hot weather.',
     soil: 'Well-drained soil rich in organic matter, pH 6.0–6.8. Requires warm temperatures.',
     spacing: '18–24" between plants, 24–36" between rows. Adequate spacing improves air circulation.',
     companions: 'Basil, onions, spinach, tomatoes. Avoid planting with fennel.',
@@ -435,6 +489,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Warm-season crop. More heat-tolerant than jalapeños. Very productive. Fruits are smaller than jalapeños.',
   },
   poblano_pepper: {
+    growingConditions: 'Poblano peppers require warm temperatures between 70–85°F (21–29°C) and full sun. They are frost-sensitive and need warm soil (at least 65°F) before transplanting. Consistent warmth produces the largest, mildest fruits.',
     soil: 'Well-drained soil rich in organic matter, pH 6.0–6.8. Requires warm temperatures.',
     spacing: '18–24" between plants, 24–36" between rows. Adequate spacing improves air circulation.',
     companions: 'Basil, onions, spinach, tomatoes. Avoid planting with fennel.',
@@ -443,6 +498,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Warm-season crop. Larger fruits than jalapeños. When dried, called ancho peppers. Stake plants to support heavy fruits.',
   },
   cherry_tomato: {
+    growingConditions: 'Cherry tomatoes are warm-season crops requiring full sun (6–8+ hours daily) and temperatures between 65–85°F (18–29°C). They are frost-sensitive but generally more heat-tolerant and disease-resistant than large tomatoes. Consistent moisture prevents fruit cracking.',
     soil: 'Well-drained loam rich in organic matter, pH 6.0–6.8. Add compost before planting.',
     spacing: '24–36" between plants, 3–4 ft between rows. Closer spacing for determinate varieties.',
     companions: 'Basil, marigold, onions, carrots, parsley. Avoid planting with potatoes or fennel.',
@@ -453,6 +509,7 @@ export const cropGuides: Record<string, CropGuide> = {
 
   // FRUITS
   strawberry: {
+    growingConditions: 'Strawberries prefer cool to moderate temperatures between 60–80°F (15–27°C) with full sun (6+ hours daily). They tolerate light frost and can produce in spring and fall. Hot weather (above 85°F) reduces fruit quality and plant vigor.',
     soil: 'Well-drained, slightly acidic soil rich in organic matter, pH 5.5–6.5. Avoid heavy clay.',
     spacing: '12–18" between plants, 3–4 ft between rows. Plant with crown at soil level.',
     companions: 'Beans, lettuce, onions, spinach. Avoid planting with brassicas.',
@@ -461,6 +518,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. June-bearing produce one large crop; everbearing produce all season. Remove runners first year for better establishment.',
   },
   blueberry: {
+    growingConditions: 'Blueberries require cool to moderate temperatures between 60–80°F (15–27°C) with full sun. They need a cold winter period (chill hours) for proper fruit set. Different varieties require different chill hours, so choose varieties suited to your climate.',
     soil: 'Acidic, well-drained soil with high organic matter, pH 4.5–5.5. Requires acidic conditions.',
     spacing: '4–6 ft between plants, 8–10 ft between rows. Plant 2+ varieties for cross-pollination.',
     companions: 'Azaleas, rhododendrons, other acid-loving plants.',
@@ -469,6 +527,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial shrub. Requires 2+ years to establish. Prune annually for best production. Mulch with pine needles or wood chips.',
   },
   raspberry: {
+    growingConditions: 'Raspberries prefer cool to moderate temperatures between 60–75°F (15–24°C) with full sun to partial shade. They tolerate frost well and require winter chill for proper fruiting. Hot weather (above 85°F) can reduce fruit quality.',
     soil: 'Well-drained, fertile soil rich in organic matter, pH 6.0–6.5. Avoid heavy clay.',
     spacing: '2–3 ft between plants, 8–10 ft between rows. Provide support with trellis or posts.',
     companions: 'Garlic, tansy. Avoid planting with blackberries or near potatoes.',
@@ -477,6 +536,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Summer-bearing produce once; everbearing produce twice. Prune old canes after fruiting. Spreads by suckers.',
   },
   blackberry: {
+    growingConditions: 'Blackberries tolerate a wide temperature range from 60–85°F (15–29°C) with full sun. They are cold-hardy and require winter chill for proper fruiting. They are more heat-tolerant than raspberries.',
     soil: 'Well-drained, fertile soil rich in organic matter, pH 5.5–7.0. Tolerates wide range.',
     spacing: '3–5 ft between plants, 8–10 ft between rows. Provide support for trailing varieties.',
     companions: 'Generally grows best alone. Can be invasive.',
@@ -485,6 +545,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Thorny and thornless varieties available. Prune old canes after fruiting. Very vigorous and can be invasive.',
   },
   apple: {
+    growingConditions: 'Apples require cool to moderate temperatures with full sun (6+ hours daily). They need winter chill hours (typically 500–1000 hours below 45°F) for proper fruiting. Spring frost during bloom can damage flowers and reduce crop.',
     soil: 'Well-drained, fertile soil, pH 6.0–7.0. Avoid poorly drained sites.',
     spacing: '15–20 ft between trees depending on rootstock. Dwarf varieties can be closer.',
     companions: 'Nasturtiums, chives, comfrey. Avoid planting near potatoes.',
@@ -493,6 +554,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Requires 2+ varieties for cross-pollination. Takes 2–5 years to bear fruit. Prune annually. Choose disease-resistant varieties.',
   },
   pear: {
+    growingConditions: 'Pears require cool to moderate temperatures with full sun. They need winter chill hours (typically 600–900 hours below 45°F) for proper fruiting. They bloom earlier than apples and are more susceptible to spring frost damage.',
     soil: 'Well-drained, fertile soil, pH 6.0–7.0. Tolerates heavier soil than apples.',
     spacing: '15–20 ft between trees depending on rootstock. Dwarf varieties can be closer.',
     companions: 'Nasturtiums, chives, comfrey. Generally compatible with most crops.',
@@ -501,6 +563,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Requires 2+ varieties for cross-pollination. Takes 3–5 years to bear fruit. More susceptible to fire blight than apples.',
   },
   peach: {
+    growingConditions: 'Peaches require warm temperatures with full sun and need winter chill hours (typically 600–900 hours below 45°F). They bloom early and are susceptible to spring frost damage. Hot summers (75–85°F) promote best fruit development.',
     soil: 'Well-drained, sandy loam, pH 6.0–7.0. Avoid heavy clay or poorly drained sites.',
     spacing: '15–20 ft between trees depending on rootstock. Dwarf varieties can be closer.',
     companions: 'Tansy, garlic, chives. Avoid planting near tomatoes.',
@@ -509,6 +572,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Self-pollinating. Bears fruit in 2–4 years. Requires annual pruning. Thin fruits for larger size. Chill hours required.',
   },
   plum: {
+    growingConditions: 'Plums require cool to moderate temperatures with full sun and need winter chill hours (typically 400–800 hours below 45°F depending on variety). European plums tolerate cooler climates; Japanese plums need warmer conditions.',
     soil: 'Well-drained, fertile soil, pH 6.0–7.0. Tolerates wide range of soils.',
     spacing: '15–20 ft between trees depending on rootstock. Dwarf varieties can be closer.',
     companions: 'Chives, garlic, tansy. Generally compatible with most crops.',
@@ -517,6 +581,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Some varieties self-pollinating, others need cross-pollination. Bears fruit in 3–5 years. Thin fruits for larger size.',
   },
   cherry: {
+    growingConditions: 'Cherries require cool to moderate temperatures with full sun and need winter chill hours (typically 800–1200 hours below 45°F). They bloom early and are very susceptible to spring frost damage. Sweet cherries need warmer summers than sour cherries.',
     soil: 'Well-drained, sandy loam, pH 6.0–7.0. Excellent drainage essential.',
     spacing: '20–25 ft between trees depending on rootstock. Dwarf varieties can be closer.',
     companions: 'Chives, garlic, tansy. Generally compatible with most crops.',
@@ -525,6 +590,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Sweet cherries need cross-pollination; sour cherries self-pollinating. Bears fruit in 3–5 years. Requires chill hours.',
   },
   apricot: {
+    growingConditions: 'Apricots require warm temperatures with full sun and need winter chill hours (typically 400–900 hours below 45°F). They bloom very early and are highly susceptible to spring frost damage. Hot, dry summers produce the best fruit.',
     soil: 'Well-drained, sandy loam, pH 6.0–7.0. Excellent drainage essential.',
     spacing: '15–20 ft between trees depending on rootstock. Dwarf varieties can be closer.',
     companions: 'Chives, garlic, tansy. Generally compatible with most crops.',
@@ -533,6 +599,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Self-pollinating. Bears fruit in 3–4 years. Blooms early so susceptible to late frost. Thin fruits for larger size.',
   },
   grape: {
+    growingConditions: 'Grapes require warm to hot temperatures between 70–90°F (21–32°C) with full sun. They need winter chill hours (typically 100–500 hours depending on variety) and a long, warm growing season. Different varieties suited to different climates.',
     soil: 'Well-drained, fertile soil, pH 5.5–7.0. Deep roots need good drainage.',
     spacing: '6–8 ft between vines, 8–10 ft between rows. Provide sturdy trellis support.',
     companions: 'Hyssop, geraniums, blackberries. Avoid planting with cabbage or radishes.',
@@ -541,6 +608,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial vine. Takes 3 years to bear fruit. Requires annual pruning. Choose varieties suited to climate.',
   },
   watermelon: {
+    growingConditions: 'Watermelons require hot temperatures between 75–90°F (24–32°C) and full sun. They are very frost-sensitive and need warm soil (at least 70°F) for germination. Consistent heat throughout the long growing season is essential for sweet, juicy fruit.',
     soil: 'Well-drained, sandy loam rich in organic matter, pH 6.0–7.0. Warm soil (70°F+) required.',
     spacing: '3–5 ft between plants, 6–8 ft between rows. Vines spread very extensively.',
     companions: 'Corn, beans, peas, radishes. Avoid planting with potatoes.',
@@ -549,6 +617,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Long-season crop (80–100 days). Requires hot weather and consistent moisture. Mulch to keep fruits clean.',
   },
   cantaloupe: {
+    growingConditions: 'Cantaloupes require warm to hot temperatures between 70–85°F (21–29°C) and full sun. They are frost-sensitive and need warm soil (at least 70°F) for germination. Consistent warmth and moderate humidity promote best fruit development.',
     soil: 'Well-drained, sandy loam rich in organic matter, pH 6.0–7.0. Warm soil (70°F+) required.',
     spacing: '2–3 ft between plants, 5–6 ft between rows. Vines spread extensively.',
     companions: 'Corn, beans, peas, radishes. Avoid planting with potatoes or cucumbers.',
@@ -557,6 +626,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Warm-season crop (80–90 days). Requires consistent moisture until fruits start ripening, then reduce water for sweeter flavor.',
   },
   honeydew_melon: {
+    growingConditions: 'Honeydew melons require hot temperatures between 75–90°F (24–32°C) and full sun. They are frost-sensitive and need warm soil (at least 70°F) for germination. They require a longer, hotter growing season than cantaloupes.',
     soil: 'Well-drained, sandy loam rich in organic matter, pH 6.0–7.0. Warm soil (70°F+) required.',
     spacing: '2–3 ft between plants, 5–6 ft between rows. Vines spread extensively.',
     companions: 'Corn, beans, peas, radishes. Avoid planting with potatoes or cucumbers.',
@@ -565,6 +635,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Longer season than cantaloupe (90–100 days). Requires hot weather. Fruits don&apos;t slip from vine when ripe.',
   },
   lemon: {
+    growingConditions: 'Lemons are subtropical trees requiring warm temperatures between 70–85°F (21–29°C) with full sun. They are frost-sensitive (damaged below 28°F) and need consistent warmth year-round. They can tolerate brief cool periods but not freezing.',
     soil: 'Well-drained, sandy loam, pH 5.5–6.5. Avoid heavy clay or poorly drained sites.',
     spacing: '12–25 ft between trees depending on variety. Dwarf varieties can be grown in containers.',
     companions: 'Generally compatible with other citrus and Mediterranean herbs.',
@@ -573,6 +644,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Evergreen tree. Frost-sensitive. Grow in containers in cold climates. Everbearing with flowers and fruits year-round.',
   },
   lime: {
+    growingConditions: 'Limes are tropical trees requiring warm temperatures between 70–90°F (21–32°C) with full sun. They are very frost-sensitive (damaged below 32°F) and need consistent warmth year-round. They are more cold-sensitive than lemons.',
     soil: 'Well-drained, sandy loam, pH 6.0–7.0. Avoid heavy clay or poorly drained sites.',
     spacing: '12–25 ft between trees depending on variety. Dwarf varieties can be grown in containers.',
     companions: 'Generally compatible with other citrus and Mediterranean herbs.',
@@ -581,6 +653,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Evergreen tree. Very frost-sensitive. Grow in containers in cold climates. Everbearing with flowers and fruits year-round.',
   },
   orange: {
+    growingConditions: 'Oranges are subtropical trees requiring warm temperatures between 70–85°F (21–29°C) with full sun. They are frost-sensitive (damaged below 28°F) and need winter chill hours for sweet fruit. They require consistent warmth during fruit development.',
     soil: 'Well-drained, sandy loam, pH 6.0–7.5. Avoid heavy clay or poorly drained sites.',
     spacing: '12–25 ft between trees depending on variety. Dwarf varieties can be grown in containers.',
     companions: 'Generally compatible with other citrus and Mediterranean herbs.',
@@ -589,6 +662,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Evergreen tree. Frost-sensitive. Requires chill hours for sweet fruit. Takes 3–5 years to bear fruit.',
   },
   grapefruit: {
+    growingConditions: 'Grapefruits are subtropical trees requiring hot temperatures between 75–90°F (24–32°C) with full sun. They are frost-sensitive (damaged below 28°F) and need consistent heat for sweet fruit. They require the hottest climate of all citrus.',
     soil: 'Well-drained, sandy loam, pH 6.0–7.5. Avoid heavy clay or poorly drained sites.',
     spacing: '12–25 ft between trees depending on variety. Dwarf varieties can be grown in containers.',
     companions: 'Generally compatible with other citrus and Mediterranean herbs.',
@@ -597,6 +671,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Evergreen tree. Frost-sensitive. Requires hot climate for best flavor. Takes 3–5 years to bear fruit.',
   },
   tangerine: {
+    growingConditions: 'Tangerines are subtropical trees requiring warm temperatures between 70–85°F (21–29°C) with full sun. They are more cold-tolerant than other citrus (damaged below 26°F) and can tolerate brief cool periods. They need less heat than oranges for sweet fruit.',
     soil: 'Well-drained, sandy loam, pH 6.0–7.0. Avoid heavy clay or poorly drained sites.',
     spacing: '12–25 ft between trees depending on variety. Dwarf varieties can be grown in containers.',
     companions: 'Generally compatible with other citrus and Mediterranean herbs.',
@@ -605,6 +680,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Evergreen tree. More cold-tolerant than other citrus. Takes 2–3 years to bear fruit. Includes mandarins and clementines.',
   },
   fig: {
+    growingConditions: 'Figs require warm to hot temperatures between 70–85°F (21–29°C) with full sun. They tolerate brief cold periods but are damaged by hard frost (below 20°F). They need hot summers for fruit to ripen properly.',
     soil: 'Well-drained, fertile soil, pH 6.0–6.5. Tolerates wide range of soils.',
     spacing: '10–15 ft between trees. Can be grown in large containers.',
     companions: 'Generally compatible with most crops. Avoid planting near vegetables as roots are invasive.',
@@ -613,6 +689,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Deciduous tree. Some varieties produce 2 crops per year. Can be grown as large shrub. Protect from frost in cold climates.',
   },
   pomegranate: {
+    growingConditions: 'Pomegranates require hot, dry temperatures between 75–90°F (24–32°C) with full sun. They tolerate brief cold periods but are damaged by hard frost (below 10°F). They need hot, dry summers for best fruit quality.',
     soil: 'Well-drained soil, pH 5.5–7.0. Tolerates poor soil and drought once established.',
     spacing: '12–18 ft between trees. Can be grown as large shrub.',
     companions: 'Generally compatible with Mediterranean herbs and drought-tolerant plants.',
@@ -621,6 +698,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Deciduous shrub/tree. Heat-loving. Takes 2–3 years to bear fruit. Very drought-tolerant once established.',
   },
   kiwi: {
+    growingConditions: 'Kiwis require moderate temperatures between 60–75°F (15–24°C) with full sun to partial shade. They need winter chill hours (typically 600–800 hours below 45°F) and are damaged by late spring frost. They prefer cool, humid climates.',
     soil: 'Well-drained, fertile soil rich in organic matter, pH 6.0–6.5. Avoid heavy clay.',
     spacing: '10–15 ft between vines. Provide sturdy trellis or arbor support.',
     companions: 'Generally compatible with most crops.',
@@ -629,6 +707,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial vine. Requires male and female plants for pollination. Takes 3–5 years to bear fruit. Very vigorous growth.',
   },
   persimmon: {
+    growingConditions: 'Persimmons tolerate a wide temperature range from 60–85°F (15–29°C) with full sun. American types are very cold-hardy (to -25°F); Asian types less so (to 0°F). They need warm summers for fruit to ripen.',
     soil: 'Well-drained, fertile soil, pH 6.0–7.5. Tolerates wide range of soils.',
     spacing: '15–20 ft between trees. Size varies by variety.',
     companions: 'Generally compatible with most crops.',
@@ -637,6 +716,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Deciduous tree. American types very cold-hardy; Asian types less so. Takes 3–5 years to bear fruit.',
   },
   cranberry: {
+    growingConditions: 'Cranberries require cool temperatures between 60–70°F (15–21°C) with full sun. They need winter chill hours and tolerate frost well. They require constant moisture or flooding and acidic conditions.',
     soil: 'Acidic, peaty soil with high organic matter, pH 4.0–5.5. Requires constant moisture or flooding.',
     spacing: '12" between plants, 3–4 ft between rows. Spreads by runners.',
     companions: 'Blueberries and other acid-loving plants.',
@@ -645,6 +725,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Requires specialized growing conditions. Commercial production uses flooded bogs. Takes 2–3 years to establish.',
   },
   gooseberry: {
+    growingConditions: 'Gooseberries prefer cool temperatures between 60–70°F (15–21°C) with full sun to partial shade. They are very cold-hardy and tolerate frost well. Hot weather (above 85°F) reduces fruit quality.',
     soil: 'Well-drained, fertile soil rich in organic matter, pH 6.0–6.5. Prefers cool climates.',
     spacing: '3–5 ft between plants, 6–8 ft between rows. Can be trained as bush or standard.',
     companions: 'Tomatoes, beans. Avoid planting near white pines (alternate host for blister rust).',
@@ -653,6 +734,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial shrub. Very cold-hardy. Takes 2–3 years to bear fruit. Prune annually for best production.',
   },
   currant: {
+    growingConditions: 'Currants prefer cool temperatures between 60–70°F (15–21°C) with full sun to partial shade. They are very cold-hardy and tolerate frost well. Hot weather (above 85°F) reduces fruit quality.',
     soil: 'Well-drained, fertile soil rich in organic matter, pH 6.0–6.5. Prefers cool climates.',
     spacing: '3–5 ft between plants, 6–8 ft between rows. Can be trained as bush or standard.',
     companions: 'Tomatoes, beans. Avoid planting near white pines (alternate host for blister rust).',
@@ -661,6 +743,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial shrub. Very cold-hardy. Takes 2–3 years to bear fruit. Prune annually for best production.',
   },
   elderberry: {
+    growingConditions: 'Elderberries tolerate a wide temperature range from 60–80°F (15–27°C) with full sun to partial shade. They are very cold-hardy and tolerate frost well. They prefer cool, moist conditions.',
     soil: 'Moist, well-drained soil rich in organic matter, pH 5.5–6.5. Tolerates wet conditions.',
     spacing: '6–10 ft between plants, 10–12 ft between rows. Large shrubs need room.',
     companions: 'Generally compatible with most crops.',
@@ -669,6 +752,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial shrub. Very cold-hardy. Takes 2–3 years to bear fruit. Plant 2+ varieties for better pollination.',
   },
   mulberry: {
+    growingConditions: 'Mulberries tolerate a wide temperature range from 60–90°F (15–32°C) with full sun. They are cold-hardy and tolerate frost well. They adapt to various climates and are very heat-tolerant.',
     soil: 'Well-drained, fertile soil, pH 6.0–7.0. Tolerates wide range of soils.',
     spacing: '15–30 ft between trees depending on variety. Can be kept smaller with pruning.',
     companions: 'Generally compatible with most crops.',
@@ -677,6 +761,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Deciduous tree. Very easy to grow. Takes 2–3 years to bear fruit. Messy when fruiting. Choose fruitless varieties for ornamental use.',
   },
   quince: {
+    growingConditions: 'Quinces prefer cool to moderate temperatures between 60–75°F (15–24°C) with full sun. They tolerate frost well and need winter chill hours (typically 200–400 hours below 45°F). They are more cold-hardy than apples.',
     soil: 'Well-drained, fertile soil, pH 6.0–7.0. Tolerates heavy soil better than apples.',
     spacing: '12–15 ft between trees. Can be grown as large shrub.',
     companions: 'Generally compatible with most crops.',
@@ -685,6 +770,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Deciduous tree/shrub. Self-pollinating. Takes 3–5 years to bear fruit. Fruits used for preserves and baking.',
   },
   nectarine: {
+    growingConditions: 'Nectarines require warm temperatures with full sun and need winter chill hours (typically 600–900 hours below 45°F). They bloom early and are susceptible to spring frost damage. Hot summers (75–85°F) promote best fruit development. Essentially the same as peaches.',
     soil: 'Well-drained, sandy loam, pH 6.0–7.0. Avoid heavy clay or poorly drained sites.',
     spacing: '15–20 ft between trees depending on rootstock. Dwarf varieties can be closer.',
     companions: 'Tansy, garlic, chives. Avoid planting near tomatoes.',
@@ -693,6 +779,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Self-pollinating. Bears fruit in 2–4 years. Requires annual pruning. Thin fruits for larger size. Essentially fuzzless peach.',
   },
   passion_fruit: {
+    growingConditions: 'Passion fruit is a tropical vine requiring warm temperatures between 70–85°F (21–29°C) with full sun to partial shade. It is frost-sensitive (damaged below 32°F) and needs consistent warmth year-round. High humidity promotes best growth.',
     soil: 'Well-drained, fertile soil rich in organic matter, pH 6.5–7.5. Requires warm climate.',
     spacing: '10–15 ft between vines. Provide sturdy trellis or fence support.',
     companions: 'Generally compatible with tropical crops.',
@@ -701,6 +788,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial vine in frost-free climates. Fast-growing. Bears fruit in 1–2 years. Requires hand-pollination in some climates.',
   },
   guava: {
+    growingConditions: 'Guavas are tropical trees requiring warm temperatures between 70–85°F (21–29°C) with full sun. They are frost-sensitive (damaged below 28°F) and need consistent warmth. They tolerate brief cool periods but not freezing.',
     soil: 'Well-drained, fertile soil, pH 5.0–7.0. Tolerates wide range of soils.',
     spacing: '10–15 ft between trees. Can be kept smaller with pruning.',
     companions: 'Generally compatible with tropical crops.',
@@ -709,6 +797,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Evergreen shrub/tree. Frost-sensitive. Bears fruit in 2–4 years. Very productive. Prune to maintain size.',
   },
   papaya: {
+    growingConditions: 'Papayas are tropical plants requiring hot temperatures between 75–90°F (24–32°C) with full sun. They are very frost-sensitive (damaged below 32°F) and need consistent heat and humidity. They grow best in tropical and subtropical climates.',
     soil: 'Well-drained, sandy loam rich in organic matter, pH 6.0–6.5. Excellent drainage essential.',
     spacing: '8–10 ft between plants. Short-lived so plant new trees every few years.',
     companions: 'Generally compatible with tropical crops.',
@@ -719,6 +808,7 @@ export const cropGuides: Record<string, CropGuide> = {
 
   // FLOWERS
   sunflower: {
+    growingConditions: 'Sunflowers are warm-season annuals thriving in temperatures between 70–85°F (21–29°C) with full sun (6–8 hours daily). They tolerate heat well and are moderately frost-sensitive. They grow best in warm, sunny conditions with low humidity.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.5. Tolerates poor soil.',
     spacing: '6–24" between plants depending on variety, 2–3 ft between rows. Giant varieties need more space.',
     companions: 'Corn, cucumbers, squash. Avoid planting with potatoes or pole beans.',
@@ -727,6 +817,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Fast-growing annual. Attracts pollinators and beneficial insects. Edible seeds. Allelopathic to some plants.',
   },
   rose: {
+    growingConditions: 'Roses prefer moderate temperatures between 60–75°F (15–24°C) with full sun (6+ hours daily). They tolerate light frost but are damaged by hard freezes. Most varieties need winter protection in cold climates.',
     soil: 'Well-drained, fertile soil rich in organic matter, pH 6.0–6.5. Avoid heavy clay.',
     spacing: '2–6 ft between plants depending on variety. Adequate spacing improves air circulation.',
     companions: 'Garlic, chives, lavender, catmint. Avoid planting with boxwood.',
@@ -735,6 +826,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Requires regular feeding and pruning. Deadhead spent blooms for continuous flowering. Many varieties available.',
   },
   tulip: {
+    growingConditions: 'Tulips are spring-blooming bulbs requiring cool temperatures between 50–65°F (10–18°C) during growth, with full sun. They need a cold period (winter chill) to bloom properly. Hot weather causes rapid decline after flowering.',
     soil: 'Well-drained, fertile soil, pH 6.0–7.0. Excellent drainage essential.',
     spacing: '4–6" between bulbs, 12–18" between rows. Plant 6–8" deep in fall.',
     companions: 'Daffodils, grape hyacinths, pansies. Generally compatible with spring bulbs.',
@@ -743,6 +835,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Spring-blooming bulb. Plant in fall for spring flowers. May not return reliably in warm climates. Chill bulbs if needed.',
   },
   dahlia: {
+    growingConditions: 'Dahlias are warm-season perennials (grown as annuals in cold climates) thriving in temperatures between 60–75°F (15–24°C) with full sun. They are frost-sensitive and need warm soil for tuber growth. Cool nights promote best flowering.',
     soil: 'Well-drained, fertile soil rich in organic matter, pH 6.5–7.0. Avoid heavy clay.',
     spacing: '12–24" between plants depending on variety, 2–3 ft between rows. Stake tall varieties.',
     companions: 'Marigolds, zinnias, cosmos. Generally compatible with most flowers.',
@@ -751,6 +844,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Tender perennial grown as annual in cold climates. Dig tubers before frost and store. Pinch for bushier plants.',
   },
   zinnia: {
+    growingConditions: 'Zinnias are warm-season annuals thriving in temperatures between 70–85°F (21–29°C) with full sun. They are frost-sensitive and love hot weather. They tolerate heat and humidity better than many flowers.',
     soil: 'Well-drained soil with moderate fertility, pH 5.5–7.5. Tolerates poor soil.',
     spacing: '6–18" between plants depending on variety, 12–24" between rows. Adequate spacing reduces disease.',
     companions: 'Tomatoes, cucumbers, squash. Generally compatible with most crops.',
@@ -759,6 +853,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Fast-growing annual. Heat-loving. Deadhead for continuous blooming. Attracts butterflies and pollinators.',
   },
   marigold: {
+    growingConditions: 'Marigolds are warm-season annuals thriving in temperatures between 70–85°F (21–29°C) with full sun. They are frost-sensitive and love hot weather. They tolerate heat, drought, and poor soil well.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.5. Tolerates poor soil.',
     spacing: '8–18" between plants depending on variety, 12–18" between rows. Closer spacing for edging.',
     companions: 'Tomatoes, peppers, cucumbers, squash. Repels many pests. Generally compatible with vegetables.',
@@ -767,6 +862,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Fast-growing annual. Heat-loving. Repels nematodes and many pests. Attracts pollinators. Self-seeds readily.',
   },
   petunia: {
+    growingConditions: 'Petunias are warm-season annuals thriving in temperatures between 60–75°F (15–24°C) with full sun. They tolerate light frost but are damaged by hard freezes. They prefer moderate temperatures and can struggle in extreme heat.',
     soil: 'Well-drained, fertile soil, pH 6.0–7.0. Avoid heavy clay.',
     spacing: '12" between plants, 12–18" between rows. Trailing varieties need more space.',
     companions: 'Generally compatible with most flowers and vegetables.',
@@ -775,6 +871,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual. Requires regular feeding and deadheading. Wave and Supertunia varieties are low-maintenance. Fragrant flowers.',
   },
   pansy: {
+    growingConditions: 'Pansies are cool-season annuals thriving in temperatures between 40–65°F (4–18°C) with full sun to partial shade. They tolerate frost and light freezing well. Hot weather (above 75°F) causes rapid decline.',
     soil: 'Rich, well-drained soil with high organic matter, pH 5.5–6.5. Prefers cool temperatures.',
     spacing: '6–9" between plants, 12" between rows. Closer spacing for mass plantings.',
     companions: 'Tulips, daffodils, spring bulbs. Generally compatible with cool-season crops.',
@@ -783,6 +880,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Cool-season annual. Plant in fall or early spring. Tolerates light frost. Self-seeds readily. Edible flowers.',
   },
   snapdragon: {
+    growingConditions: 'Snapdragons are cool-season annuals thriving in temperatures between 50–70°F (10–21°C) with full sun. They tolerate light frost and prefer cool weather. Hot weather (above 80°F) reduces flowering and causes decline.',
     soil: 'Well-drained, fertile soil, pH 6.2–7.0. Prefers cool temperatures.',
     spacing: '6–12" between plants depending on variety, 12–18" between rows. Stake tall varieties.',
     companions: 'Generally compatible with most flowers and vegetables.',
@@ -791,6 +889,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Cool-season annual. Plant in fall or early spring. Deadhead for continuous blooming. Self-seeds readily.',
   },
   cosmos: {
+    growingConditions: 'Cosmos are warm-season annuals thriving in temperatures between 70–85°F (21–29°C) with full sun. They tolerate heat and drought well and are moderately frost-sensitive. They prefer warm, dry conditions.',
     soil: 'Well-drained soil with low to moderate fertility, pH 6.0–8.0. Tolerates poor soil.',
     spacing: '12–18" between plants, 18–24" between rows. Stake tall varieties in windy areas.',
     companions: 'Generally compatible with most crops. Attracts beneficial insects.',
@@ -799,6 +898,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Fast-growing annual. Heat-loving. Self-seeds readily. Attracts butterflies and pollinators. Very easy to grow.',
   },
   lavender: {
+    growingConditions: 'Lavender is a perennial herb thriving in temperatures between 60–80°F (15–27°C) with full sun. It is cold-hardy (to 0°F for most varieties) and very drought-tolerant once established. It prefers hot, dry summers and cool winters.',
     soil: 'Well-drained, sandy or gravelly soil, pH 6.5–7.5. Excellent drainage essential.',
     spacing: '12–18" between plants, 2–3 ft between rows. Adequate spacing improves air circulation.',
     companions: 'Roses, rosemary, sage, thyme. Generally compatible with Mediterranean herbs.',
@@ -807,6 +907,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Drought-tolerant once established. Prune after flowering. Attracts pollinators. Fragrant flowers and foliage.',
   },
   chrysanthemum: {
+    growingConditions: 'Chrysanthemums are perennials thriving in temperatures between 60–75°F (15–24°C) with full sun. They tolerate light frost and are triggered to bloom by short days (fall). Cool nights promote best flower color.',
     soil: 'Well-drained, fertile soil rich in organic matter, pH 6.5–7.0. Consistent moisture required.',
     spacing: '18–24" between plants, 2–3 ft between rows. Adequate spacing improves air circulation.',
     companions: 'Generally compatible with most flowers.',
@@ -815,6 +916,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Pinch regularly until mid-summer for bushier plants. Divide every 2–3 years. Fall-blooming.',
   },
   carnation: {
+    growingConditions: 'Carnations are perennials (often grown as annuals) thriving in temperatures between 50–70°F (10–21°C) with full sun. They tolerate light frost and prefer cool weather. Hot weather (above 80°F) reduces flower quality.',
     soil: 'Well-drained, fertile soil, pH 6.0–7.0. Avoid heavy clay.',
     spacing: '12–18" between plants, 18–24" between rows. Stake tall varieties.',
     companions: 'Generally compatible with most flowers.',
@@ -823,6 +925,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial often grown as annual. Deadhead for continuous blooming. Fragrant flowers. Many colors available.',
   },
   lily: {
+    growingConditions: 'Lilies are perennial bulbs thriving in temperatures between 60–75°F (15–24°C) with full sun to partial shade. They tolerate light frost and prefer cool roots with warm tops. Different types have different temperature preferences.',
     soil: 'Well-drained, fertile soil rich in organic matter, pH 6.0–6.5. Excellent drainage essential.',
     spacing: '12–18" between bulbs, 2–3 ft between rows. Plant 6–8" deep.',
     companions: 'Roses, peonies, daylilies. Generally compatible with perennials.',
@@ -831,6 +934,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial bulb. Plant in fall or spring. Mulch to keep roots cool. Many types: Asiatic, Oriental, trumpet, etc.',
   },
   iris: {
+    growingConditions: 'Irises are perennial rhizomes thriving in temperatures between 60–75°F (15–24°C) with full sun. Bearded iris prefer hot, dry summers; Japanese iris prefer cool, moist conditions. Most tolerate light frost.',
     soil: 'Well-drained soil, pH 6.0–7.5. Bearded iris prefer drier conditions; Japanese iris prefer moist soil.',
     spacing: '12–24" between rhizomes, 2–3 ft between rows. Plant rhizomes at soil surface.',
     companions: 'Roses, peonies, daylilies. Generally compatible with perennials.',
@@ -839,6 +943,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial rhizome. Divide every 3–4 years. Bearded iris need sun and good drainage. Many types and colors.',
   },
   daffodil: {
+    growingConditions: 'Daffodils are spring-blooming bulbs requiring cool temperatures between 50–65°F (10–18°C) during growth, with full sun to partial shade. They need a cold period (winter chill) to bloom properly. They tolerate light frost well.',
     soil: 'Well-drained soil, pH 6.0–7.0. Tolerates wide range of soils.',
     spacing: '4–6" between bulbs, 12–18" between rows. Plant 6" deep in fall.',
     companions: 'Tulips, grape hyacinths, pansies. Generally compatible with spring bulbs.',
@@ -847,6 +952,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Spring-blooming bulb. Plant in fall. Naturalizes well. Allow foliage to die back naturally. Very reliable.',
   },
   hyacinth: {
+    growingConditions: 'Hyacinths are spring-blooming bulbs requiring cool temperatures between 50–65°F (10–18°C) during growth, with full sun. They need a cold period (winter chill) to bloom properly. They tolerate light frost well.',
     soil: 'Well-drained, fertile soil, pH 6.0–7.0. Excellent drainage essential.',
     spacing: '6–9" between bulbs, 12" between rows. Plant 6" deep in fall.',
     companions: 'Tulips, daffodils, pansies. Generally compatible with spring bulbs.',
@@ -855,6 +961,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Spring-blooming bulb. Plant in fall. May not return reliably after first year. Very fragrant flowers.',
   },
   peony: {
+    growingConditions: 'Peonies are perennials thriving in temperatures between 60–75°F (15–24°C) with full sun. They are very cold-hardy and require winter chill (below 40°F) for proper blooming. They prefer cool springs and moderate summers.',
     soil: 'Well-drained, fertile soil rich in organic matter, pH 6.5–7.0. Avoid heavy clay.',
     spacing: '3–4 ft between plants. Large plants need room.',
     companions: 'Roses, irises, daylilies. Generally compatible with perennials.',
@@ -863,6 +970,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Plant in fall. Takes 2–3 years to establish. Very long-lived (50+ years). Support heavy blooms.',
   },
   hydrangea: {
+    growingConditions: 'Hydrangeas are perennial shrubs thriving in temperatures between 60–75°F (15–24°C) with morning sun and afternoon shade. They tolerate light frost and prefer cool, moist conditions. Hot afternoon sun can scorch leaves.',
     soil: 'Rich, well-drained soil with high organic matter, pH 5.5–6.5 (blue flowers) or 6.5–7.5 (pink flowers).',
     spacing: '3–10 ft between plants depending on variety. Large shrubs need room.',
     companions: 'Hostas, ferns, astilbes. Generally compatible with shade-loving plants.',
@@ -871,6 +979,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial shrub. Prune according to type. Flower color affected by soil pH. Prefers morning sun, afternoon shade.',
   },
   geranium: {
+    growingConditions: 'Geraniums are tender perennials (grown as annuals in cold climates) thriving in temperatures between 65–75°F (18–24°C) with full sun. They tolerate light frost but are damaged by hard freezes. They prefer moderate temperatures and can struggle in extreme heat.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Avoid overwatering.',
     spacing: '12–18" between plants, 18–24" between rows. Adequate spacing improves air circulation.',
     companions: 'Roses, petunias, marigolds. Generally compatible with most flowers.',
@@ -879,6 +988,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Tender perennial grown as annual in cold climates. Drought-tolerant. Many colors and types available.',
   },
   begonia: {
+    growingConditions: 'Begonias are tender perennials (grown as annuals in cold climates) thriving in temperatures between 60–75°F (15–24°C) with partial shade to shade. They are frost-sensitive and prefer cool, humid conditions. Hot sun can scorch leaves.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–7.0. Consistent moisture required.',
     spacing: '8–12" between plants depending on variety, 12–18" between rows.',
     companions: 'Impatiens, coleus, ferns. Generally compatible with shade-loving plants.',
@@ -887,6 +997,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Tender perennial grown as annual in cold climates. Prefers shade to part shade. Many types: wax, tuberous, rex.',
   },
   impatiens: {
+    growingConditions: 'Impatiens are annuals thriving in temperatures between 60–75°F (15–24°C) with partial shade to shade. They are frost-sensitive and prefer cool, humid conditions. Hot sun causes wilting and poor flowering.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–7.0. Consistent moisture required.',
     spacing: '8–12" between plants, 12" between rows. Closer spacing for mass plantings.',
     companions: 'Begonias, coleus, ferns. Generally compatible with shade-loving plants.',
@@ -895,6 +1006,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual. Prefers shade to part shade. Consistent moisture essential. Self-seeds readily. New Guinea types more sun-tolerant.',
   },
   salvia: {
+    growingConditions: 'Salvias (annual types) thrive in temperatures between 70–85°F (21–29°C) with full sun. They are frost-sensitive and love hot weather. Perennial types are more cold-hardy and tolerate light frost.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Drought-tolerant once established.',
     spacing: '12–18" between plants, 18–24" between rows. Adequate spacing improves air circulation.',
     companions: 'Roses, lavender, coneflowers. Generally compatible with most flowers.',
@@ -903,6 +1015,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual or perennial depending on type. Heat-loving. Attracts hummingbirds and butterflies. Many colors available.',
   },
   aster: {
+    growingConditions: 'Asters are perennials thriving in temperatures between 60–75°F (15–24°C) with full sun. They tolerate light frost and are triggered to bloom by short days (fall). Cool nights promote best flower color.',
     soil: 'Well-drained, fertile soil, pH 5.5–7.5. Consistent moisture required.',
     spacing: '12–24" between plants depending on variety, 2–3 ft between rows. Adequate spacing reduces disease.',
     companions: 'Chrysanthemums, sedum, ornamental grasses. Generally compatible with fall perennials.',
@@ -911,6 +1024,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Pinch in early summer for bushier plants. Divide every 2–3 years. Fall-blooming. Attracts butterflies.',
   },
   delphinium: {
+    growingConditions: 'Delphiniums are perennials thriving in cool temperatures between 60–70°F (15–21°C) with full sun. They tolerate light frost and prefer cool summers. Hot weather (above 80°F) causes poor flowering and decline.',
     soil: 'Rich, well-drained soil with high organic matter, pH 7.0–7.5. Prefers cool climates.',
     spacing: '12–18" between plants, 2–3 ft between rows. Stake tall flower spikes.',
     companions: 'Roses, peonies, foxgloves. Generally compatible with cottage garden plants.',
@@ -919,6 +1033,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Requires staking. Cut back after flowering for possible rebloom. Challenging in hot climates.',
   },
   hollyhock: {
+    growingConditions: 'Hollyhocks are biennials or short-lived perennials thriving in temperatures between 60–75°F (15–24°C) with full sun. They tolerate light frost and prefer moderate temperatures. Hot, humid weather promotes rust disease.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–8.0. Tolerates poor soil.',
     spacing: '18–24" between plants, 2–3 ft between rows. Stake tall plants.',
     companions: 'Roses, delphiniums, foxgloves. Generally compatible with cottage garden plants.',
@@ -927,6 +1042,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Biennial or short-lived perennial. Self-seeds readily. Very tall (6–8 ft). Rust disease is common problem.',
   },
   foxglove: {
+    growingConditions: 'Foxgloves are biennials thriving in cool temperatures between 60–70°F (15–21°C) with partial shade to full sun. They tolerate frost well and prefer cool, moist conditions. Hot weather causes rapid decline after flowering.',
     soil: 'Rich, well-drained soil with high organic matter, pH 5.5–6.5. Prefers cool climates.',
     spacing: '12–18" between plants, 2–3 ft between rows. Stake tall flower spikes in windy areas.',
     companions: 'Hostas, ferns, astilbes. Generally compatible with shade-loving plants.',
@@ -935,6 +1051,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Biennial. Self-seeds readily. Prefers part shade. Very tall (3–6 ft). All parts are poisonous.',
   },
   lupine: {
+    growingConditions: 'Lupines are perennials thriving in cool temperatures between 60–70°F (15–21°C) with full sun. They tolerate light frost and prefer cool summers. Hot weather (above 80°F) causes poor flowering and decline.',
     soil: 'Well-drained, slightly acidic soil, pH 6.0–7.0. Avoid heavy clay.',
     spacing: '12–18" between plants, 2–3 ft between rows. Stake tall varieties.',
     companions: 'Delphiniums, peonies, irises. Generally compatible with perennials.',
@@ -943,6 +1060,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Prefers cool climates. Fixes nitrogen. Self-seeds readily. Deadhead to prevent self-seeding.',
   },
   sweet_pea: {
+    growingConditions: 'Sweet peas are cool-season annuals thriving in temperatures between 50–70°F (10–21°C) with full sun. They tolerate frost well and prefer cool weather. Hot weather (above 75°F) causes rapid decline.',
     soil: 'Rich, well-drained soil with high organic matter, pH 7.0–7.5. Prefers cool temperatures.',
     spacing: '6" between plants, 12–18" between rows. Provide trellis or support.',
     companions: 'Generally compatible with cool-season crops.',
@@ -951,6 +1069,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual vine. Plant in fall or early spring. Prefers cool weather. Deadhead regularly. Very fragrant flowers.',
   },
   morning_glory: {
+    growingConditions: 'Morning glories are warm-season annuals thriving in temperatures between 70–85°F (21–29°C) with full sun. They are frost-sensitive and love hot weather. They tolerate heat and drought well.',
     soil: 'Well-drained soil with low to moderate fertility, pH 6.0–7.0. Tolerates poor soil.',
     spacing: '6–12" between plants, 12–18" between rows. Provide trellis or support.',
     companions: 'Corn, sunflowers. Generally compatible with tall crops.',
@@ -959,6 +1078,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual vine. Fast-growing. Self-seeds readily. Can be invasive. Flowers open in morning, close in afternoon.',
   },
   nasturtium: {
+    growingConditions: 'Nasturtiums are cool-season annuals thriving in temperatures between 60–75°F (15–24°C) with full sun to partial shade. They tolerate light frost and prefer cool weather. Hot weather (above 85°F) reduces flowering.',
     soil: 'Well-drained soil with low fertility, pH 6.0–8.0. Avoid high nitrogen.',
     spacing: '10–12" between plants, 12–18" between rows. Trailing varieties need more space.',
     companions: 'Tomatoes, cucumbers, squash, fruit trees. Repels aphids and whiteflies.',
@@ -967,6 +1087,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual. Fast-growing. Self-seeds readily. Edible flowers and leaves. Acts as trap crop for aphids.',
   },
   calendula: {
+    growingConditions: 'Calendulas are cool-season annuals thriving in temperatures between 50–70°F (10–21°C) with full sun. They tolerate frost well and prefer cool weather. Hot weather (above 80°F) reduces flowering.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Tolerates poor soil.',
     spacing: '9–12" between plants, 12–18" between rows. Closer spacing for mass plantings.',
     companions: 'Tomatoes, asparagus, roses. Generally compatible with vegetables.',
@@ -975,6 +1096,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Cool-season annual. Self-seeds readily. Edible and medicinal flowers. Attracts beneficial insects.',
   },
   poppy: {
+    growingConditions: 'Poppies (annual types) are cool-season plants thriving in temperatures between 50–70°F (10–21°C) with full sun. They tolerate frost well and prefer cool weather. Hot weather causes rapid decline after flowering.',
     soil: 'Well-drained soil with moderate fertility, pH 6.5–7.0. Avoid heavy clay.',
     spacing: '6–12" between plants depending on variety, 12–18" between rows. Thin seedlings early.',
     companions: 'Generally compatible with most flowers.',
@@ -983,6 +1105,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual or perennial depending on type. Direct seed as they don&apos;t transplant well. Self-seeds readily.',
   },
   coneflower: {
+    growingConditions: 'Coneflowers (Echinacea) are perennials thriving in temperatures between 60–80°F (15–27°C) with full sun. They tolerate heat, drought, and light frost well. They are very adaptable to various climates.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Drought-tolerant once established.',
     spacing: '18–24" between plants, 2–3 ft between rows. Adequate spacing improves air circulation.',
     companions: 'Black-eyed Susans, ornamental grasses, sedums. Generally compatible with prairie plants.',
@@ -991,6 +1114,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Very easy to grow. Drought-tolerant. Attracts butterflies and birds. Medicinal properties (Echinacea).',
   },
   black_eyed_susan: {
+    growingConditions: 'Black-eyed Susans are perennials or biennials thriving in temperatures between 60–80°F (15–27°C) with full sun. They tolerate heat, drought, and light frost well. They are very adaptable to various climates.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.5. Tolerates poor soil.',
     spacing: '12–18" between plants, 18–24" between rows. Adequate spacing improves air circulation.',
     companions: 'Coneflowers, ornamental grasses, sedums. Generally compatible with prairie plants.',
@@ -999,6 +1123,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial or biennial. Very easy to grow. Drought-tolerant. Self-seeds readily. Attracts butterflies and birds.',
   },
   coreopsis: {
+    growingConditions: 'Coreopsis are perennials thriving in temperatures between 60–80°F (15–27°C) with full sun. They tolerate heat, drought, and light frost well. They are very adaptable to various climates.',
     soil: 'Well-drained soil with low to moderate fertility, pH 6.0–7.0. Drought-tolerant once established.',
     spacing: '12–18" between plants, 18–24" between rows. Adequate spacing improves air circulation.',
     companions: 'Coneflowers, black-eyed Susans, ornamental grasses. Generally compatible with prairie plants.',
@@ -1007,6 +1132,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Very easy to grow. Drought-tolerant. Long blooming period. Attracts butterflies.',
   },
   gaillardia: {
+    growingConditions: 'Gaillardias are perennials thriving in temperatures between 60–85°F (15–29°C) with full sun. They tolerate heat, drought, and light frost well. They are very adaptable to various climates.',
     soil: 'Well-drained soil with low to moderate fertility, pH 6.0–7.0. Drought-tolerant once established.',
     spacing: '12–18" between plants, 18–24" between rows. Adequate spacing improves air circulation.',
     companions: 'Coneflowers, black-eyed Susans, ornamental grasses. Generally compatible with prairie plants.',
@@ -1015,6 +1141,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Very easy to grow. Drought-tolerant. Long blooming period. Attracts butterflies.',
   },
   dianthus: {
+    growingConditions: 'Dianthus are perennials or annuals thriving in temperatures between 60–70°F (15–21°C) with full sun. They tolerate light frost and prefer cool weather. Hot weather (above 80°F) reduces flowering.',
     soil: 'Well-drained, slightly alkaline soil, pH 6.5–7.5. Excellent drainage essential.',
     spacing: '6–12" between plants depending on variety, 12" between rows.',
     companions: 'Roses, lavender, salvia. Generally compatible with most flowers.',
@@ -1023,6 +1150,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial or annual depending on type. Fragrant flowers. Prefers cool temperatures. Many colors and forms.',
   },
   verbena: {
+    growingConditions: 'Verbenas are annuals or perennials thriving in temperatures between 60–80°F (15–27°C) with full sun. They tolerate heat and drought well once established. They are moderately frost-sensitive.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Drought-tolerant once established.',
     spacing: '12–18" between plants, 18–24" between rows. Trailing varieties need more space.',
     companions: 'Roses, petunias, marigolds. Generally compatible with most flowers.',
@@ -1031,6 +1159,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual or perennial depending on type. Heat-loving. Attracts butterflies. Long blooming period.',
   },
   alyssum: {
+    growingConditions: 'Alyssum is a cool-season annual thriving in temperatures between 50–70°F (10–21°C) with full sun to partial shade. It tolerates light frost and prefers cool weather. Hot weather (above 80°F) causes decline.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Tolerates poor soil.',
     spacing: '6–9" between plants, 12" between rows. Closer spacing for edging.',
     companions: 'Generally compatible with most flowers and vegetables. Good ground cover.',
@@ -1039,6 +1168,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Cool-season annual. Fragrant flowers. Self-seeds readily. Excellent edging plant. Attracts beneficial insects.',
   },
   celosia: {
+    growingConditions: 'Celosias are warm-season annuals thriving in temperatures between 70–85°F (21–29°C) with full sun. They are frost-sensitive and love hot weather. They tolerate heat and humidity well.',
     soil: 'Well-drained, fertile soil, pH 6.0–7.0. Consistent moisture required.',
     spacing: '8–18" between plants depending on variety, 12–24" between rows.',
     companions: 'Zinnias, marigolds, cosmos. Generally compatible with most flowers.',
@@ -1047,6 +1177,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual. Heat-loving. Long-lasting flowers. Includes plumed and crested types. Excellent for drying.',
   },
   columbine: {
+    growingConditions: 'Columbines are perennials thriving in cool temperatures between 60–70°F (15–21°C) with partial shade to full sun. They tolerate light frost and prefer cool, moist conditions. Hot weather causes decline.',
     soil: 'Well-drained, fertile soil rich in organic matter, pH 6.0–7.0. Prefers cool climates.',
     spacing: '12–18" between plants, 18–24" between rows.',
     companions: 'Hostas, ferns, bleeding hearts. Generally compatible with shade-loving plants.',
@@ -1055,6 +1186,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Prefers part shade. Self-seeds readily. Short-lived but reseeds. Attracts hummingbirds.',
   },
   bleeding_heart: {
+    growingConditions: 'Bleeding hearts are perennials thriving in cool temperatures between 60–70°F (15–21°C) with partial shade to shade. They tolerate frost well and prefer cool, moist conditions. Foliage goes dormant in summer heat.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–7.0. Consistent moisture required.',
     spacing: '2–3 ft between plants. Large plants need room.',
     companions: 'Hostas, ferns, astilbes. Generally compatible with shade-loving plants.',
@@ -1063,6 +1195,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Prefers shade. Spring-blooming. Foliage goes dormant in summer heat. Very long-lived.',
   },
   anemone: {
+    growingConditions: 'Anemones (tuberous types) are perennials thriving in cool temperatures between 50–65°F (10–18°C) with full sun to partial shade. They tolerate light frost and prefer cool weather. Hot weather causes decline.',
     soil: 'Well-drained, fertile soil rich in organic matter, pH 6.0–7.0. Consistent moisture required.',
     spacing: '6–12" between plants depending on variety, 12–18" between rows.',
     companions: 'Generally compatible with most perennials.',
@@ -1071,6 +1204,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial or tuberous depending on type. Spring or fall blooming. Soak tubers before planting.',
   },
   ranunculus: {
+    growingConditions: 'Ranunculus are tuberous perennials thriving in cool temperatures between 50–65°F (10–18°C) with full sun. They tolerate light frost and prefer cool weather. Hot weather (above 75°F) causes rapid decline.',
     soil: 'Well-drained, fertile soil rich in organic matter, pH 6.0–7.0. Consistent moisture required.',
     spacing: '4–6" between corms, 12" between rows. Plant 2" deep.',
     companions: 'Anemones, tulips, daffodils. Generally compatible with spring bulbs.',
@@ -1079,6 +1213,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Tuberous perennial. Soak corms before planting. Prefers cool temperatures. Stunning rose-like flowers.',
   },
   lisianthus: {
+    growingConditions: 'Lisianthus are annuals thriving in temperatures between 60–75°F (15–24°C) with full sun. They tolerate light frost and prefer cool to moderate temperatures. Hot weather (above 85°F) reduces flower quality.',
     soil: 'Well-drained, fertile soil, pH 6.5–7.0. Consistent moisture required.',
     spacing: '6–12" between plants, 12–18" between rows. Stake tall varieties.',
     companions: 'Generally compatible with most flowers.',
@@ -1087,6 +1222,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual. Challenging to grow from seed. Long growing season. Rose-like flowers. Premium cut flower.',
   },
   stock: {
+    growingConditions: 'Stock are cool-season annuals thriving in temperatures between 50–70°F (10–21°C) with full sun. They tolerate frost well and prefer cool weather. Hot weather (above 75°F) causes rapid decline.',
     soil: 'Rich, well-drained soil with high organic matter, pH 7.0–7.5. Prefers cool temperatures.',
     spacing: '9–12" between plants, 12–18" between rows. Stake tall varieties.',
     companions: 'Generally compatible with cool-season flowers.',
@@ -1095,6 +1231,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Cool-season annual. Very fragrant flowers. Plant in fall or early spring. Bolts in heat.',
   },
   statice: {
+    growingConditions: 'Statice are annuals thriving in temperatures between 60–80°F (15–27°C) with full sun. They tolerate heat and drought well and are moderately frost-sensitive. They prefer warm, dry conditions.',
     soil: 'Well-drained soil with low to moderate fertility, pH 6.0–8.0. Drought-tolerant once established.',
     spacing: '12–18" between plants, 18–24" between rows.',
     companions: 'Generally compatible with most flowers.',
@@ -1103,6 +1240,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual. Heat-loving. Long-lasting flowers. Excellent for drying. Also called sea lavender.',
   },
   yarrow: {
+    growingConditions: 'Yarrow is a perennial thriving in temperatures between 60–80°F (15–27°C) with full sun. It tolerates heat, drought, and light frost well. It is very adaptable to various climates.',
     soil: 'Well-drained soil with low to moderate fertility, pH 6.0–7.0. Drought-tolerant once established.',
     spacing: '12–24" between plants, 2–3 ft between rows. Adequate spacing improves air circulation.',
     companions: 'Generally compatible with most perennials. Attracts beneficial insects.',
@@ -1111,6 +1249,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Very easy to grow. Drought-tolerant. Spreads by rhizomes. Attracts beneficial insects.',
   },
   scabiosa: {
+    growingConditions: 'Scabiosa are perennials or annuals thriving in temperatures between 60–75°F (15–24°C) with full sun. They tolerate light frost and prefer cool to moderate temperatures. Hot weather reduces flowering.',
     soil: 'Well-drained, fertile soil, pH 7.0–7.5. Prefers slightly alkaline soil.',
     spacing: '12–18" between plants, 18–24" between rows.',
     companions: 'Generally compatible with most flowers.',
@@ -1119,6 +1258,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial or annual depending on type. Long blooming period. Attracts butterflies. Also called pincushion flower.',
   },
   amaranth: {
+    growingConditions: 'Amaranth is a warm-season annual thriving in temperatures between 70–85°F (21–29°C) with full sun. It is frost-sensitive and loves hot weather. It tolerates heat and drought well.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Tolerates poor soil.',
     spacing: '18–24" between plants, 2–3 ft between rows. Large plants need room.',
     companions: 'Generally compatible with most crops.',
@@ -1127,6 +1267,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual. Heat-loving. Very tall (4–6 ft). Dramatic flowers. Seeds are edible grain. Self-seeds readily.',
   },
   cockscomb: {
+    growingConditions: 'Cockscomb (a type of celosia) is a warm-season annual thriving in temperatures between 70–85°F (21–29°C) with full sun. It is frost-sensitive and loves hot weather. It tolerates heat and humidity well.',
     soil: 'Well-drained, fertile soil, pH 6.0–7.0. Consistent moisture required.',
     spacing: '8–18" between plants depending on variety, 12–24" between rows.',
     companions: 'Zinnias, marigolds, cosmos. Generally compatible with most flowers.',
@@ -1137,6 +1278,7 @@ export const cropGuides: Record<string, CropGuide> = {
 
   // HERBS
   basil: {
+    growingConditions: 'Basil is a warm-season annual requiring temperatures between 70–85°F (21–29°C) with full sun (6+ hours daily). It is very frost-sensitive and needs consistently warm conditions. Cool temperatures below 50°F cause leaf damage and poor growth.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–7.0. Requires warm temperatures.',
     spacing: '10–12" between plants, 18" between rows. Adequate spacing improves air circulation.',
     companions: 'Tomatoes, peppers, oregano. Repels aphids and mosquitoes. Avoid planting with rue.',
@@ -1145,6 +1287,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual. Very frost-sensitive. Pinch flowers to prolong leaf production. Many varieties: sweet, Thai, lemon, purple.',
   },
   oregano: {
+    growingConditions: 'Oregano is a perennial herb thriving in temperatures between 60–80°F (15–27°C) with full sun. It is cold-hardy (to 0°F) and very drought-tolerant once established. It prefers hot, dry summers.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–8.0. Drought-tolerant once established.',
     spacing: '12–18" between plants, 18–24" between rows. Spreads by runners.',
     companions: 'Generally compatible with most herbs and vegetables.',
@@ -1153,6 +1296,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Very easy to grow. Drought-tolerant. Flavor intensifies when dried. Greek and Italian varieties.',
   },
   thyme: {
+    growingConditions: 'Thyme is a perennial herb thriving in temperatures between 60–80°F (15–27°C) with full sun. It is very cold-hardy (to -20°F) and extremely drought-tolerant once established. It prefers hot, dry conditions.',
     soil: 'Well-drained, sandy or gravelly soil, pH 6.0–8.0. Excellent drainage essential.',
     spacing: '8–12" between plants, 12–18" between rows. Low-growing ground cover.',
     companions: 'Rosemary, sage, lavender. Generally compatible with Mediterranean herbs.',
@@ -1161,6 +1305,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Very drought-tolerant. Low-growing. Many varieties: common, lemon, creeping. Evergreen in mild climates.',
   },
   rosemary: {
+    growingConditions: 'Rosemary is a perennial shrub thriving in temperatures between 60–80°F (15–27°C) with full sun. It is moderately cold-hardy (to 10–20°F depending on variety) and very drought-tolerant once established. It prefers hot, dry summers.',
     soil: 'Well-drained, sandy or gravelly soil, pH 6.0–7.5. Excellent drainage essential.',
     spacing: '2–3 ft between plants. Large shrubs need room.',
     companions: 'Sage, thyme, lavender. Generally compatible with Mediterranean herbs.',
@@ -1169,6 +1314,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial shrub. Drought-tolerant once established. Frost-sensitive. Grow in containers in cold climates. Evergreen.',
   },
   sage: {
+    growingConditions: 'Sage is a perennial herb thriving in temperatures between 60–75°F (15–24°C) with full sun. It is cold-hardy (to -10°F) and drought-tolerant once established. It prefers hot, dry summers.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Drought-tolerant once established.',
     spacing: '18–24" between plants, 2–3 ft between rows. Large plants need room.',
     companions: 'Rosemary, thyme, carrots. Avoid planting with cucumbers.',
@@ -1177,6 +1323,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Drought-tolerant. Cut back after flowering. Many varieties: common, purple, pineapple. Evergreen in mild climates.',
   },
   mint: {
+    growingConditions: 'Mint is a perennial herb tolerating a wide temperature range from 55–75°F (13–24°C) with full sun to partial shade. It is cold-hardy (to -20°F) and prefers cool, moist conditions. It can tolerate some heat with adequate moisture.',
     soil: 'Moist, well-drained soil rich in organic matter, pH 6.0–7.0. Tolerates wide range of conditions.',
     spacing: '18–24" between plants. Very invasive; grow in containers.',
     companions: 'Generally grows best in containers. Repels aphids and cabbage moths.',
@@ -1185,6 +1332,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Very invasive; plant in containers or contained area. Many varieties: peppermint, spearmint, chocolate.',
   },
   parsley: {
+    growingConditions: 'Parsley is a biennial (grown as annual) thriving in temperatures between 50–75°F (10–24°C) with full sun to partial shade. It tolerates light frost and prefers cool to moderate temperatures. Hot weather (above 85°F) causes bolting.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–7.0. Consistent moisture required.',
     spacing: '8–10" between plants, 12–18" between rows.',
     companions: 'Tomatoes, asparagus, carrots. Generally compatible with most vegetables.',
@@ -1193,6 +1341,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Biennial grown as annual. Slow to germinate (3–4 weeks). Soak seeds overnight. Curly and flat-leaf varieties.',
   },
   cilantro: {
+    growingConditions: 'Cilantro is a cool-season annual thriving in temperatures between 50–70°F (10–21°C) with full sun to partial shade. It tolerates light frost and prefers cool weather. Hot weather (above 75°F) triggers rapid bolting.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Prefers cool temperatures.',
     spacing: '6–8" between plants, 12" between rows. Can be grown more densely for leaves.',
     companions: 'Generally compatible with most vegetables.',
@@ -1201,6 +1350,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual. Fast-growing. Bolts quickly in heat. Succession plant every 2–3 weeks. Leaves are cilantro; seeds are coriander.',
   },
   dill: {
+    growingConditions: 'Dill is an annual herb thriving in temperatures between 60–75°F (15–24°C) with full sun. It tolerates light frost and prefers cool to moderate temperatures. Hot weather (above 85°F) causes rapid bolting.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Tolerates wide range of conditions.',
     spacing: '12–18" between plants, 18–24" between rows. Stake tall plants.',
     companions: 'Cabbage, lettuce, onions. Avoid planting with carrots or tomatoes.',
@@ -1209,6 +1359,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual. Fast-growing. Self-seeds readily. Attracts beneficial insects. Both leaves and seeds are used.',
   },
   tarragon: {
+    growingConditions: 'Tarragon is a perennial herb thriving in temperatures between 60–75°F (15–24°C) with full sun. French tarragon is cold-hardy (to -10°F) and prefers hot, dry summers. It goes dormant in winter.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.5. Drought-tolerant once established.',
     spacing: '18–24" between plants, 2–3 ft between rows.',
     companions: 'Generally compatible with most herbs and vegetables.',
@@ -1217,6 +1368,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. French tarragon (preferred) doesn&apos;t produce seeds; propagate by division. Russian tarragon less flavorful.',
   },
   marjoram: {
+    growingConditions: 'Marjoram is a perennial (often grown as annual) thriving in temperatures between 60–75°F (15–24°C) with full sun. It is frost-sensitive and prefers warm, dry conditions. It is less cold-hardy than oregano.',
     soil: 'Well-drained soil with moderate fertility, pH 6.5–7.5. Drought-tolerant once established.',
     spacing: '8–12" between plants, 12–18" between rows.',
     companions: 'Generally compatible with most herbs and vegetables.',
@@ -1225,6 +1377,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial often grown as annual. Similar to oregano but sweeter. Frost-sensitive. Grow in containers in cold climates.',
   },
   bay_leaf: {
+    growingConditions: 'Bay leaf is an evergreen shrub/tree thriving in temperatures between 60–75°F (15–24°C) with full sun to partial shade. It is frost-sensitive (damaged below 20°F) and prefers Mediterranean-type climates with mild winters.',
     soil: 'Well-drained, fertile soil, pH 6.0–7.0. Tolerates wide range of conditions.',
     spacing: '4–6 ft between plants. Large shrubs/trees need room.',
     companions: 'Generally compatible with Mediterranean herbs.',
@@ -1233,6 +1386,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Evergreen shrub/tree. Slow-growing. Frost-sensitive. Grow in containers in cold climates. Can be pruned to maintain size.',
   },
   chamomile: {
+    growingConditions: 'Chamomile (German type) is a cool-season annual thriving in temperatures between 50–70°F (10–21°C) with full sun. It tolerates light frost and prefers cool weather. Hot weather (above 80°F) causes rapid decline.',
     soil: 'Well-drained soil with low to moderate fertility, pH 5.5–7.5. Tolerates poor soil.',
     spacing: '6–9" between plants, 12" between rows.',
     companions: 'Generally compatible with most crops. Attracts beneficial insects.',
@@ -1241,6 +1395,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual (German) or perennial (Roman). Self-seeds readily. Flowers used for tea. Attracts beneficial insects.',
   },
   lemon_balm: {
+    growingConditions: 'Lemon balm is a perennial herb tolerating a wide temperature range from 55–75°F (13–24°C) with full sun to partial shade. It is cold-hardy (to -20°F) and prefers cool to moderate temperatures. It can tolerate some heat.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.5. Tolerates wide range of conditions.',
     spacing: '18–24" between plants, 2–3 ft between rows. Can be invasive.',
     companions: 'Generally compatible with most herbs. Repels mosquitoes.',
@@ -1249,6 +1404,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Very easy to grow. Self-seeds readily. Can be invasive. Lemon-scented leaves used for tea.',
   },
   lemongrass: {
+    growingConditions: 'Lemongrass is a tropical perennial requiring warm temperatures between 70–85°F (21–29°C) with full sun. It is very frost-sensitive and needs consistently warm conditions. It thrives in hot, humid climates.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–7.0. Requires warm temperatures.',
     spacing: '24" between plants, 3 ft between rows. Large clumps need room.',
     companions: 'Generally compatible with tropical herbs.',
@@ -1257,6 +1413,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial in frost-free climates. Grow in containers in cold climates. Requires hot weather. Used in Asian cooking.',
   },
   stevia: {
+    growingConditions: 'Stevia is a perennial herb (grown as annual in cold climates) thriving in temperatures between 60–75°F (15–24°C) with full sun. It is frost-sensitive and prefers warm, humid conditions. It struggles in extreme heat.',
     soil: 'Well-drained, sandy loam, pH 6.5–7.5. Consistent moisture required.',
     spacing: '18" between plants, 2 ft between rows.',
     companions: 'Generally compatible with most herbs.',
@@ -1265,6 +1422,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial in frost-free climates. Frost-sensitive. Leaves are 200–300 times sweeter than sugar. Dry for storage.',
   },
   chervil: {
+    growingConditions: 'Chervil is a cool-season annual thriving in temperatures between 50–65°F (10–18°C) with partial shade. It tolerates light frost and prefers cool, moist conditions. Hot weather (above 75°F) causes rapid bolting.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–7.0. Prefers cool temperatures and shade.',
     spacing: '6–9" between plants, 12" between rows.',
     companions: 'Radishes, lettuce. Generally compatible with cool-season crops.',
@@ -1273,6 +1431,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual. Prefers cool temperatures and part shade. Bolts quickly in heat. Delicate anise flavor. Succession plant.',
   },
   sorrel: {
+    growingConditions: 'Sorrel is a perennial herb thriving in temperatures between 60–75°F (15–24°C) with full sun to partial shade. It is cold-hardy (to -20°F) and prefers cool to moderate temperatures. It can tolerate some heat with adequate moisture.',
     soil: 'Rich, well-drained soil with high organic matter, pH 5.5–6.8. Consistent moisture required.',
     spacing: '12–18" between plants, 18–24" between rows.',
     companions: 'Generally compatible with most vegetables.',
@@ -1281,6 +1440,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Very easy to grow. Remove flower stalks to prolong leaf production. Lemony, tangy flavor.',
   },
   lovage: {
+    growingConditions: 'Lovage is a perennial herb thriving in temperatures between 60–75°F (15–24°C) with full sun to partial shade. It is very cold-hardy (to -30°F) and prefers cool to moderate temperatures. It can tolerate some heat.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–7.0. Consistent moisture required.',
     spacing: '2–3 ft between plants. Large plants need room.',
     companions: 'Generally compatible with most vegetables.',
@@ -1289,6 +1449,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Very tall (4–6 ft). Celery-like flavor. All parts edible: leaves, stems, seeds, roots.',
   },
   borage: {
+    growingConditions: 'Borage is a cool-season annual thriving in temperatures between 60–75°F (15–24°C) with full sun. It tolerates light frost and prefers cool to moderate temperatures. Hot weather (above 85°F) causes decline.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Tolerates poor soil.',
     spacing: '12–18" between plants, 18–24" between rows.',
     companions: 'Tomatoes, squash, strawberries. Attracts pollinators and repels hornworms.',
@@ -1297,6 +1458,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual. Self-seeds readily. Attracts bees and beneficial insects. Edible flowers. Cucumber-flavored leaves.',
   },
   anise: {
+    growingConditions: 'Anise is a warm-season annual requiring temperatures between 70–80°F (21–27°C) with full sun. It is frost-sensitive and needs a long, warm growing season (120 days). Consistent warmth is essential for seed development.',
     soil: 'Well-drained, fertile soil, pH 6.0–7.0. Requires warm temperatures.',
     spacing: '6–12" between plants, 18" between rows.',
     companions: 'Coriander. Avoid planting with carrots.',
@@ -1305,6 +1467,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual. Long growing season (120 days). Direct seed as doesn&apos;t transplant well. Seeds used for flavoring.',
   },
   caraway: {
+    growingConditions: 'Caraway is a biennial thriving in cool temperatures between 60–70°F (15–21°C) with full sun. It tolerates frost well and prefers cool weather. Seeds develop in the second year after overwintering.',
     soil: 'Well-drained, fertile soil, pH 6.0–7.0. Prefers cool temperatures.',
     spacing: '6–12" between plants, 18" between rows.',
     companions: 'Peas, beans. Avoid planting with fennel.',
@@ -1313,6 +1476,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Biennial. Seeds used for flavoring. Leaves and roots also edible. Self-seeds readily.',
   },
   cumin: {
+    growingConditions: 'Cumin is a warm-season annual requiring hot temperatures between 75–85°F (24–29°C) with full sun. It is frost-sensitive and needs a long, hot growing season (120 days). Consistent heat is essential for seed development.',
     soil: 'Well-drained, sandy loam, pH 6.0–7.0. Requires hot temperatures.',
     spacing: '4–6" between plants, 12" between rows.',
     companions: 'Generally compatible with most herbs.',
@@ -1321,6 +1485,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual. Requires long, hot growing season (120 days). Direct seed. Seeds used for flavoring.',
   },
   coriander: {
+    growingConditions: 'Coriander (cilantro seeds) is a cool-season annual thriving in temperatures between 50–70°F (10–21°C) with full sun. It tolerates light frost and prefers cool weather. Allow plants to bolt and flower for seed production.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Prefers cool temperatures.',
     spacing: '6–8" between plants, 12" between rows.',
     companions: 'Generally compatible with most vegetables.',
@@ -1329,6 +1494,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual. Same plant as cilantro. Allow to flower and set seed. Self-seeds readily. Seeds used for flavoring.',
   },
   fenugreek: {
+    growingConditions: 'Fenugreek is a cool-season annual thriving in temperatures between 60–75°F (15–24°C) with full sun. It tolerates light frost and prefers cool to moderate temperatures. It matures quickly (90 days).',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Tolerates poor soil.',
     spacing: '4–6" between plants, 12" between rows.',
     companions: 'Generally compatible with most crops.',
@@ -1337,6 +1503,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual. Fast-growing (90 days). Seeds and leaves used for flavoring. Fixes nitrogen. Used in curry powder.',
   },
   mustard: {
+    growingConditions: 'Mustard is a cool-season annual thriving in temperatures between 50–70°F (10–21°C) with full sun. It tolerates frost well and prefers cool weather. Hot weather (above 75°F) causes rapid bolting.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.0. Prefers cool temperatures.',
     spacing: '6–12" between plants, 12–18" between rows.',
     companions: 'Generally compatible with most vegetables.',
@@ -1345,6 +1512,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Annual. Fast-growing. Leaves used for greens; seeds for condiment. Self-seeds readily. Cover crop.',
   },
   turmeric: {
+    growingConditions: 'Turmeric is a tropical perennial requiring warm, humid conditions with temperatures between 70–85°F (21–29°C) and partial shade to filtered sun. It is very frost-sensitive and needs a long, warm growing season (8–10 months).',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–7.5. Requires warm, humid conditions.',
     spacing: '12" between rhizomes, 18" between rows. Plant 2–4" deep.',
     companions: 'Generally compatible with tropical crops.',
@@ -1353,6 +1521,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Tropical perennial. Requires long, warm growing season (240 days). Grow in containers in cool climates. Related to ginger.',
   },
   cardamom: {
+    growingConditions: 'Cardamom is a tropical perennial requiring warm, humid conditions with temperatures between 70–80°F (21–27°C) and partial shade. It is very frost-sensitive and needs consistent warmth and high humidity.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–6.5. Requires warm, humid conditions.',
     spacing: '3–4 ft between plants. Large plants need room.',
     companions: 'Generally compatible with tropical crops.',
@@ -1361,6 +1530,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Tropical perennial. Requires 2+ years to bear. Prefers shade. Grow in containers in cool climates. Expensive spice.',
   },
   saffron: {
+    growingConditions: 'Saffron is a fall-blooming crocus requiring cool to moderate temperatures between 60–70°F (15–21°C) with full sun. It needs hot, dry summers and cool, wet winters. Corms need a dry dormant period in summer.',
     soil: 'Well-drained, sandy loam, pH 6.0–8.0. Excellent drainage essential.',
     spacing: '4–6" between corms, 12" between rows. Plant 4" deep in late summer.',
     companions: 'Generally compatible with most crops.',
@@ -1369,6 +1539,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial corm. Fall-blooming crocus. Requires 150+ corms for 1 oz saffron. Very labor-intensive.',
   },
   vanilla: {
+    growingConditions: 'Vanilla is a tropical orchid vine requiring warm, humid conditions with temperatures between 75–85°F (24–29°C) and partial shade to filtered sun. It is very frost-sensitive and needs consistently warm, humid conditions year-round.',
     soil: 'Rich, well-drained soil with high organic matter, pH 6.0–7.0. Requires warm, humid conditions.',
     spacing: '3–4 ft between plants. Vining orchid needs support.',
     companions: 'Generally compatible with tropical crops.',
@@ -1377,6 +1548,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Tropical orchid vine. Requires 3+ years to flower. Hand-pollination required. Very labor-intensive. Second most expensive spice.',
   },
   peppermint: {
+    growingConditions: 'Peppermint is a perennial herb tolerating a wide temperature range from 55–75°F (13–24°C) with full sun to partial shade. It is very cold-hardy (to -20°F) and prefers cool, moist conditions. It can tolerate some heat with adequate moisture.',
     soil: 'Moist, well-drained soil rich in organic matter, pH 6.0–7.0. Tolerates wide range of conditions.',
     spacing: '18–24" between plants. Very invasive; grow in containers.',
     companions: 'Generally grows best in containers. Repels aphids and cabbage moths.',
@@ -1385,6 +1557,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Very invasive; plant in containers. Stronger flavor than spearmint. Used for tea and flavoring.',
   },
   spearmint: {
+    growingConditions: 'Spearmint is a perennial herb tolerating a wide temperature range from 55–75°F (13–24°C) with full sun to partial shade. It is very cold-hardy (to -20°F) and prefers cool, moist conditions. It can tolerate some heat with adequate moisture.',
     soil: 'Moist, well-drained soil rich in organic matter, pH 6.0–7.0. Tolerates wide range of conditions.',
     spacing: '18–24" between plants. Very invasive; grow in containers.',
     companions: 'Generally grows best in containers. Repels aphids and cabbage moths.',
@@ -1393,6 +1566,7 @@ export const cropGuides: Record<string, CropGuide> = {
     notes: 'Perennial. Very invasive; plant in containers. Milder flavor than peppermint. Used for tea, cooking, and mojitos.',
   },
   catnip: {
+    growingConditions: 'Catnip is a perennial herb thriving in temperatures between 55–75°F (13–24°C) with full sun to partial shade. It is very cold-hardy (to -30°F) and drought-tolerant once established. It prefers moderate temperatures.',
     soil: 'Well-drained soil with moderate fertility, pH 6.0–7.5. Drought-tolerant once established.',
     spacing: '18–24" between plants, 2–3 ft between rows.',
     companions: 'Generally compatible with most herbs. Repels aphids and flea beetles.',
