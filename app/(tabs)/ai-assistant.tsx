@@ -494,6 +494,7 @@ export default function AIAssistantScreen() {
   };
 
   const handleSignOut = async () => {
+    console.log('AI Assistant: Sign out button pressed');
     Alert.alert(
       'Sign Out',
       'Are you sure you want to sign out?',
@@ -507,13 +508,12 @@ export default function AIAssistantScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log('AI Assistant: Calling signOut from AuthContext');
               await signOut();
-              // Navigation will be handled automatically by _layout.tsx
+              console.log('AI Assistant: Sign out completed');
             } catch (error: any) {
               console.error('AI Assistant: Sign out error:', error);
-              // The local state is already cleared in AuthContext
-              // Just show a notice to the user
-              Alert.alert('Signed Out', 'You have been signed out successfully.');
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
             }
           },
         },
@@ -535,7 +535,11 @@ export default function AIAssistantScreen() {
               <Text style={styles.upgradeButtonText}>⭐ Upgrade</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.7}>
+          <TouchableOpacity 
+            style={styles.signOutButton} 
+            onPress={handleSignOut} 
+            activeOpacity={0.7}
+          >
             <Text style={styles.signOutButtonText}>Sign Out</Text>
           </TouchableOpacity>
         </View>
@@ -742,15 +746,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   signOutButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   signOutButtonText: {
-    color: '#FFFFFF',
+    color: '#2D5016',
     fontWeight: '600',
     fontSize: 14,
   },
