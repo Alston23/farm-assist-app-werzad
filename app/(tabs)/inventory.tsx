@@ -156,143 +156,153 @@ export default function InventoryScreen() {
   };
 
   const handleDeleteStorage = async (id: string) => {
-    Alert.alert(
-      'Delete Storage',
-      'Are you sure you want to delete this storage location?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from('storage_locations')
-                .delete()
-                .eq('id', id);
+    console.log('Inventory: handleDeleteStorage called with id', id);
 
-              if (error) throw error;
-              fetchAllData();
-            } catch (error: any) {
-              console.error('Error deleting storage:', error);
-              Alert.alert('Error', 'Failed to delete storage location');
-            }
-          },
-        },
-      ]
-    );
+    try {
+      const { error } = await supabase
+        .from('storage_locations')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Inventory: delete error from Supabase', error);
+        Alert.alert(
+          'Error deleting item',
+          error.message || 'Something went wrong while deleting this item.'
+        );
+        return;
+      }
+
+      console.log('Inventory: delete success for id', id);
+
+      // Remove from local state so the item disappears immediately
+      setStorageLocations((prev) =>
+        prev ? prev.filter((item) => item.id !== id) : prev
+      );
+    } catch (err) {
+      console.error('Inventory: unexpected delete error', err);
+      Alert.alert('Error deleting item', 'Something went wrong. Please try again.');
+    }
   };
 
   const handleDeleteFertilizer = async (id: string) => {
-    Alert.alert(
-      'Delete Fertilizer',
-      'Are you sure you want to delete this fertilizer?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from('fertilizers')
-                .delete()
-                .eq('id', id);
+    console.log('Inventory: handleDeleteFertilizer called with id', id);
 
-              if (error) throw error;
-              fetchAllData();
-            } catch (error: any) {
-              console.error('Error deleting fertilizer:', error);
-              Alert.alert('Error', 'Failed to delete fertilizer');
-            }
-          },
-        },
-      ]
-    );
+    try {
+      const { error } = await supabase
+        .from('fertilizers')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Inventory: delete error from Supabase', error);
+        Alert.alert(
+          'Error deleting item',
+          error.message || 'Something went wrong while deleting this item.'
+        );
+        return;
+      }
+
+      console.log('Inventory: delete success for id', id);
+
+      // Remove from local state so the item disappears immediately
+      setFertilizers((prev) =>
+        prev ? prev.filter((item) => item.id !== id) : prev
+      );
+    } catch (err) {
+      console.error('Inventory: unexpected delete error', err);
+      Alert.alert('Error deleting item', 'Something went wrong. Please try again.');
+    }
   };
 
   const handleDeleteSeed = async (id: string) => {
-    Alert.alert(
-      'Delete Seed',
-      'Are you sure you want to delete this seed?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from('seeds')
-                .delete()
-                .eq('id', id);
+    console.log('Inventory: handleDeleteSeed called with id', id);
 
-              if (error) throw error;
-              fetchAllData();
-            } catch (error: any) {
-              console.error('Error deleting seed:', error);
-              Alert.alert('Error', 'Failed to delete seed');
-            }
-          },
-        },
-      ]
-    );
+    try {
+      const { error } = await supabase
+        .from('seeds')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Inventory: delete error from Supabase', error);
+        Alert.alert(
+          'Error deleting item',
+          error.message || 'Something went wrong while deleting this item.'
+        );
+        return;
+      }
+
+      console.log('Inventory: delete success for id', id);
+
+      // Remove from local state so the item disappears immediately
+      setSeeds((prev) =>
+        prev ? prev.filter((item) => item.id !== id) : prev
+      );
+    } catch (err) {
+      console.error('Inventory: unexpected delete error', err);
+      Alert.alert('Error deleting item', 'Something went wrong. Please try again.');
+    }
   };
 
   const handleDeleteTransplant = async (id: string) => {
-    Alert.alert(
-      'Delete Transplant',
-      'Are you sure you want to delete this transplant?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from('transplants')
-                .delete()
-                .eq('id', id);
+    console.log('Inventory: handleDeleteTransplant called with id', id);
 
-              if (error) throw error;
-              fetchAllData();
-            } catch (error: any) {
-              console.error('Error deleting transplant:', error);
-              Alert.alert('Error', 'Failed to delete transplant');
-            }
-          },
-        },
-      ]
-    );
+    try {
+      const { error } = await supabase
+        .from('transplants')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Inventory: delete error from Supabase', error);
+        Alert.alert(
+          'Error deleting item',
+          error.message || 'Something went wrong while deleting this item.'
+        );
+        return;
+      }
+
+      console.log('Inventory: delete success for id', id);
+
+      // Remove from local state so the item disappears immediately
+      setTransplants((prev) =>
+        prev ? prev.filter((item) => item.id !== id) : prev
+      );
+    } catch (err) {
+      console.error('Inventory: unexpected delete error', err);
+      Alert.alert('Error deleting item', 'Something went wrong. Please try again.');
+    }
   };
 
   const handleDeletePackaging = async (id: string) => {
-    Alert.alert(
-      'Delete Packaging',
-      'Are you sure you want to delete this packaging?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from('packaging')
-                .delete()
-                .eq('id', id);
+    console.log('Inventory: handleDeletePackaging called with id', id);
 
-              if (error) throw error;
-              fetchAllData();
-            } catch (error: any) {
-              console.error('Error deleting packaging:', error);
-              Alert.alert('Error', 'Failed to delete packaging');
-            }
-          },
-        },
-      ]
-    );
+    try {
+      const { error } = await supabase
+        .from('packaging')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Inventory: delete error from Supabase', error);
+        Alert.alert(
+          'Error deleting item',
+          error.message || 'Something went wrong while deleting this item.'
+        );
+        return;
+      }
+
+      console.log('Inventory: delete success for id', id);
+
+      // Remove from local state so the item disappears immediately
+      setPackaging((prev) =>
+        prev ? prev.filter((item) => item.id !== id) : prev
+      );
+    } catch (err) {
+      console.error('Inventory: unexpected delete error', err);
+      Alert.alert('Error deleting item', 'Something went wrong. Please try again.');
+    }
   };
 
   const handleEditStorage = (storage: StorageLocation) => {
