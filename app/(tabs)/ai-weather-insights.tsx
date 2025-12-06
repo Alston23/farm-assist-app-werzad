@@ -544,132 +544,92 @@ function AIWeatherInsightsContent() {
       </View>
       <LinearGradient colors={['#2D5016', '#4A7C2C', '#6BA542']} style={styles.gradient}>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-          {weatherLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#FFFFFF" />
-              <Text style={styles.loadingText}>Getting your location and weather forecast...</Text>
-            </View>
-          ) : weatherError ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorIcon}>📍</Text>
+          {/* Weather Forecast Section - At the top */}
+          <View style={styles.forecastSection}>
+            <Text style={styles.sectionTitle}>5-Day Forecast</Text>
+
+            {locationContextLoading || weatherLoading ? (
+              <Text style={styles.helperText}>Loading forecast...</Text>
+            ) : weatherError ? (
               <Text style={styles.errorText}>{weatherError}</Text>
-              <TouchableOpacity style={styles.retryButton} onPress={loadLocationAndWeather}>
-                <Text style={styles.retryButtonText}>Try Again</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <React.Fragment>
-              <ProUpsellBanner message="Want detailed weather-based task scheduling and alerts? Unlock Farm Copilot Pro." />
-
-              {/* 5-Day Forecast */}
-              {weatherForecast.length > 0 && (
-                <View style={styles.forecastContainer}>
-                  <Text style={styles.forecastTitle}>5-Day Forecast</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.forecastScroll}>
-                    {weatherForecast.map((day, index) => (
-                      <View key={index} style={styles.forecastCard}>
-                        <Text style={styles.forecastDay}>{index === 0 ? 'Today' : day.dayName}</Text>
-                        <Text style={styles.forecastDate}>{new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</Text>
-                        <Text style={styles.forecastIcon}>{day.icon}</Text>
-                        <Text style={styles.forecastCondition}>{day.condition}</Text>
-                        <Text style={styles.forecastTemp}>{day.high}°</Text>
-                        <Text style={styles.forecastTempLow}>{day.low}°</Text>
-                        {day.precipProb > 0 && (
-                          <Text style={styles.forecastPrecip}>💧 {day.precipProb}%</Text>
-                        )}
-                      </View>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-
-              {/* Rule-Based Suggestions (New Feature) */}
-              {suggestions.length > 0 && (
-                <View style={styles.suggestionsContainer}>
-                  <Text style={styles.suggestionsTitle}>🎯 Weather + Task Recommendations</Text>
-                  <Text style={styles.suggestionsSubtitle}>
-                    Smart suggestions based on your upcoming tasks and weather
-                  </Text>
-                  {suggestions.map((suggestion) => (
-                    <View key={suggestion.id} style={styles.ruleBasedCard}>
-                      <Text style={styles.ruleBasedIcon}>⚡</Text>
-                      <Text style={styles.ruleBasedMessage}>{suggestion.message}</Text>
+            ) : (
+              <View style={styles.forecastRow}>
+                {weatherForecast.map((day) => {
+                  const minF = day.minTempC * 9 / 5 + 32;
+                  const maxF = day.maxTempC * 9 / 5 + 32;
+                  return (
+                    <View key={day.date} style={styles.forecastCard}>
+                      <Text style={styles.forecastDate}>
+                        {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </Text>
+                      <Text style={styles.forecastTemp}>
+                        {Math.round(minF)}°–{Math.round(maxF)}°F
+                      </Text>
+                      <Text style={styles.forecastRain}>
+                        Rain: {day.precipProb}%
+                      </Text>
                     </View>
-                  ))}
-                </View>
-              )}
+                  );
+                })}
+              </View>
+            )}
+          </View>
 
-              {/* Smart Task Suggestions */}
-              {smartSuggestions.length > 0 && (
-                <View style={styles.suggestionsContainer}>
-                  <Text style={styles.suggestionsTitle}>🧠 Smart Task Suggestions</Text>
-                  <Text style={styles.suggestionsSubtitle}>
-                    Based on your upcoming tasks and weather forecast
-                  </Text>
-                  {smartSuggestions.map((suggestion) => (
-                    <View
-                      key={suggestion.id}
-                      style={[
-                        styles.suggestionCard,
-                        { borderLeftColor: getPriorityColor(suggestion.priority) },
-                      ]}
-                    >
-                      <View style={styles.suggestionHeader}>
-                        <Text style={styles.suggestionIcon}>{suggestion.icon}</Text>
-                        <View style={styles.suggestionContent}>
-                          <Text style={styles.suggestionTitle}>{suggestion.title}</Text>
-                          <Text style={styles.suggestionDescription}>{suggestion.description}</Text>
-                        </View>
-                      </View>
-                      <View
-                        style={[
-                          styles.priorityBadge,
-                          { backgroundColor: getPriorityColor(suggestion.priority) },
-                        ]}
-                      >
-                        <Text style={styles.priorityText}>{suggestion.priority.toUpperCase()}</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              )}
+          {/* Weather-Aware Task Suggestions Section */}
+          <View style={styles.suggestionsSection}>
+            <Text style={styles.sectionTitle}>Weather-Aware Task Suggestions</Text>
+            {suggestions.length === 0 ? (
+              <Text style={styles.helperText}>
+                No weather issues detected for your upcoming tasks in the next few days.
+              </Text>
+            ) : (
+              <React.Fragment>
+                {suggestions.map((s) => (
+                  <View key={s.id} style={styles.suggestionCard}>
+                    <Text style={styles.suggestionText}>{s.message}</Text>
+                  </View>
+                ))}
+              </React.Fragment>
+            )}
+          </View>
 
-              {/* AI Chat Messages */}
-              {messages.map((message) => (
-                <View
-                  key={message.id}
+          {/* Pro Upsell Banner */}
+          <ProUpsellBanner message="Want detailed weather-based task scheduling and alerts? Unlock Farm Copilot Pro." />
+
+          {/* AI Chat Messages - Below weather sections */}
+          {messages.map((message) => (
+            <View
+              key={message.id}
+              style={[
+                styles.messageContainer,
+                message.role === 'user' ? styles.userMessage : styles.assistantMessage,
+              ]}
+            >
+              <View
+                style={[
+                  styles.messageBubble,
+                  message.role === 'user' ? styles.userBubble : styles.assistantBubble,
+                ]}
+              >
+                <Text
                   style={[
-                    styles.messageContainer,
-                    message.role === 'user' ? styles.userMessage : styles.assistantMessage,
+                    styles.messageText,
+                    message.role === 'user' ? styles.userText : styles.assistantText,
                   ]}
                 >
-                  <View
-                    style={[
-                      styles.messageBubble,
-                      message.role === 'user' ? styles.userBubble : styles.assistantBubble,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.messageText,
-                        message.role === 'user' ? styles.userText : styles.assistantText,
-                      ]}
-                    >
-                      {message.content}
-                    </Text>
-                  </View>
-                </View>
-              ))}
+                  {message.content}
+                </Text>
+              </View>
+            </View>
+          ))}
 
-              {loading && (
-                <View style={[styles.messageContainer, styles.assistantMessage]}>
-                  <View style={[styles.messageBubble, styles.assistantBubble]}>
-                    <ActivityIndicator color="#2D5016" />
-                    <Text style={styles.loadingMessageText}>Analyzing weather and generating recommendations...</Text>
-                  </View>
-                </View>
-              )}
-            </React.Fragment>
+          {loading && (
+            <View style={[styles.messageContainer, styles.assistantMessage]}>
+              <View style={[styles.messageBubble, styles.assistantBubble]}>
+                <ActivityIndicator color="#2D5016" />
+                <Text style={styles.loadingMessageText}>Analyzing weather and generating recommendations...</Text>
+              </View>
+            </View>
           )}
         </ScrollView>
 
@@ -744,6 +704,86 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 20,
   },
+  forecastSection: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2D5016',
+    marginBottom: 12,
+  },
+  helperText: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: 12,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#F44336',
+    textAlign: 'center',
+    paddingVertical: 12,
+  },
+  forecastRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  forecastCard: {
+    backgroundColor: '#F0F8F0',
+    borderRadius: 12,
+    padding: 12,
+    minWidth: '18%',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#4A7C2C',
+  },
+  forecastDate: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  forecastTemp: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#2D5016',
+    marginBottom: 4,
+  },
+  forecastRain: {
+    fontSize: 11,
+    color: '#4A7C2C',
+  },
+  suggestionsSection: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  suggestionCard: {
+    backgroundColor: '#FFF9E6',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9800',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  suggestionText: {
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 20,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -767,13 +807,6 @@ const styles = StyleSheet.create({
     fontSize: 48,
     marginBottom: 16,
   },
-  errorText: {
-    fontSize: 16,
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 24,
-  },
   retryButton: {
     backgroundColor: '#4A7C2C',
     paddingHorizontal: 24,
@@ -784,156 +817,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
-  },
-  forecastContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-  },
-  forecastTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2D5016',
-    marginBottom: 12,
-  },
-  forecastScroll: {
-    marginHorizontal: -8,
-  },
-  forecastCard: {
-    backgroundColor: '#F0F8F0',
-    borderRadius: 12,
-    padding: 12,
-    marginHorizontal: 6,
-    minWidth: 100,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#4A7C2C',
-  },
-  forecastDay: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2D5016',
-    marginBottom: 2,
-  },
-  forecastDate: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 8,
-  },
-  forecastIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  forecastCondition: {
-    fontSize: 12,
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  forecastTemp: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2D5016',
-  },
-  forecastTempLow: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  forecastPrecip: {
-    fontSize: 11,
-    color: '#4A7C2C',
-    marginTop: 4,
-  },
-  suggestionsContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-  },
-  suggestionsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2D5016',
-    marginBottom: 4,
-  },
-  suggestionsSubtitle: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 16,
-  },
-  ruleBasedCard: {
-    backgroundColor: '#FFF9E6',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FF9800',
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  ruleBasedIcon: {
-    fontSize: 24,
-    marginRight: 12,
-  },
-  ruleBasedMessage: {
-    flex: 1,
-    fontSize: 14,
-    color: '#333',
-    lineHeight: 20,
-  },
-  suggestionCard: {
-    backgroundColor: '#F9F9F9',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  suggestionHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  suggestionIcon: {
-    fontSize: 28,
-    marginRight: 12,
-  },
-  suggestionContent: {
-    flex: 1,
-  },
-  suggestionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 6,
-  },
-  suggestionDescription: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
-  },
-  priorityBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginTop: 4,
-  },
-  priorityText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: 'bold',
   },
   messageContainer: {
     marginBottom: 12,
