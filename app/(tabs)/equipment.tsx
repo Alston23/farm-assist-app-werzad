@@ -68,32 +68,47 @@ export default function EquipmentScreen() {
     setDetailModalVisible(true);
   };
 
-  const handleDeleteEquipment = (item: Equipment) => {
+  const handleDeleteEquipment = async (id: string) => {
+    console.log('Equipment: Delete button pressed for id', id);
+
     Alert.alert(
       'Delete Equipment',
-      `Are you sure you want to delete ${item.name}? This will also delete all associated service records.`,
+      'Are you sure you want to delete this equipment?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
+            console.log('Equipment: Confirmed delete for id', id);
             try {
               const { error } = await supabase
                 .from('equipment')
                 .delete()
-                .eq('id', item.id);
+                .eq('id', id);
 
               if (error) {
-                console.error('Error deleting equipment:', error);
-                Alert.alert('Error', 'Failed to delete equipment');
-              } else {
-                fetchEquipment();
-                Alert.alert('Success', 'Equipment deleted successfully');
+                console.error('Equipment: Delete error', error);
+                Alert.alert(
+                  'Error deleting equipment',
+                  error.message || 'Something went wrong while deleting.'
+                );
+                return;
               }
-            } catch (error) {
-              console.error('Error:', error);
-              Alert.alert('Error', 'An unexpected error occurred');
+
+              console.log('Equipment: Delete success for id', id);
+
+              // Update local state to remove the deleted equipment
+              setEquipment((prev) => prev.filter((eq) => eq.id !== id));
+
+              // Also refetch to ensure consistency
+              await fetchEquipment();
+            } catch (err) {
+              console.error('Equipment: Unexpected delete error', err);
+              Alert.alert(
+                'Error deleting equipment',
+                'Something went wrong. Please try again.'
+              );
             }
           },
         },
@@ -158,7 +173,7 @@ export default function EquipmentScreen() {
 
                   <TouchableOpacity
                     style={styles.deleteButton}
-                    onPress={() => handleDeleteEquipment(item)}
+                    onPress={() => handleDeleteEquipment(item.id)}
                   >
                     <Text style={styles.deleteButtonText}>Delete</Text>
                   </TouchableOpacity>
