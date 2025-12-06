@@ -31,6 +31,8 @@ type CustomCropDetail = {
   notes?: string;
 };
 
+const DEFAULT_GROWING_CONDITIONS_FALLBACK = 'Growing condition details are not available for this crop yet. Please check back later or consult local agricultural extension services for specific growing requirements.';
+
 export default function CropDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -54,7 +56,7 @@ export default function CropDetailScreen() {
     setLoading(true);
     
     try {
-      console.log('Loading custom crop:', cropId);
+      console.log('Crops: Loading custom crop:', cropId);
       const { data, error } = await supabase
         .from('crops')
         .select('*')
@@ -62,14 +64,14 @@ export default function CropDetailScreen() {
         .single();
 
       if (error) {
-        console.error('Error loading custom crop:', error);
+        console.error('Crops: Error loading custom crop:', error);
         return;
       }
 
-      console.log('Loaded custom crop:', data);
+      console.log('Crops: Loaded custom crop:', data.name);
       setCustomCrop(data);
     } catch (e) {
-      console.error('Exception loading custom crop:', e);
+      console.error('Crops: Exception loading custom crop:', e);
     } finally {
       setLoading(false);
     }
@@ -109,11 +111,14 @@ export default function CropDetailScreen() {
   const scientificName = customCrop?.scientific_name || crop?.scientificName;
   const imageUrl = crop?.imageUrl;
 
-  // Get crop-specific guide data
+  // Get crop-specific guide data for ALL crops (vegetables, fruits, herbs, flowers)
   const cropKey = normalizeCropKey(cropName);
   const guide = getCropGuide(cropName);
   
-  console.log('Crop name:', cropName, 'Normalized key:', cropKey, 'Guide found:', !!guide);
+  console.log('Crops: Processing crop details for', cropName);
+  console.log('Crops: Category:', category);
+  console.log('Crops: Normalized key:', cropKey);
+  console.log('Crops: Guide found:', !!guide);
 
   const getCategoryEmoji = (cat: string) => {
     switch (cat) {
@@ -178,8 +183,30 @@ export default function CropDetailScreen() {
     storage: 'Not specified',
   };
 
-  // Use guide data for growing conditions, soil, spacing, companions, pests, and harvest sections
-  const growingConditionsInfo = guide?.growingConditions || 'Growing condition details are not available for this crop yet.';
+  // Generate growing conditions for ALL crops (vegetables, fruits, herbs, flowers)
+  // No restrictions based on category or index
+  let growingConditionsInfo: string;
+  
+  try {
+    console.log('Crops: generating growing conditions for', cropName);
+    
+    // Use guide data if available (this contains AI-quality detailed information for all crops)
+    if (guide?.growingConditions) {
+      growingConditionsInfo = guide.growingConditions;
+      console.log('Crops: Using guide growing conditions for', cropName);
+    } else {
+      // Fallback only when guide data is not available
+      console.log('Crops: No guide data found for', cropName, '- using fallback');
+      growingConditionsInfo = DEFAULT_GROWING_CONDITIONS_FALLBACK;
+    }
+  } catch (error) {
+    console.error('Crops: AI growing conditions error', error);
+    growingConditionsInfo = DEFAULT_GROWING_CONDITIONS_FALLBACK;
+  }
+  
+  console.log('Crops: final growing conditions for', cropName, ':', growingConditionsInfo.substring(0, 100) + '...');
+
+  // Use guide data for other sections with proper fallbacks
   const soilInfo = guide?.soil || `${cropDetails.soilType}, pH ${cropDetails.soilPH}`;
   const spacingInfo = guide?.spacing || `Plant spacing: ${cropDetails.plantSpacing}, Row spacing: ${cropDetails.rowSpacing}, Planting depth: ${cropDetails.plantingDepth}`;
   const companionsInfo = guide?.companions || (cropDetails.companions !== 'Not specified' ? cropDetails.companions : 'No companion planting information available for this crop yet.');
@@ -200,7 +227,7 @@ export default function CropDetailScreen() {
                 source={{ uri: imageUrl }} 
                 style={styles.cropImage}
                 onError={() => {
-                  console.log('Image failed to load:', imageUrl);
+                  console.log('Crops: Image failed to load:', imageUrl);
                   setImageError(true);
                 }}
                 resizeMode="cover"
