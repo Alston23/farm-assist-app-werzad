@@ -55,13 +55,20 @@ interface SmartSuggestion {
   actionable: boolean;
 }
 
+type WeatherTaskSuggestion = {
+  id: string;
+  message: string;
+};
+
 function AIWeatherInsightsContent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [weatherForecast, setWeatherForecast] = useState<WeatherDay[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
   const [smartSuggestions, setSmartSuggestions] = useState<SmartSuggestion[]>([]);
+  const [suggestions, setSuggestions] = useState<WeatherTaskSuggestion[]>([]);
   const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState<string | null>(null);
@@ -85,7 +92,7 @@ function AIWeatherInsightsContent() {
 
     // Get location and load data
     await loadLocationAndWeather();
-    await loadTasks();
+    await loadUpcomingTasks();
   };
 
   const loadLocationAndWeather = async () => {
@@ -129,10 +136,10 @@ function AIWeatherInsightsContent() {
         const precipProb = data.daily.precipitation_probability_max[index];
 
         return {
-          date: dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          date,
           dayName,
-          high: Math.round(minTempC * 9 / 5 + 32),
-          low: Math.round(maxTempC * 9 / 5 + 32),
+          high: Math.round(maxTempC * 9 / 5 + 32),
+          low: Math.round(minTempC * 9 / 5 + 32),
           condition: getWeatherCondition(weatherCode),
           icon: getWeatherIcon(weatherCode),
           precipitation: precipProb,
@@ -150,10 +157,20 @@ function AIWeatherInsightsContent() {
     }
   };
 
-  const loadTasks = async () => {
+  const loadUpcomingTasks = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('Weather Insights: No user found');
+        return;
+      }
+
+      // Calculate date range for next 7 days
+      const today = new Date();
+      const in7Days = new Date();
+      in7Days.setDate(today.getDate() + 7);
+
+      console.log('Weather Insights: Loading tasks from', today.toISOString().split('T')[0], 'to', in7Days.toISOString().split('T')[0]);
 
       // Load tasks with planting information
       const { data: tasksData, error: tasksError } = await supabase
@@ -167,27 +184,73 @@ function AIWeatherInsightsContent() {
         `)
         .eq('user_id', user.id)
         .eq('completed', false)
+        .gte('due_date', today.toISOString().split('T')[0])
+        .lte('due_date', in7Days.toISOString().split('T')[0])
         .order('due_date', { ascending: true });
 
       if (tasksError) {
-        console.error('Error fetching tasks:', tasksError);
+        console.error('Weather Insights: Error fetching tasks:', tasksError);
       } else {
-        setTasks(tasksData || []);
-        console.log('Weather Insights: Loaded', tasksData?.length || 0, 'tasks');
+        setUpcomingTasks(tasksData || []);
+        console.log('Weather Insights: Loaded', tasksData?.length || 0, 'upcoming tasks');
       }
     } catch (error) {
-      console.error('Error loading tasks:', error);
+      console.error('Weather Insights: Error loading upcoming tasks:', error);
     }
   };
 
+  // Generate rule-based suggestions from weather + tasks
   useEffect(() => {
-    if (weatherForecast.length > 0 && tasks.length > 0) {
+    if (!weatherForecast.length || !upcomingTasks.length) {
+      setSuggestions([]);
+      return;
+    }
+
+    console.log('Weather Insights: Generating rule-based suggestions');
+    const newSuggestions: WeatherTaskSuggestion[] = [];
+
+    // Helper to find forecast for a given date string (YYYY-MM-DD)
+    const findDay = (dateStr: string) =>
+      weatherForecast.find((d) => d.date === dateStr);
+
+    for (const task of upcomingTasks) {
+      const dueDate = task.due_date;
+      const day = findDay(dueDate);
+      if (!day) continue;
+
+      const minF = day.minTempC * 9 / 5 + 32;
+      const maxF = day.maxTempC * 9 / 5 + 32;
+      const rain = day.precipProb;
+
+      // Rule 1: Freeze risk (min below 34°F)
+      if (minF <= 34) {
+        newSuggestions.push({
+          id: `freeze-${task.id}`,
+          message: `Freeze risk around ${dueDate} (low near ${Math.round(minF)}°F). Consider doing "${task.title}" earlier, especially if it involves tender crops like tomatoes or peppers.`,
+        });
+      }
+
+      // Rule 2: Heavy rain risk (precipitation > 60%)
+      if (rain >= 60) {
+        newSuggestions.push({
+          id: `rain-${task.id}`,
+          message: `High chance of rain (~${rain}% on ${dueDate}) for "${task.title}". If this is a harvest or field work task, consider shifting it by a day for better conditions.`,
+        });
+      }
+    }
+
+    setSuggestions(newSuggestions);
+    console.log('Weather Insights: Generated', newSuggestions.length, 'rule-based suggestions');
+  }, [weatherForecast, upcomingTasks]);
+
+  useEffect(() => {
+    if (weatherForecast.length > 0 && upcomingTasks.length > 0) {
       generateSmartSuggestions();
     }
-  }, [weatherForecast, tasks]);
+  }, [weatherForecast, upcomingTasks]);
 
   const generateSmartSuggestions = () => {
-    const suggestions: SmartSuggestion[] = [];
+    const smartSuggs: SmartSuggestion[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -196,7 +259,7 @@ function AIWeatherInsightsContent() {
       const freezeTemp = 32; // 32°F = 0°C
       if (day.low <= freezeTemp) {
         const daysUntil = index;
-        const affectedTasks = tasks.filter(task => {
+        const affectedTasks = upcomingTasks.filter(task => {
           if (task.task_type === 'harvesting' && task.planting?.crop_name) {
             const taskDate = new Date(task.due_date);
             const dayDate = new Date(today);
@@ -208,7 +271,7 @@ function AIWeatherInsightsContent() {
 
         if (affectedTasks.length > 0) {
           affectedTasks.forEach(task => {
-            suggestions.push({
+            smartSuggs.push({
               id: `freeze-${task.id}`,
               icon: '❄️',
               title: `Freeze Warning: Harvest ${task.planting?.crop_name} Early`,
@@ -218,7 +281,7 @@ function AIWeatherInsightsContent() {
             });
           });
         } else {
-          suggestions.push({
+          smartSuggs.push({
             id: `freeze-general-${index}`,
             icon: '❄️',
             title: `Freeze Warning on ${day.dayName}`,
@@ -231,7 +294,7 @@ function AIWeatherInsightsContent() {
     });
 
     // Check for rain on scheduled task dates
-    tasks.forEach(task => {
+    upcomingTasks.forEach(task => {
       const taskDate = new Date(task.due_date);
       taskDate.setHours(0, 0, 0, 0);
       const daysUntil = Math.ceil((taskDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -241,7 +304,7 @@ function AIWeatherInsightsContent() {
         if (weatherDay && weatherDay.precipProb > 60) {
           // High chance of rain on task date
           if (task.task_type === 'harvesting') {
-            suggestions.push({
+            smartSuggs.push({
               id: `rain-harvest-${task.id}`,
               icon: '🌧️',
               title: `Rain on Harvest Date: ${task.planting?.crop_name}`,
@@ -250,7 +313,7 @@ function AIWeatherInsightsContent() {
               actionable: true,
             });
           } else if (task.task_type === 'fertilizing') {
-            suggestions.push({
+            smartSuggs.push({
               id: `rain-fertilize-${task.id}`,
               icon: '🌧️',
               title: `Rain Before Fertilizing`,
@@ -259,7 +322,7 @@ function AIWeatherInsightsContent() {
               actionable: false,
             });
           } else if (task.task_type === 'watering') {
-            suggestions.push({
+            smartSuggs.push({
               id: `rain-water-${task.id}`,
               icon: '💧',
               title: `Skip Watering on ${weatherDay.date}`,
@@ -275,9 +338,9 @@ function AIWeatherInsightsContent() {
     // Check for extreme heat
     weatherForecast.forEach((day, index) => {
       if (day.high >= 95) {
-        const wateringTasks = tasks.filter(task => task.task_type === 'watering');
+        const wateringTasks = upcomingTasks.filter(task => task.task_type === 'watering');
         if (wateringTasks.length > 0) {
-          suggestions.push({
+          smartSuggs.push({
             id: `heat-${index}`,
             icon: '🌡️',
             title: `Extreme Heat Warning on ${day.dayName}`,
@@ -293,7 +356,7 @@ function AIWeatherInsightsContent() {
     weatherForecast.forEach((day, index) => {
       if (day.high >= 65 && day.high <= 75 && day.precipProb < 30) {
         if (index <= 2) {
-          suggestions.push({
+          smartSuggs.push({
             id: `ideal-${index}`,
             icon: '🌱',
             title: `Ideal Planting Conditions on ${day.dayName}`,
@@ -307,10 +370,10 @@ function AIWeatherInsightsContent() {
 
     // Sort by priority
     const priorityOrder = { high: 0, medium: 1, low: 2 };
-    suggestions.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+    smartSuggs.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
 
-    setSmartSuggestions(suggestions);
-    console.log('Weather Insights: Generated', suggestions.length, 'smart suggestions');
+    setSmartSuggestions(smartSuggs);
+    console.log('Weather Insights: Generated', smartSuggs.length, 'smart suggestions');
   };
 
   const getWeatherCondition = (code: number): string => {
@@ -506,7 +569,7 @@ function AIWeatherInsightsContent() {
                     {weatherForecast.map((day, index) => (
                       <View key={index} style={styles.forecastCard}>
                         <Text style={styles.forecastDay}>{index === 0 ? 'Today' : day.dayName}</Text>
-                        <Text style={styles.forecastDate}>{day.date}</Text>
+                        <Text style={styles.forecastDate}>{new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</Text>
                         <Text style={styles.forecastIcon}>{day.icon}</Text>
                         <Text style={styles.forecastCondition}>{day.condition}</Text>
                         <Text style={styles.forecastTemp}>{day.high}°</Text>
@@ -517,6 +580,22 @@ function AIWeatherInsightsContent() {
                       </View>
                     ))}
                   </ScrollView>
+                </View>
+              )}
+
+              {/* Rule-Based Suggestions (New Feature) */}
+              {suggestions.length > 0 && (
+                <View style={styles.suggestionsContainer}>
+                  <Text style={styles.suggestionsTitle}>🎯 Weather + Task Recommendations</Text>
+                  <Text style={styles.suggestionsSubtitle}>
+                    Smart suggestions based on your upcoming tasks and weather
+                  </Text>
+                  {suggestions.map((suggestion) => (
+                    <View key={suggestion.id} style={styles.ruleBasedCard}>
+                      <Text style={styles.ruleBasedIcon}>⚡</Text>
+                      <Text style={styles.ruleBasedMessage}>{suggestion.message}</Text>
+                    </View>
+                  ))}
                 </View>
               )}
 
@@ -783,6 +862,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666',
     marginBottom: 16,
+  },
+  ruleBasedCard: {
+    backgroundColor: '#FFF9E6',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9800',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  ruleBasedIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  ruleBasedMessage: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 20,
   },
   suggestionCard: {
     backgroundColor: '#F9F9F9',
