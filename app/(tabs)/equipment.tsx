@@ -93,7 +93,7 @@ export default function EquipmentScreen() {
     setIsEquipmentFormOpen(true);
   };
 
-  const handleDeleteEquipment = (id: string) => {
+  const handleDeleteEquipment = async (id: string) => {
     console.log('Equipment: handleDeleteEquipment called with id', id);
 
     Alert.alert(
@@ -113,23 +113,25 @@ export default function EquipmentScreen() {
                 .eq('id', id);
 
               if (error) {
-                console.error('Equipment: delete error', error);
+                console.error('Equipment: Supabase delete error', error);
                 Alert.alert(
-                  'Error deleting equipment',
-                  error.message || 'Something went wrong while deleting.'
+                  'Error deleting',
+                  error.message || 'Could not delete this equipment.'
                 );
                 return;
               }
 
-              console.log('Equipment: delete success for id', id);
+              console.log('Equipment: delete success, removing from state');
 
-              setEquipment((prev) => prev.filter((e) => e.id === undefined ? true : e.id !== id));
+              setEquipment((prev) =>
+                Array.isArray(prev) ? prev.filter((e) => e.id !== id) : prev
+              );
+
+              // Also refetch to ensure consistency
+              await fetchEquipment();
             } catch (err) {
               console.error('Equipment: unexpected delete error', err);
-              Alert.alert(
-                'Error deleting equipment',
-                'Something went wrong. Please try again.'
-              );
+              Alert.alert('Error deleting', 'Something went wrong. Please try again.');
             }
           },
         },
@@ -206,7 +208,7 @@ export default function EquipmentScreen() {
                     <TouchableOpacity
                       style={styles.deleteButton}
                       onPress={() => {
-                        console.log('Equipment: Delete button pressed for id', item.id);
+                        console.log('Equipment: Delete button pressed for', item);
                         handleDeleteEquipment(item.id);
                       }}
                     >
