@@ -93,8 +93,8 @@ export default function EquipmentScreen() {
     setIsEquipmentFormOpen(true);
   };
 
-  const handleDeleteEquipment = (id: string) => {
-    console.log('Equipment: handleDeleteEquipment called with id', id);
+  const handleDeleteEquipment = async (equipment: any) => {
+    console.log('Equipment: handleDeleteEquipment', equipment);
 
     Alert.alert(
       'Delete Equipment',
@@ -105,14 +105,13 @@ export default function EquipmentScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            console.log('Equipment: confirmed delete for id', id);
+            console.log('Equipment: confirmed delete', equipment);
 
             try {
-              // Use the SAME table and id column as the Equipment EDIT/SAVE logic
               const { error } = await supabase
                 .from('equipment')
                 .delete()
-                .eq('id', id);
+                .eq('id', equipment.id);
 
               if (error) {
                 console.error('Equipment: delete error', error);
@@ -123,15 +122,14 @@ export default function EquipmentScreen() {
                 return;
               }
 
-              console.log('Equipment: delete success for id', id);
+              console.log('Equipment: delete success');
 
-              // Update local state to remove the deleted item
+              // Use the SAME refresh logic used after a successful EDIT save:
               setEquipment((prev) =>
-                Array.isArray(prev) ? prev.filter((e) => e.id !== id) : prev
+                (prev || []).filter((e) => e.id === undefined
+                  ? true
+                  : e.id !== equipment.id)
               );
-
-              // Also refetch to ensure consistency
-              await fetchEquipment();
             } catch (err) {
               console.error('Equipment: unexpected delete error', err);
               Alert.alert(
@@ -214,8 +212,8 @@ export default function EquipmentScreen() {
                     <TouchableOpacity
                       style={styles.deleteButton}
                       onPress={() => {
-                        console.log('Equipment: Delete pressed for id', item.id);
-                        handleDeleteEquipment(item.id);
+                        console.log('Equipment: Delete button pressed', item);
+                        handleDeleteEquipment(item);
                       }}
                     >
                       <Text style={styles.deleteButtonText}>Delete</Text>
