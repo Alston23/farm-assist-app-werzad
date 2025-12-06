@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { allCrops } from '../../data/crops';
+import { getCropGuide, normalizeCropKey } from '../../data/cropGuides';
 import { supabase } from '../../lib/supabase';
 
 type CustomCropDetail = {
@@ -106,6 +107,12 @@ export default function CropDetailScreen() {
   const category = customCrop?.category || crop?.category || 'vegetable';
   const scientificName = customCrop?.scientific_name || crop?.scientificName;
 
+  // Get crop-specific guide data
+  const cropKey = normalizeCropKey(cropName);
+  const guide = getCropGuide(cropName);
+  
+  console.log('Crop name:', cropName, 'Normalized key:', cropKey, 'Guide found:', !!guide);
+
   const getCategoryEmoji = (cat: string) => {
     switch (cat) {
       case 'vegetable': return '🥕';
@@ -127,12 +134,12 @@ export default function CropDetailScreen() {
   };
 
   // Determine notes text with proper fallback
-  const notesText =
-    customCrop?.notes && customCrop.notes.trim().length > 0
+  const notesText = guide?.notes || 
+    (customCrop?.notes && customCrop.notes.trim().length > 0
       ? customCrop.notes
-      : 'No additional notes are available for this crop yet.';
+      : 'No additional notes are available for this crop yet.');
 
-  // For custom crops, use database values; for default crops, use mock data
+  // For custom crops, use database values; for default crops, use guide data with fallbacks
   const cropDetails = customCrop ? {
     sunlight: customCrop.sunlight || 'Not specified',
     water: customCrop.water || 'Not specified',
@@ -161,13 +168,20 @@ export default function CropDetailScreen() {
     plantingDepth: '1/4 inch',
     temperature: '65-85°F (18-29°C)',
     hardiness: 'Zones 3-11 (annual)',
-    companions: 'Basil, carrots, onions, marigolds',
-    avoid: 'Brassicas, fennel',
-    pests: 'Aphids, hornworms, whiteflies',
-    diseases: 'Blight, wilt, leaf spot',
-    harvest: 'When fruit is firm and fully colored',
-    storage: 'Store at room temperature until ripe',
+    companions: 'Not specified',
+    avoid: 'Not specified',
+    pests: 'Not specified',
+    diseases: 'Not specified',
+    harvest: 'Not specified',
+    storage: 'Not specified',
   };
+
+  // Use guide data for soil, spacing, companions, pests, and harvest sections
+  const soilInfo = guide?.soil || `${cropDetails.soilType}, pH ${cropDetails.soilPH}`;
+  const spacingInfo = guide?.spacing || `Plant spacing: ${cropDetails.plantSpacing}, Row spacing: ${cropDetails.rowSpacing}, Planting depth: ${cropDetails.plantingDepth}`;
+  const companionsInfo = guide?.companions || (cropDetails.companions !== 'Not specified' ? cropDetails.companions : 'No companion planting information available for this crop yet.');
+  const pestsInfo = guide?.pests || (cropDetails.pests !== 'Not specified' || cropDetails.diseases !== 'Not specified' ? `Pests: ${cropDetails.pests}. Diseases: ${cropDetails.diseases}` : 'No pest and disease information available for this crop yet.');
+  const harvestInfo = guide?.harvest || (cropDetails.harvest !== 'Not specified' || cropDetails.storage !== 'Not specified' ? `Harvest: ${cropDetails.harvest}. Storage: ${cropDetails.storage}` : 'No harvest and storage information available for this crop yet.');
 
   return (
     <View style={styles.container}>
@@ -219,30 +233,12 @@ export default function CropDetailScreen() {
 
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>🌱 Soil Requirements</Text>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Soil Type:</Text>
-              <Text style={styles.detailValue}>{cropDetails.soilType}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Soil pH:</Text>
-              <Text style={styles.detailValue}>{cropDetails.soilPH}</Text>
-            </View>
+            <Text style={styles.detailValue}>{soilInfo}</Text>
           </View>
 
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>📏 Spacing & Planting</Text>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Plant Spacing:</Text>
-              <Text style={styles.detailValue}>{cropDetails.plantSpacing}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Row Spacing:</Text>
-              <Text style={styles.detailValue}>{cropDetails.rowSpacing}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Planting Depth:</Text>
-              <Text style={styles.detailValue}>{cropDetails.plantingDepth}</Text>
-            </View>
+            <Text style={styles.detailValue}>{spacingInfo}</Text>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Days to Maturity:</Text>
               <Text style={styles.detailValue}>{cropDetails.daysToMaturity}</Text>
@@ -251,38 +247,17 @@ export default function CropDetailScreen() {
 
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>🤝 Companion Planting</Text>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Good Companions:</Text>
-              <Text style={styles.detailValue}>{cropDetails.companions}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Avoid Planting With:</Text>
-              <Text style={styles.detailValue}>{cropDetails.avoid}</Text>
-            </View>
+            <Text style={styles.detailValue}>{companionsInfo}</Text>
           </View>
 
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>🐛 Pests & Diseases</Text>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Common Pests:</Text>
-              <Text style={styles.detailValue}>{cropDetails.pests}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Common Diseases:</Text>
-              <Text style={styles.detailValue}>{cropDetails.diseases}</Text>
-            </View>
+            <Text style={styles.detailValue}>{pestsInfo}</Text>
           </View>
 
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>🌾 Harvest & Storage</Text>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>When to Harvest:</Text>
-              <Text style={styles.detailValue}>{cropDetails.harvest}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Storage:</Text>
-              <Text style={styles.detailValue}>{cropDetails.storage}</Text>
-            </View>
+            <Text style={styles.detailValue}>{harvestInfo}</Text>
           </View>
 
           <View style={styles.notesCard}>
