@@ -55,8 +55,22 @@ export default function FieldsScreen() {
     }
   };
 
-  const handleSuccess = () => {
-    fetchFieldsBeds();
+  const handleFieldSaved = (savedField: any) => {
+    console.log('Fields: handleFieldSaved called', savedField);
+
+    // Update the local state with the saved field
+    setFieldsBeds((prev) => {
+      if (!prev) return [savedField];
+      const index = prev.findIndex((f) => f.id === savedField.id);
+      if (index === -1) {
+        // New field - add to the beginning of the list
+        return [savedField, ...prev];
+      }
+      // Existing field - update it
+      const copy = [...prev];
+      copy[index] = savedField;
+      return copy;
+    });
   };
 
   const handleEdit = (item: FieldBed) => {
@@ -168,7 +182,7 @@ export default function FieldsScreen() {
       <AddFieldBedModal
         visible={modalVisible}
         onClose={handleCloseModal}
-        onSuccess={handleSuccess}
+        onSuccess={handleFieldSaved}
         editItem={editingItem}
       />
     </View>

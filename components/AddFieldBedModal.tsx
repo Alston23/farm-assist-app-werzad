@@ -19,7 +19,7 @@ import { getCropDetail } from '../data/cropDetails';
 interface AddFieldBedModalProps {
   visible: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (savedField?: any) => void;
   editItem?: any;
 }
 
@@ -300,15 +300,19 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
         }
 
         console.log('Fields: Save success', data);
-        Alert.alert(
-          'Success',
-          `${type === 'field' ? 'Field' : 'Bed'} updated successfully!`,
-          [{ text: 'OK', onPress: () => {
-            resetForm();
-            onSuccess();
-            onClose();
-          }}]
-        );
+        
+        // Show success alert
+        Alert.alert('Success', 'Field/bed saved successfully.');
+        
+        // Call onSuccess with the saved data
+        onSuccess?.(data);
+        
+        // Log before closing
+        console.log('Fields: closing form after successful save');
+        
+        // Reset form and close
+        resetForm();
+        onClose?.();
       } else {
         // Create new field/bed with planting
         console.log('Fields: Creating new field/bed');
@@ -353,19 +357,23 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
         }
 
         console.log('Success! Field/bed and planting created');
-        Alert.alert(
-          'Success',
-          `${type === 'field' ? 'Field' : 'Bed'} saved successfully! You can now view it in the Plantings tab.`,
-          [{ text: 'OK', onPress: () => {
-            resetForm();
-            onSuccess();
-            onClose();
-          }}]
-        );
+        
+        // Show success alert
+        Alert.alert('Success', 'Field/bed saved successfully.');
+        
+        // Call onSuccess with the saved data
+        onSuccess?.(newFieldBed);
+        
+        // Log before closing
+        console.log('Fields: closing form after successful save');
+        
+        // Reset form and close
+        resetForm();
+        onClose?.();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Fields: Save error', error);
-      Alert.alert('Error saving field', 'An unexpected error occurred');
+      Alert.alert('Error saving field', error.message || 'Something went wrong saving this field/bed.');
       setSaving(false);
     }
   };
