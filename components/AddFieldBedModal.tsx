@@ -182,7 +182,27 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
     setShowHarvestDatePicker(false);
   };
 
-  const handleSave = async () => {
+  const handleSaveField = async () => {
+    // Log button press and current form values
+    console.log('Fields: Save button pressed');
+    console.log('Fields: current form values', {
+      type,
+      name,
+      areaValue,
+      areaUnit,
+      soilType,
+      cropId,
+      cropName,
+      cropSearchQuery,
+      daysToMaturity,
+      irrigationType,
+      plantingDate: plantingDate ? plantingDate.toISOString() : null,
+      harvestDate: harvestDate ? harvestDate.toISOString() : null,
+      plantingDateInput,
+      harvestDateInput,
+      editMode: !!editItem,
+    });
+
     console.log('Save button pressed');
     console.log('Edit mode:', !!editItem);
     
@@ -719,7 +739,7 @@ export default function AddFieldBedModal({ visible, onClose, onSuccess, editItem
 
             <TouchableOpacity
               style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-              onPress={handleSave}
+              onPress={handleSaveField}
               disabled={saving}
               activeOpacity={0.7}
             >
