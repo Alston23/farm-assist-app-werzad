@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, Alert, ActivityIndicator, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -50,8 +50,8 @@ type WeatherTaskSuggestion = {
   priority: 'low' | 'medium' | 'high';
 };
 
-// OpenWeatherMap API Key - Replace with your actual key
-const OPENWEATHER_API_KEY = 'YOUR_API_KEY'; // TODO: Replace with actual API key
+// OpenWeatherMap API Key
+const OPENWEATHER_API_KEY = '4aacadfe5ccd51d0c6df1f089434ecc0';
 
 function AIWeatherInsightsContent() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -67,51 +67,7 @@ function AIWeatherInsightsContent() {
 
   const { hasLocationPermission, requestLocationPermission, loading: locationContextLoading } = useLocation();
 
-  useEffect(() => {
-    initializeScreen();
-  }, []);
-
-  const initializeScreen = async () => {
-    console.log('Weather Insights: Initializing screen');
-    
-    // Check if we have location permission
-    if (!hasLocationPermission && !locationContextLoading) {
-      console.log('Weather Insights: Requesting location permission');
-      const granted = await requestLocationPermission();
-      if (!granted) {
-        setWeatherError('Location permission is required to show weather forecasts and smart suggestions.');
-        return;
-      }
-    }
-
-    // Get location and load data
-    await loadLocationAndWeather();
-    await loadUpcomingTasks();
-  };
-
-  const loadLocationAndWeather = async () => {
-    try {
-      setWeatherLoading(true);
-      setWeatherError(null);
-
-      console.log('Weather Insights: Getting current location');
-      const currentLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-
-      setUserLocation(currentLocation);
-      console.log('Weather Insights: Location obtained:', currentLocation.coords.latitude, currentLocation.coords.longitude);
-
-      await fetchWeatherForecast(currentLocation.coords.latitude, currentLocation.coords.longitude);
-    } catch (error: any) {
-      console.error('Weather Insights: Error getting location:', error);
-      setWeatherError(error.message ?? 'Error loading weather');
-    } finally {
-      setWeatherLoading(false);
-    }
-  };
-
-  const fetchWeatherForecast = async (latitude: number, longitude: number) => {
+  const fetchWeatherForecast = useCallback(async (latitude: number, longitude: number) => {
     try {
       console.log('Weather Insights: Fetching weather forecast for:', latitude, longitude);
 
@@ -177,8 +133,53 @@ function AIWeatherInsightsContent() {
       console.log('Weather Insights: Weather data loaded successfully', days.length, 'days');
     } catch (err: any) {
       console.error('Weather Insights: Error fetching weather:', err);
-      setWeatherError(err.message ?? 'Error loading weather. Please check your API key.');
+      setWeatherError(err.message ?? 'Error loading weather. Please try again.');
+      throw err;
     }
+  }, []);
+
+  const loadLocationAndWeather = useCallback(async () => {
+    try {
+      setWeatherLoading(true);
+      setWeatherError(null);
+
+      console.log('Weather Insights: Getting current location');
+      const currentLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      setUserLocation(currentLocation);
+      console.log('Weather Insights: Location obtained:', currentLocation.coords.latitude, currentLocation.coords.longitude);
+
+      await fetchWeatherForecast(currentLocation.coords.latitude, currentLocation.coords.longitude);
+    } catch (error: any) {
+      console.error('Weather Insights: Error getting location:', error);
+      setWeatherError(error.message ?? 'Error loading weather');
+    } finally {
+      setWeatherLoading(false);
+    }
+  }, [fetchWeatherForecast]);
+
+  useEffect(() => {
+    initializeScreen();
+  }, []);
+
+  const initializeScreen = async () => {
+    console.log('Weather Insights: Initializing screen');
+    
+    // Check if we have location permission
+    if (!hasLocationPermission && !locationContextLoading) {
+      console.log('Weather Insights: Requesting location permission');
+      const granted = await requestLocationPermission();
+      if (!granted) {
+        setWeatherError('Location permission is required to show weather forecasts and smart suggestions.');
+        return;
+      }
+    }
+
+    // Get location and load data
+    await loadLocationAndWeather();
+    await loadUpcomingTasks();
   };
 
   const loadUpcomingTasks = async () => {
@@ -493,11 +494,6 @@ function AIWeatherInsightsContent() {
             ) : weatherError ? (
               <View style={styles.errorContainer}>
                 <Text style={styles.errorText}>{weatherError}</Text>
-                {weatherError.includes('API key') && (
-                  <Text style={styles.errorHint}>
-                    Please add your OpenWeatherMap API key to the code.
-                  </Text>
-                )}
                 <TouchableOpacity
                   style={styles.retryButton}
                   onPress={loadLocationAndWeather}
