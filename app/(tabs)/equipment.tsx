@@ -93,8 +93,8 @@ export default function EquipmentScreen() {
     setIsEquipmentFormOpen(true);
   };
 
-  const handleDeleteEquipment = async (id: string) => {
-    console.log('Equipment: handleDeleteEquipment', id);
+  const handleDeleteEquipment = (id: string) => {
+    console.log('Equipment: handleDeleteEquipment called with id', id);
 
     Alert.alert(
       'Delete Equipment',
@@ -105,6 +105,7 @@ export default function EquipmentScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
+            console.log('Equipment: confirmed delete for id', id);
             try {
               const { error } = await supabase
                 .from('equipment')
@@ -112,24 +113,22 @@ export default function EquipmentScreen() {
                 .eq('id', id);
 
               if (error) {
-                console.error('Equipment delete error', error);
+                console.error('Equipment: delete error', error);
                 Alert.alert(
                   'Error deleting equipment',
-                  error.message || 'Delete failed.'
+                  error.message || 'Something went wrong while deleting.'
                 );
                 return;
               }
 
-              console.log('Equipment delete success', id);
+              console.log('Equipment: delete success for id', id);
 
-              setEquipment((prev) =>
-                prev ? prev.filter((e) => e.id !== id) : prev
-              );
+              setEquipment((prev) => prev.filter((e) => e.id === undefined ? true : e.id !== id));
             } catch (err) {
-              console.error('Equipment delete crash', err);
+              console.error('Equipment: unexpected delete error', err);
               Alert.alert(
                 'Error deleting equipment',
-                'Something went wrong.'
+                'Something went wrong. Please try again.'
               );
             }
           },
@@ -207,7 +206,7 @@ export default function EquipmentScreen() {
                     <TouchableOpacity
                       style={styles.deleteButton}
                       onPress={() => {
-                        console.log('Equipment: Delete pressed', item.id);
+                        console.log('Equipment: Delete button pressed for id', item.id);
                         handleDeleteEquipment(item.id);
                       }}
                     >
