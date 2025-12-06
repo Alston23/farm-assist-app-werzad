@@ -30,9 +30,10 @@ interface Equipment {
 
 interface AddEquipmentModalProps {
   visible: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
+  onClose?: () => void;
+  onSuccess?: () => void;
   initialEquipment?: Equipment | null;
+  onSaved?: (equipment: any) => void;
 }
 
 const equipmentTypes = [
@@ -50,7 +51,13 @@ const equipmentTypes = [
   'Other',
 ];
 
-export default function AddEquipmentModal({ visible, onClose, onSuccess, initialEquipment }: AddEquipmentModalProps) {
+export default function AddEquipmentModal({ 
+  visible, 
+  onClose, 
+  onSuccess, 
+  initialEquipment,
+  onSaved 
+}: AddEquipmentModalProps) {
   const [name, setName] = useState('');
   const [type, setType] = useState('');
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
@@ -99,9 +106,9 @@ export default function AddEquipmentModal({ visible, onClose, onSuccess, initial
     }
   };
 
-  const handleSave = async () => {
-    console.log('Equipment: Save button pressed');
-    console.log('Equipment: current form values', {
+  const handleSaveEquipment = async () => {
+    console.log('Equipment: Save pressed');
+    console.log('Equipment: form values', {
       name,
       type,
       brand,
@@ -113,12 +120,14 @@ export default function AddEquipmentModal({ visible, onClose, onSuccess, initial
       notes,
     });
 
-    if (!name.trim()) {
-      Alert.alert('Error', 'Please enter equipment name');
+    // Validate required fields
+    if (!name.trim() || !hours) {
+      Alert.alert('Missing information', 'Please fill in all required fields.');
       return;
     }
+
     if (!type) {
-      Alert.alert('Error', 'Please select equipment type');
+      Alert.alert('Missing information', 'Please fill in all required fields.');
       return;
     }
 
@@ -132,61 +141,76 @@ export default function AddEquipmentModal({ visible, onClose, onSuccess, initial
         return;
       }
 
-      const equipmentData: any = {
+      // Build payload
+      const payload: any = {
         user_id: user.id,
         name: name.trim(),
         type,
         hours: hours ? parseFloat(hours) : 0,
       };
 
-      if (brand.trim()) equipmentData.brand = brand.trim();
-      if (model.trim()) equipmentData.model = model.trim();
-      if (year) equipmentData.year = parseInt(year);
-      if (purchasePrice) equipmentData.purchase_price = parseFloat(purchasePrice);
-      if (notes.trim()) equipmentData.notes = notes.trim();
-      equipmentData.purchase_date = purchaseDate.toISOString().split('T')[0];
+      if (brand.trim()) payload.brand = brand.trim();
+      if (model.trim()) payload.model = model.trim();
+      if (year) payload.year = parseInt(year);
+      if (purchasePrice) payload.purchase_price = parseFloat(purchasePrice);
+      if (notes.trim()) payload.notes = notes.trim();
+      payload.purchase_date = purchaseDate.toISOString().split('T')[0];
 
-      let result;
-      if (isEditMode && initialEquipment) {
-        // Update existing equipment
+      console.log('Equipment: Saving with payload', payload);
+
+      let data, error;
+
+      // Perform insert or update based on whether initialEquipment.id exists
+      if (initialEquipment?.id) {
         console.log('Equipment: Updating equipment with id', initialEquipment.id);
-        result = await supabase
+        const result = await supabase
           .from('equipment')
-          .update(equipmentData)
+          .update(payload)
           .eq('id', initialEquipment.id)
           .select()
           .single();
+        
+        data = result.data;
+        error = result.error;
       } else {
-        // Insert new equipment
         console.log('Equipment: Creating new equipment');
-        result = await supabase
+        const result = await supabase
           .from('equipment')
-          .insert(equipmentData)
+          .insert(payload)
           .select()
           .single();
+        
+        data = result.data;
+        error = result.error;
       }
-
-      const { data, error } = result;
 
       if (error) {
         console.error('Equipment: Save error', error);
-        Alert.alert('Error', error.message || 'Failed to save equipment');
+        Alert.alert('Error saving equipment', error.message || 'Something went wrong.');
         setSaving(false);
         return;
       }
 
       console.log('Equipment: Save success', data);
 
-      Alert.alert('Success', `Equipment ${isEditMode ? 'updated' : 'added'} successfully!`, [
-        { text: 'OK', onPress: () => {
-          resetForm();
-          onSuccess();
-          onClose();
-        }}
-      ]);
+      // Call onSaved callback if provided
+      onSaved?.(data);
+
+      // Show success alert
+      Alert.alert('Success', 'Equipment saved successfully.');
+
+      // Call onClose callback
+      onClose?.();
+
+      // Also call onSuccess for backward compatibility
+      onSuccess?.();
+
+      // Reset form
+      resetForm();
+      setSaving(false);
     } catch (error) {
       console.error('Equipment: Unexpected save error', error);
-      Alert.alert('Error', 'An unexpected error occurred');
+      Alert.alert('Error saving equipment', 'Something went wrong. Please try again.');
       setSaving(false);
     }
   };
@@ -206,7 +230,7 @@ export default function AddEquipmentModal({ visible, onClose, onSuccess, initial
 
   const handleClose = () => {
     resetForm();
-    onClose();
+    onClose?.();
   };
 
   const formatDate = (date: Date): string => {
@@ -307,7 +331,7 @@ export default function AddEquipmentModal({ visible, onClose, onSuccess, initial
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.label}>Current Hours</Text>
+              <Text style={styles.label}>Current Hours *</Text>
               <TextInput
                 style={styles.input}
                 value={hours}
@@ -358,7 +382,7 @@ export default function AddEquipmentModal({ visible, onClose, onSuccess, initial
 
             <TouchableOpacity
               style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-              onPress={handleSave}
+              onPress={handleSaveEquipment}
               disabled={saving}
             >
               <Text style={styles.saveButtonText}>

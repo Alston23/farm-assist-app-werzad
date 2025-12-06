@@ -28,7 +28,7 @@ export default function EquipmentScreen() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // New state for edit functionality
+  // State for edit functionality
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
   const [isEquipmentFormOpen, setIsEquipmentFormOpen] = useState(false);
 
@@ -67,9 +67,19 @@ export default function EquipmentScreen() {
     fetchEquipment();
   };
 
-  const handleEquipmentSaved = () => {
-    console.log('Equipment: handleEquipmentSaved called');
-    fetchEquipment();
+  const handleEquipmentSaved = (saved: any) => {
+    console.log('Equipment: handleEquipmentSaved', saved);
+    setEquipment((prev) => {
+      const existingIndex = prev.findIndex((e) => e.id === saved.id);
+      if (existingIndex === -1) {
+        // New equipment - add to the beginning of the list
+        return [saved, ...prev];
+      }
+      // Existing equipment - update in place
+      const copy = [...prev];
+      copy[existingIndex] = saved;
+      return copy;
+    });
   };
 
   const handleEquipmentPress = (item: Equipment) => {
@@ -115,9 +125,6 @@ export default function EquipmentScreen() {
 
               // Update local state to remove the deleted equipment
               setEquipment((prev) => prev.filter((eq) => eq.id !== id));
-
-              // Also refetch to ensure consistency
-              await fetchEquipment();
             } catch (err) {
               console.error('Equipment: Unexpected delete error', err);
               Alert.alert(
@@ -226,7 +233,7 @@ export default function EquipmentScreen() {
             setIsEquipmentFormOpen(false);
             setEditingEquipment(null);
           }}
-          onSuccess={handleEquipmentSaved}
+          onSaved={handleEquipmentSaved}
         />
       )}
 
