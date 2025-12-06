@@ -32,6 +32,7 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
   const [deliveryAvailable, setDeliveryAvailable] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: boolean }>({});
 
   const units = ['lbs', 'kg', 'bushels', 'boxes', 'units', 'bunches', 'each'];
   const categories = ['vegetables', 'fruits', 'flowers', 'herbs', 'spices', 'aromatics', 'other'];
@@ -60,10 +61,21 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
   };
 
   const handleSubmit = async () => {
-    if (!productName.trim() || !description.trim() || !price || !quantity) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
+    const newErrors: { [key: string]: boolean } = {};
+
+    // Mark required fields
+    if (!productName.trim()) newErrors.productName = true;
+    if (!description.trim()) newErrors.description = true;
+    if (!price) newErrors.price = true;
+    if (!quantity) newErrors.quantity = true;
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      Alert.alert('Missing information', 'Please fill in all required fields.');
+      return; // do NOT call Supabase yet
     }
+
+    setErrors({});
 
     const priceNum = parseFloat(price);
     const quantityNum = parseFloat(quantity);
@@ -131,6 +143,7 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
     setPickupLocation('');
     setDeliveryAvailable(false);
     setImages([]);
+    setErrors({});
   };
 
   return (
@@ -147,7 +160,10 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
           <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
             <Text style={styles.label}>Product Name *</Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                errors.productName && { borderColor: 'red', borderWidth: 2 },
+              ]}
               value={productName}
               onChangeText={setProductName}
               placeholder="e.g., Organic Tomatoes"
@@ -171,7 +187,11 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
 
             <Text style={styles.label}>Description *</Text>
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[
+                styles.input,
+                styles.textArea,
+                errors.description && { borderColor: 'red', borderWidth: 2 },
+              ]}
               value={description}
               onChangeText={setDescription}
               placeholder="Describe your product..."
@@ -184,7 +204,10 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
               <View style={styles.halfWidth}>
                 <Text style={styles.label}>Price * ($)</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    errors.price && { borderColor: 'red', borderWidth: 2 },
+                  ]}
                   value={price}
                   onChangeText={setPrice}
                   placeholder="0.00"
@@ -196,7 +219,10 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
               <View style={styles.halfWidth}>
                 <Text style={styles.label}>Quantity *</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    errors.quantity && { borderColor: 'red', borderWidth: 2 },
+                  ]}
                   value={quantity}
                   onChangeText={setQuantity}
                   placeholder="0"

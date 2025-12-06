@@ -35,6 +35,7 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
   const [hoursUsed, setHoursUsed] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: boolean }>({});
 
   const conditions = ['new', 'excellent', 'good', 'fair', 'poor', 'parts_only'];
 
@@ -62,15 +63,26 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
   };
 
   const handleSubmit = async () => {
-    if (!equipmentName.trim() || !equipmentType.trim() || !description.trim()) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
+    const newErrors: { [key: string]: boolean } = {};
+
+    // Mark required fields
+    if (!equipmentName.trim()) newErrors.equipmentName = true;
+    if (!equipmentType.trim()) newErrors.equipmentType = true;
+    if (!description.trim()) newErrors.description = true;
+    
+    // For "for_sale" listings, price and condition are required
+    if (listingType === 'for_sale') {
+      if (!price) newErrors.price = true;
+      if (!condition) newErrors.condition = true;
     }
 
-    if (listingType === 'for_sale' && !price) {
-      Alert.alert('Error', 'Please enter a price for items for sale');
-      return;
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      Alert.alert('Missing information', 'Please fill in all required fields.');
+      return; // do NOT call Supabase yet
     }
+
+    setErrors({});
 
     setLoading(true);
 
@@ -133,6 +145,7 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
     setLocation('');
     setHoursUsed('');
     setImages([]);
+    setErrors({});
   };
 
   return (
@@ -169,7 +182,10 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
 
             <Text style={styles.label}>Equipment Name *</Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                errors.equipmentName && { borderColor: 'red', borderWidth: 2 },
+              ]}
               value={equipmentName}
               onChangeText={setEquipmentName}
               placeholder="e.g., John Deere 5075E Tractor"
@@ -178,7 +194,10 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
 
             <Text style={styles.label}>Equipment Type *</Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                errors.equipmentType && { borderColor: 'red', borderWidth: 2 },
+              ]}
               value={equipmentType}
               onChangeText={setEquipmentType}
               placeholder="e.g., Tractor, Plow, Harvester, Seeder, Baler, etc."
@@ -242,7 +261,11 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
                   {conditions.map((cond) => (
                     <TouchableOpacity
                       key={cond}
-                      style={[styles.chip, condition === cond && styles.chipActive]}
+                      style={[
+                        styles.chip,
+                        condition === cond && styles.chipActive,
+                        errors.condition && !condition && { borderColor: 'red', borderWidth: 2 },
+                      ]}
                       onPress={() => setCondition(cond)}
                     >
                       <Text style={[styles.chipText, condition === cond && styles.chipTextActive]}>
@@ -254,7 +277,10 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
 
                 <Text style={styles.label}>Price * ($)</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    errors.price && { borderColor: 'red', borderWidth: 2 },
+                  ]}
                   value={price}
                   onChangeText={setPrice}
                   placeholder="0.00"
@@ -280,7 +306,11 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
 
             <Text style={styles.label}>Description *</Text>
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[
+                styles.input,
+                styles.textArea,
+                errors.description && { borderColor: 'red', borderWidth: 2 },
+              ]}
               value={description}
               onChangeText={setDescription}
               placeholder={listingType === 'for_sale' 
