@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import * as Location from 'expo-location';
+import { useLocation } from '../../contexts/LocationContext';
 import PremiumGuard from '../../components/PremiumGuard';
 import ProUpsellBanner from '../../components/ProUpsellBanner';
 
@@ -23,129 +24,293 @@ interface WeatherDay {
   condition: string;
   icon: string;
   precipitation: number;
+  minTempC: number;
+  maxTempC: number;
+  precipProb: number;
+}
+
+interface Task {
+  id: string;
+  title: string;
+  description: string;
+  task_type: string;
+  due_date: string;
+  completed: boolean;
+  priority: string;
+  planting_id: string;
+  planting?: {
+    crop_name: string;
+    field_bed: {
+      name: string;
+    };
+  };
+}
+
+interface SmartSuggestion {
+  id: string;
+  icon: string;
+  title: string;
+  description: string;
+  priority: 'low' | 'medium' | 'high';
+  actionable: boolean;
 }
 
 function AIWeatherInsightsContent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [locationLoading, setLocationLoading] = useState(true);
   const [weatherForecast, setWeatherForecast] = useState<WeatherDay[]>([]);
-  const [location, setLocation] = useState<Location.LocationObject | null>(null);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [smartSuggestions, setSmartSuggestions] = useState<SmartSuggestion[]>([]);
+  const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
   const router = useRouter();
 
+  const { hasLocationPermission, requestLocationPermission, loading: locationContextLoading } = useLocation();
+
   useEffect(() => {
-    requestLocationAndFetchWeather();
+    initializeScreen();
   }, []);
 
-  const requestLocationAndFetchWeather = async () => {
-    try {
-      console.log('Weather Insights: Requesting location permissions');
-      
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      
-      if (status !== 'granted') {
-        console.log('Weather Insights: Location permission denied');
-        setLocationError('Location permission denied. Please enable location access to get weather forecasts.');
-        setLocationLoading(false);
-        
-        const errorMessage: Message = {
-          id: Date.now().toString(),
-          role: 'assistant',
-          content: 'I need access to your location to provide accurate weather forecasts and farming recommendations. Please enable location permissions in your device settings and try again.',
-          timestamp: new Date(),
-        };
-        setMessages([errorMessage]);
+  const initializeScreen = async () => {
+    // Check if we have location permission
+    if (!hasLocationPermission && !locationContextLoading) {
+      const granted = await requestLocationPermission();
+      if (!granted) {
+        setWeatherError('Location permission is required to show weather forecasts and smart suggestions.');
         return;
       }
+    }
+
+    // Get location and load data
+    await loadLocationAndWeather();
+    await loadTasks();
+  };
+
+  const loadLocationAndWeather = async () => {
+    try {
+      setWeatherLoading(true);
+      setWeatherError(null);
 
       console.log('Weather Insights: Getting current location');
       const currentLocation = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
-      
-      setLocation(currentLocation);
+
+      setUserLocation(currentLocation);
       console.log('Weather Insights: Location obtained:', currentLocation.coords.latitude, currentLocation.coords.longitude);
 
       await fetchWeatherForecast(currentLocation.coords.latitude, currentLocation.coords.longitude);
-      
-      setLocationLoading(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Weather Insights: Error getting location:', error);
-      setLocationError('Failed to get your location. Please try again.');
-      setLocationLoading(false);
-      
-      const errorMessage: Message = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: 'I encountered an error getting your location. Please make sure location services are enabled on your device and try again.',
-        timestamp: new Date(),
-      };
-      setMessages([errorMessage]);
+      setWeatherError(error.message ?? 'Error loading weather');
+    } finally {
+      setWeatherLoading(false);
     }
   };
 
   const fetchWeatherForecast = async (latitude: number, longitude: number) => {
     try {
       console.log('Weather Insights: Fetching weather forecast for:', latitude, longitude);
-      
-      const response = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode&temperature_unit=fahrenheit&timezone=auto&forecast_days=5`
-      );
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch weather data');
-      }
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=auto&forecast_days=5`;
 
-      const data = await response.json();
-      console.log('Weather Insights: Weather data received');
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to load weather');
+      const data = await res.json();
 
-      const forecast: WeatherDay[] = data.daily.time.map((date: string, index: number) => {
+      const days = data.daily.time.map((date: string, index: number) => {
         const dateObj = new Date(date);
         const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
         const weatherCode = data.daily.weathercode[index];
-        
+        const minTempC = data.daily.temperature_2m_min[index];
+        const maxTempC = data.daily.temperature_2m_max[index];
+        const precipProb = data.daily.precipitation_probability_max[index];
+
         return {
           date: dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
           dayName,
-          high: Math.round(data.daily.temperature_2m_max[index]),
-          low: Math.round(data.daily.temperature_2m_min[index]),
+          high: Math.round(minTempC * 9 / 5 + 32),
+          low: Math.round(maxTempC * 9 / 5 + 32),
           condition: getWeatherCondition(weatherCode),
           icon: getWeatherIcon(weatherCode),
-          precipitation: Math.round(data.daily.precipitation_sum[index] * 10) / 10,
+          precipitation: precipProb,
+          minTempC,
+          maxTempC,
+          precipProb,
         };
       });
 
-      setWeatherForecast(forecast);
-
-      const initialPrompt = `Based on the 5-day weather forecast for your location, here's what you should know:
-
-${forecast.map((day, index) => 
-  `${index === 0 ? 'Today' : day.dayName}: ${day.condition}, High: ${day.high}°F, Low: ${day.low}°F${day.precipitation > 0 ? `, Rain: ${day.precipitation}"` : ''}`
-).join('\n')}
-
-Now, let me provide you with specific farming tasks and recommendations based on this forecast. What can I help you with regarding your crops and the upcoming weather?`;
-
-      const welcomeMessage: Message = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: initialPrompt,
-        timestamp: new Date(),
-      };
-      
-      setMessages([welcomeMessage]);
-    } catch (error) {
-      console.error('Weather Insights: Error fetching weather:', error);
-      
-      const errorMessage: Message = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: 'I encountered an error fetching the weather forecast. Please try again later.',
-        timestamp: new Date(),
-      };
-      setMessages([errorMessage]);
+      setWeatherForecast(days);
+      console.log('Weather Insights: Weather data loaded successfully');
+    } catch (err: any) {
+      console.error('Weather Insights: Error fetching weather:', err);
+      setWeatherError(err.message ?? 'Error loading weather');
     }
+  };
+
+  const loadTasks = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Load tasks with planting information
+      const { data: tasksData, error: tasksError } = await supabase
+        .from('tasks')
+        .select(`
+          *,
+          planting:plantings(
+            crop_name,
+            field_bed:fields_beds(name)
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('completed', false)
+        .order('due_date', { ascending: true });
+
+      if (tasksError) {
+        console.error('Error fetching tasks:', tasksError);
+      } else {
+        setTasks(tasksData || []);
+        console.log('Weather Insights: Loaded', tasksData?.length || 0, 'tasks');
+      }
+    } catch (error) {
+      console.error('Error loading tasks:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (weatherForecast.length > 0 && tasks.length > 0) {
+      generateSmartSuggestions();
+    }
+  }, [weatherForecast, tasks]);
+
+  const generateSmartSuggestions = () => {
+    const suggestions: SmartSuggestion[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Check for freeze warnings
+    weatherForecast.forEach((day, index) => {
+      const freezeTemp = 32; // 32°F = 0°C
+      if (day.low <= freezeTemp) {
+        const daysUntil = index;
+        const affectedTasks = tasks.filter(task => {
+          if (task.task_type === 'harvesting' && task.planting?.crop_name) {
+            const taskDate = new Date(task.due_date);
+            const dayDate = new Date(today);
+            dayDate.setDate(dayDate.getDate() + index);
+            return taskDate >= dayDate;
+          }
+          return false;
+        });
+
+        if (affectedTasks.length > 0) {
+          affectedTasks.forEach(task => {
+            suggestions.push({
+              id: `freeze-${task.id}`,
+              icon: '❄️',
+              title: `Freeze Warning: Harvest ${task.planting?.crop_name} Early`,
+              description: `Freeze expected in ${daysUntil} day${daysUntil !== 1 ? 's' : ''} (${day.dayName}). Consider harvesting ${task.planting?.crop_name} before ${day.date} to avoid frost damage.`,
+              priority: 'high',
+              actionable: true,
+            });
+          });
+        } else {
+          suggestions.push({
+            id: `freeze-general-${index}`,
+            icon: '❄️',
+            title: `Freeze Warning on ${day.dayName}`,
+            description: `Temperature will drop to ${day.low}°F on ${day.date}. Protect sensitive crops and consider covering plants.`,
+            priority: 'high',
+            actionable: true,
+          });
+        }
+      }
+    });
+
+    // Check for rain on scheduled task dates
+    tasks.forEach(task => {
+      const taskDate = new Date(task.due_date);
+      taskDate.setHours(0, 0, 0, 0);
+      const daysUntil = Math.ceil((taskDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (daysUntil >= 0 && daysUntil < 5) {
+        const weatherDay = weatherForecast[daysUntil];
+        if (weatherDay && weatherDay.precipProb > 60) {
+          // High chance of rain on task date
+          if (task.task_type === 'harvesting') {
+            suggestions.push({
+              id: `rain-harvest-${task.id}`,
+              icon: '🌧️',
+              title: `Rain on Harvest Date: ${task.planting?.crop_name}`,
+              description: `${weatherDay.precipProb}% chance of rain on ${weatherDay.date}. Consider harvesting ${task.planting?.crop_name} a day earlier or later to avoid wet conditions.`,
+              priority: 'medium',
+              actionable: true,
+            });
+          } else if (task.task_type === 'fertilizing') {
+            suggestions.push({
+              id: `rain-fertilize-${task.id}`,
+              icon: '🌧️',
+              title: `Rain Before Fertilizing`,
+              description: `Rain expected on ${weatherDay.date}. This is ideal timing for fertilizing ${task.planting?.crop_name} - nutrients will be absorbed better.`,
+              priority: 'low',
+              actionable: false,
+            });
+          } else if (task.task_type === 'watering') {
+            suggestions.push({
+              id: `rain-water-${task.id}`,
+              icon: '💧',
+              title: `Skip Watering on ${weatherDay.date}`,
+              description: `${weatherDay.precipProb}% chance of rain. You can skip watering ${task.planting?.crop_name} and let nature do the work!`,
+              priority: 'low',
+              actionable: true,
+            });
+          }
+        }
+      }
+    });
+
+    // Check for extreme heat
+    weatherForecast.forEach((day, index) => {
+      if (day.high >= 95) {
+        const wateringTasks = tasks.filter(task => task.task_type === 'watering');
+        if (wateringTasks.length > 0) {
+          suggestions.push({
+            id: `heat-${index}`,
+            icon: '🌡️',
+            title: `Extreme Heat Warning on ${day.dayName}`,
+            description: `Temperature will reach ${day.high}°F on ${day.date}. Increase watering frequency and consider providing shade for sensitive crops.`,
+            priority: 'high',
+            actionable: true,
+          });
+        }
+      }
+    });
+
+    // Check for ideal planting conditions
+    weatherForecast.forEach((day, index) => {
+      if (day.high >= 65 && day.high <= 75 && day.precipProb < 30) {
+        if (index <= 2) {
+          suggestions.push({
+            id: `ideal-${index}`,
+            icon: '🌱',
+            title: `Ideal Planting Conditions on ${day.dayName}`,
+            description: `Perfect weather on ${day.date} (${day.high}°F, low rain chance). Great day for transplanting or direct seeding.`,
+            priority: 'low',
+            actionable: false,
+          });
+        }
+      }
+    });
+
+    // Sort by priority
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    suggestions.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+
+    setSmartSuggestions(suggestions);
+    console.log('Weather Insights: Generated', suggestions.length, 'smart suggestions');
   };
 
   const getWeatherCondition = (code: number): string => {
@@ -237,8 +402,8 @@ Now, let me provide you with specific farming tasks and recommendations based on
 
       let weatherContext = '';
       if (weatherForecast.length > 0) {
-        weatherContext = `\n\nCurrent 5-day weather forecast:\n${weatherForecast.map((day, index) => 
-          `${index === 0 ? 'Today' : day.dayName}: ${day.condition}, High: ${day.high}°F, Low: ${day.low}°F${day.precipitation > 0 ? `, Rain: ${day.precipitation}"` : ''}`
+        weatherContext = `\n\nCurrent 5-day weather forecast:\n${weatherForecast.map((day, index) =>
+          `${index === 0 ? 'Today' : day.dayName}: ${day.condition}, High: ${day.high}°F, Low: ${day.low}°F${day.precipProb > 0 ? `, Rain chance: ${day.precipProb}%` : ''}`
         ).join('\n')}`;
       }
 
@@ -270,7 +435,7 @@ Now, let me provide you with specific farming tasks and recommendations based on
       await saveMessage('assistant', data.response);
     } catch (error: any) {
       console.error('Error sending message:', error);
-      
+
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -285,6 +450,19 @@ Now, let me provide you with specific farming tasks and recommendations based on
 
   const handleBackToAssistant = () => {
     router.replace('/(tabs)/ai-assistant');
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return '#F44336';
+      case 'medium':
+        return '#FF9800';
+      case 'low':
+        return '#4CAF50';
+      default:
+        return '#999';
+    }
   };
 
   return (
@@ -303,23 +481,24 @@ Now, let me provide you with specific farming tasks and recommendations based on
       </View>
       <LinearGradient colors={['#2D5016', '#4A7C2C', '#6BA542']} style={styles.gradient}>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-          {locationLoading ? (
+          {weatherLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#FFFFFF" />
               <Text style={styles.loadingText}>Getting your location and weather forecast...</Text>
             </View>
-          ) : locationError ? (
+          ) : weatherError ? (
             <View style={styles.errorContainer}>
               <Text style={styles.errorIcon}>📍</Text>
-              <Text style={styles.errorText}>{locationError}</Text>
-              <TouchableOpacity style={styles.retryButton} onPress={requestLocationAndFetchWeather}>
+              <Text style={styles.errorText}>{weatherError}</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={loadLocationAndWeather}>
                 <Text style={styles.retryButtonText}>Try Again</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            <>
+            <React.Fragment>
               <ProUpsellBanner message="Want detailed weather-based task scheduling and alerts? Unlock Farm Copilot Pro." />
-              
+
+              {/* 5-Day Forecast */}
               {weatherForecast.length > 0 && (
                 <View style={styles.forecastContainer}>
                   <Text style={styles.forecastTitle}>5-Day Forecast</Text>
@@ -332,8 +511,8 @@ Now, let me provide you with specific farming tasks and recommendations based on
                         <Text style={styles.forecastCondition}>{day.condition}</Text>
                         <Text style={styles.forecastTemp}>{day.high}°</Text>
                         <Text style={styles.forecastTempLow}>{day.low}°</Text>
-                        {day.precipitation > 0 && (
-                          <Text style={styles.forecastPrecip}>💧 {day.precipitation}"</Text>
+                        {day.precipProb > 0 && (
+                          <Text style={styles.forecastPrecip}>💧 {day.precipProb}%</Text>
                         )}
                       </View>
                     ))}
@@ -341,6 +520,42 @@ Now, let me provide you with specific farming tasks and recommendations based on
                 </View>
               )}
 
+              {/* Smart Task Suggestions */}
+              {smartSuggestions.length > 0 && (
+                <View style={styles.suggestionsContainer}>
+                  <Text style={styles.suggestionsTitle}>🧠 Smart Task Suggestions</Text>
+                  <Text style={styles.suggestionsSubtitle}>
+                    Based on your upcoming tasks and weather forecast
+                  </Text>
+                  {smartSuggestions.map((suggestion) => (
+                    <View
+                      key={suggestion.id}
+                      style={[
+                        styles.suggestionCard,
+                        { borderLeftColor: getPriorityColor(suggestion.priority) },
+                      ]}
+                    >
+                      <View style={styles.suggestionHeader}>
+                        <Text style={styles.suggestionIcon}>{suggestion.icon}</Text>
+                        <View style={styles.suggestionContent}>
+                          <Text style={styles.suggestionTitle}>{suggestion.title}</Text>
+                          <Text style={styles.suggestionDescription}>{suggestion.description}</Text>
+                        </View>
+                      </View>
+                      <View
+                        style={[
+                          styles.priorityBadge,
+                          { backgroundColor: getPriorityColor(suggestion.priority) },
+                        ]}
+                      >
+                        <Text style={styles.priorityText}>{suggestion.priority.toUpperCase()}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* AI Chat Messages */}
               {messages.map((message) => (
                 <View
                   key={message.id}
@@ -375,11 +590,11 @@ Now, let me provide you with specific farming tasks and recommendations based on
                   </View>
                 </View>
               )}
-            </>
+            </React.Fragment>
           )}
         </ScrollView>
 
-        {!locationLoading && !locationError && (
+        {!weatherLoading && !weatherError && (
           <View style={styles.inputContainer}>
             <View style={styles.inputRow}>
               <TextInput
@@ -551,6 +766,70 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#4A7C2C',
     marginTop: 4,
+  },
+  suggestionsContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  suggestionsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2D5016',
+    marginBottom: 4,
+  },
+  suggestionsSubtitle: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 16,
+  },
+  suggestionCard: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  suggestionHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  suggestionIcon: {
+    fontSize: 28,
+    marginRight: 12,
+  },
+  suggestionContent: {
+    flex: 1,
+  },
+  suggestionTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 6,
+  },
+  suggestionDescription: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  priorityBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  priorityText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   messageContainer: {
     marginBottom: 12,
