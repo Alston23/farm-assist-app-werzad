@@ -74,9 +74,19 @@ export default function AIAssistantScreen() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
-  const { signOut } = useAuth();
   const router = useRouter();
+  const { signOut } = useAuth();
   const { isPro, loading: proLoading } = useProStatus();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      // After sign out, send the user back to the auth flow
+      router.replace('/auth');
+    } catch (error) {
+      console.error('Error signing out from AI Assistant screen:', error);
+    }
+  };
 
   // Reset to Quick Actions page whenever the screen comes into focus
   useFocusEffect(
@@ -493,34 +503,6 @@ export default function AIAssistantScreen() {
     );
   };
 
-  const handleSignOut = async () => {
-    console.log('AI Assistant: Sign out button pressed');
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              console.log('AI Assistant: Calling signOut from AuthContext');
-              await signOut();
-              console.log('AI Assistant: Sign out completed');
-            } catch (error: any) {
-              console.error('AI Assistant: Sign out error:', error);
-              Alert.alert('Error', 'Failed to sign out. Please try again.');
-            }
-          },
-        },
-      ]
-    );
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
@@ -535,12 +517,18 @@ export default function AIAssistantScreen() {
               <Text style={styles.upgradeButtonText}>⭐ Upgrade</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity 
-            style={styles.signOutButton} 
-            onPress={handleSignOut} 
-            activeOpacity={0.7}
+          <TouchableOpacity
+            onPress={handleSignOut}
+            style={{
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 8,
+              backgroundColor: '#166534',
+            }}
           >
-            <Text style={styles.signOutButtonText}>Sign Out</Text>
+            <Text style={{ color: 'white', fontWeight: '600', fontSize: 14 }}>
+              Sign Out
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
