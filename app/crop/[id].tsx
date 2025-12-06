@@ -126,6 +126,12 @@ export default function CropDetailScreen() {
     }
   };
 
+  // Determine notes text with proper fallback
+  const notesText =
+    customCrop?.notes && customCrop.notes.trim().length > 0
+      ? customCrop.notes
+      : 'No additional notes are available for this crop yet.';
+
   // For custom crops, use database values; for default crops, use mock data
   const cropDetails = customCrop ? {
     sunlight: customCrop.sunlight || 'Not specified',
@@ -144,7 +150,6 @@ export default function CropDetailScreen() {
     diseases: customCrop.diseases || 'Not specified',
     harvest: customCrop.harvest || 'Not specified',
     storage: customCrop.storage || 'Not specified',
-    notes: customCrop.notes || 'No additional notes',
   } : {
     sunlight: 'Full sun (6-8 hours daily)',
     water: 'Regular watering, keep soil consistently moist',
@@ -162,7 +167,6 @@ export default function CropDetailScreen() {
     diseases: 'Blight, wilt, leaf spot',
     harvest: 'When fruit is firm and fully colored',
     storage: 'Store at room temperature until ripe',
-    notes: 'This is sample data. In production, each crop would have specific growing requirements tailored to its needs.',
   };
 
   return (
@@ -283,7 +287,7 @@ export default function CropDetailScreen() {
 
           <View style={styles.notesCard}>
             <Text style={styles.notesTitle}>📝 Notes</Text>
-            <Text style={styles.notesText}>{cropDetails.notes}</Text>
+            <Text style={styles.notesText}>{notesText}</Text>
           </View>
         </ScrollView>
       </LinearGradient>
