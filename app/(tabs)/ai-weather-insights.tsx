@@ -283,18 +283,22 @@ Now, let me provide you with specific farming tasks and recommendations based on
     }
   };
 
-  const handleBack = () => {
-    console.log('Weather Insights: Back button pressed');
-    router.push('/(tabs)/ai-assistant');
+  const handleBackToAssistant = () => {
+    router.replace('/(tabs)/ai-assistant');
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Text style={styles.backButtonText}>← Back</Text>
+        <TouchableOpacity
+          onPress={handleBackToAssistant}
+          style={{ paddingHorizontal: 8, paddingVertical: 4 }}
+        >
+          <Text style={{ color: 'white', fontWeight: '600', fontSize: 14 }}>
+            ← Back
+          </Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>🌤️ Weather Insights</Text>
+        <Text style={styles.headerTitle}>Weather Insights</Text>
         <View style={styles.placeholder} />
       </View>
       <LinearGradient colors={['#2D5016', '#4A7C2C', '#6BA542']} style={styles.gradient}>
@@ -427,17 +431,6 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? 48 : 60,
     paddingBottom: 16,
     backgroundColor: '#2D5016',
-  },
-  backButton: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  backButtonText: {
-    color: '#2D5016',
-    fontWeight: '600',
-    fontSize: 14,
   },
   headerTitle: {
     fontSize: 20,
