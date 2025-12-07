@@ -13,7 +13,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
-import { pickMultipleImages } from '../utils/imagePicker';
+import { pickMultipleImagesFromCamera, pickMultipleImagesFromLibrary } from '../utils/imagePicker';
 
 interface AddCustomerListingModalProps {
   visible: boolean;
@@ -37,6 +37,20 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
   const units = ['lbs', 'kg', 'bushels', 'boxes', 'units', 'bunches', 'each'];
   const categories = ['vegetables', 'fruits', 'flowers', 'herbs', 'spices', 'aromatics', 'other'];
 
+  const handlePickImagesFromCamera = async () => {
+    const uris = await pickMultipleImagesFromCamera();
+    if (uris.length > 0) {
+      setImages([...images, ...uris].slice(0, 5));
+    }
+  };
+
+  const handlePickImagesFromLibrary = async () => {
+    const uris = await pickMultipleImagesFromLibrary();
+    if (uris.length > 0) {
+      setImages([...images, ...uris].slice(0, 5));
+    }
+  };
+
   const showImagePickerOptions = () => {
     Alert.alert(
       'Add Images',
@@ -44,21 +58,11 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
       [
         {
           text: 'Take Photo',
-          onPress: async () => {
-            const uris = await pickMultipleImages('camera');
-            if (uris.length > 0) {
-              setImages([...images, ...uris].slice(0, 5));
-            }
-          },
+          onPress: handlePickImagesFromCamera,
         },
         {
           text: 'Choose from Library',
-          onPress: async () => {
-            const uris = await pickMultipleImages('library');
-            if (uris.length > 0) {
-              setImages([...images, ...uris].slice(0, 5));
-            }
-          },
+          onPress: handlePickImagesFromLibrary,
         },
         {
           text: 'Cancel',

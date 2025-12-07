@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 import { useProStatus } from '../../hooks/useProStatus';
-import { pickImage } from '../../utils/imagePicker';
+import { pickImageFromCamera, pickImageFromLibrary } from '../../utils/imagePicker';
 
 interface Message {
   id: string;
@@ -161,6 +161,18 @@ export default function AIAssistantScreen() {
     }
   };
 
+  const handlePickImageFromCamera = async () => {
+    const uri = await pickImageFromCamera((imageUri) => {
+      setSelectedImage(imageUri);
+    });
+  };
+
+  const handlePickImageFromLibrary = async () => {
+    const uri = await pickImageFromLibrary((imageUri) => {
+      setSelectedImage(imageUri);
+    });
+  };
+
   const showImagePickerOptions = () => {
     Alert.alert(
       'Upload Photo',
@@ -168,21 +180,11 @@ export default function AIAssistantScreen() {
       [
         {
           text: 'Take Photo',
-          onPress: async () => {
-            const uri = await pickImage('camera');
-            if (uri) {
-              setSelectedImage(uri);
-            }
-          },
+          onPress: handlePickImageFromCamera,
         },
         {
           text: 'Choose from Library',
-          onPress: async () => {
-            const uri = await pickImage('library');
-            if (uri) {
-              setSelectedImage(uri);
-            }
-          },
+          onPress: handlePickImageFromLibrary,
         },
         {
           text: 'Cancel',
@@ -195,6 +197,8 @@ export default function AIAssistantScreen() {
   const uploadImageToSupabase = async (imageUri: string): Promise<string | null> => {
     try {
       setUploadingImage(true);
+      console.log('Image upload: started with uri', imageUri);
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
@@ -221,6 +225,7 @@ export default function AIAssistantScreen() {
         .from('farm-images')
         .getPublicUrl(filePath);
 
+      console.log('Image upload: finished');
       return urlData.publicUrl;
     } catch (error) {
       console.error('Error uploading image:', error);

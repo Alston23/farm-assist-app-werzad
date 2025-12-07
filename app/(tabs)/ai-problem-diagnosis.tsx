@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import PremiumGuard from '../../components/PremiumGuard';
 import ProUpsellBanner from '../../components/ProUpsellBanner';
-import { pickImage } from '../../utils/imagePicker';
+import { pickImageFromCamera, pickImageFromLibrary } from '../../utils/imagePicker';
 
 interface Message {
   id: string;
@@ -25,6 +25,18 @@ function AIProblemDiagnosisContent() {
   const [showWelcome, setShowWelcome] = useState(true);
   const router = useRouter();
 
+  const handlePickImageFromCamera = async () => {
+    const uri = await pickImageFromCamera((imageUri) => {
+      setSelectedImageUri(imageUri);
+    });
+  };
+
+  const handlePickImageFromLibrary = async () => {
+    const uri = await pickImageFromLibrary((imageUri) => {
+      setSelectedImageUri(imageUri);
+    });
+  };
+
   const showImagePickerOptions = () => {
     Alert.alert(
       'Upload Photo',
@@ -32,21 +44,11 @@ function AIProblemDiagnosisContent() {
       [
         {
           text: 'Take Photo',
-          onPress: async () => {
-            const uri = await pickImage('camera');
-            if (uri) {
-              setSelectedImageUri(uri);
-            }
-          },
+          onPress: handlePickImageFromCamera,
         },
         {
           text: 'Choose from Library',
-          onPress: async () => {
-            const uri = await pickImage('library');
-            if (uri) {
-              setSelectedImageUri(uri);
-            }
-          },
+          onPress: handlePickImageFromLibrary,
         },
         {
           text: 'Cancel',
@@ -59,6 +61,8 @@ function AIProblemDiagnosisContent() {
   const uploadImageToSupabase = async (imageUri: string): Promise<string | null> => {
     try {
       setUploadingImage(true);
+      console.log('Image upload: started with uri', imageUri);
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
@@ -85,6 +89,7 @@ function AIProblemDiagnosisContent() {
         .from('farm-images')
         .getPublicUrl(filePath);
 
+      console.log('Image upload: finished');
       return urlData.publicUrl;
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -256,7 +261,7 @@ function AIProblemDiagnosisContent() {
               </Text>
               <TouchableOpacity 
                 style={styles.uploadButton}
-                onPress={showImagePickerOptions}
+                onPress={handlePickImageFromLibrary}
               >
                 <Text style={styles.uploadButtonIcon}>📷</Text>
                 <Text style={styles.uploadButtonText}>Upload Photo for Analysis</Text>
@@ -347,7 +352,7 @@ function AIProblemDiagnosisContent() {
           <View style={styles.inputRow}>
             <TouchableOpacity
               style={styles.imageButton}
-              onPress={showImagePickerOptions}
+              onPress={handlePickImageFromCamera}
               disabled={loading || uploadingImage}
             >
               <Text style={styles.imageButtonText}>📷</Text>
