@@ -161,83 +161,59 @@ export default function AIAssistantScreen() {
     }
   };
 
-  // Shared helper function to open the camera and handle permissions
-  const openCameraForImage = async (onImagePicked?: (asset: any) => void) => {
-    console.log('Camera: button pressed');
+  const handlePickImage = async () => {
+    console.log('Image: pick pressed');
 
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    console.log('Camera: permission status =', status);
+    // Ask permissions
+    const { status: camStatus } = await ImagePicker.requestCameraPermissionsAsync();
+    const { status: libStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (status !== 'granted') {
+    if (camStatus !== 'granted' || libStatus !== 'granted') {
       Alert.alert(
-        'Camera permission needed',
-        'Please allow camera access in Settings to take a photo.'
+        'Permission needed',
+        'Camera and photo library access are required to add photos.'
       );
       return;
     }
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.8,
+    // Let user choose camera or gallery
+    const choice = await new Promise<'camera' | 'library' | 'cancel'>((resolve) => {
+      Alert.alert(
+        'Add Photo',
+        'Choose how to add a photo',
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => resolve('cancel') },
+          { text: 'Take Photo', onPress: () => resolve('camera') },
+          { text: 'Choose from Library', onPress: () => resolve('library') },
+        ]
+      );
     });
 
-    console.log('Camera: result =', result);
+    if (choice === 'cancel') return;
 
-    if (!result.canceled && result.assets && result.assets[0]) {
-      if (onImagePicked) {
-        onImagePicked(result.assets[0]);
-      }
+    let result: ImagePicker.ImagePickerResult;
+    if (choice === 'camera') {
+      result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        quality: 0.8,
+      });
+    } else {
+      result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        quality: 0.8,
+      });
     }
-  };
 
-  // Handler for image selection (used by both camera and gallery)
-  const handleImageSelected = (asset: any) => {
-    const uri = asset.uri || asset;
-    setSelectedImage(uri);
-  };
+    if (result.canceled) {
+      console.log('Image: user cancelled');
+      return;
+    }
 
-  const showImagePickerOptions = () => {
-    Alert.alert(
-      'Upload Photo',
-      'Choose how to add a photo',
-      [
-        {
-          text: 'Take Photo',
-          onPress: () => {
-            console.log('Camera: AI assistant camera button pressed');
-            openCameraForImage(handleImageSelected);
-          },
-        },
-        {
-          text: 'Choose from Library',
-          onPress: async () => {
-            console.log('Library button pressed');
+    const asset = result.assets[0];
+    console.log('Image: got asset', asset.uri);
 
-            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (status !== 'granted') {
-              Alert.alert('Photo library permission required');
-              return;
-            }
-
-            const result = await ImagePicker.launchImageLibraryAsync({
-              allowsEditing: true,
-              quality: 0.8,
-            });
-
-            if (!result.canceled && result.assets?.[0]?.uri) {
-              const uri = result.assets[0].uri;
-              console.log('Library image selected', uri);
-              handleImageSelected(uri);
-            }
-          },
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-      ]
-    );
+    // Call existing image handling logic
+    setSelectedImage(asset.uri);
   };
 
   const uploadImageToSupabase = async (imageUri: string): Promise<string | null> => {
@@ -682,7 +658,7 @@ export default function AIAssistantScreen() {
             <View style={styles.inputRow}>
               <TouchableOpacity
                 style={styles.imageButton}
-                onPress={showImagePickerOptions}
+                onPress={handlePickImage}
                 disabled={loading || uploadingImage}
                 activeOpacity={0.7}
               >

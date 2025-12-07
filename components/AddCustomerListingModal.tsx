@@ -37,84 +37,63 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
   const units = ['lbs', 'kg', 'bushels', 'boxes', 'units', 'bunches', 'each'];
   const categories = ['vegetables', 'fruits', 'flowers', 'herbs', 'spices', 'aromatics', 'other'];
 
-  // Shared helper function to open the camera and handle permissions
-  const openCameraForImage = async (onImagePicked?: (asset: any) => void) => {
-    console.log('Camera: button pressed');
+  const handlePickImage = async () => {
+    console.log('Image: pick pressed');
 
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    console.log('Camera: permission status =', status);
+    // Ask permissions
+    const { status: camStatus } = await ImagePicker.requestCameraPermissionsAsync();
+    const { status: libStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (status !== 'granted') {
+    if (camStatus !== 'granted' || libStatus !== 'granted') {
       Alert.alert(
-        'Camera permission needed',
-        'Please allow camera access in Settings to take a photo.'
+        'Permission needed',
+        'Camera and photo library access are required to add photos.'
       );
       return;
     }
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.8,
+    // Let user choose camera or gallery
+    const choice = await new Promise<'camera' | 'library' | 'cancel'>((resolve) => {
+      Alert.alert(
+        'Add Photo',
+        'Choose how to add a photo',
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => resolve('cancel') },
+          { text: 'Take Photo', onPress: () => resolve('camera') },
+          { text: 'Choose from Library', onPress: () => resolve('library') },
+        ]
+      );
     });
 
-    console.log('Camera: result =', result);
+    if (choice === 'cancel') return;
 
-    if (!result.canceled && result.assets && result.assets[0]) {
-      if (onImagePicked) {
-        onImagePicked(result.assets[0]);
-      }
+    let result: ImagePicker.ImagePickerResult;
+    if (choice === 'camera') {
+      result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        quality: 0.8,
+      });
+    } else {
+      result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: false,
+        allowsMultipleSelection: true,
+        quality: 0.8,
+      });
     }
-  };
 
-  // Handler for marketplace image selection
-  const handleMarketplaceImagePicked = (asset: any) => {
-    const uri = asset.uri || asset;
-    setImages([...images, uri].slice(0, 5));
-  };
+    if (result.canceled) {
+      console.log('Image: user cancelled');
+      return;
+    }
 
-  const showImagePickerOptions = () => {
-    Alert.alert(
-      'Add Images',
-      'Choose how to add images',
-      [
-        {
-          text: 'Take Photo',
-          onPress: () => {
-            console.log('Camera: Marketplace camera button pressed');
-            openCameraForImage(handleMarketplaceImagePicked);
-          },
-        },
-        {
-          text: 'Choose from Library',
-          onPress: async () => {
-            console.log('Library button pressed');
-
-            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (status !== 'granted') {
-              Alert.alert('Photo library permission required');
-              return;
-            }
-
-            const result = await ImagePicker.launchImageLibraryAsync({
-              allowsEditing: false,
-              allowsMultipleSelection: true,
-              quality: 0.8,
-            });
-
-            if (!result.canceled && result.assets && result.assets.length > 0) {
-              const uris = result.assets.map(asset => asset.uri);
-              console.log('Library images selected', uris);
-              setImages([...images, ...uris].slice(0, 5));
-            }
-          },
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-      ]
-    );
+    // Handle multiple images from library or single image from camera
+    if (result.assets && result.assets.length > 0) {
+      const uris = result.assets.map(asset => asset.uri);
+      console.log('Image: got assets', uris);
+      
+      // Call existing image handling logic
+      setImages([...images, ...uris].slice(0, 5));
+    }
   };
 
   const removeImage = (index: number) => {
@@ -326,7 +305,7 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
             </TouchableOpacity>
 
             <Text style={styles.label}>Images (up to 5)</Text>
-            <TouchableOpacity style={styles.imagePickerButton} onPress={showImagePickerOptions}>
+            <TouchableOpacity style={styles.imagePickerButton} onPress={handlePickImage}>
               <Text style={styles.imagePickerButtonText}>+ Add Images</Text>
             </TouchableOpacity>
 
