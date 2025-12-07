@@ -3,9 +3,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import PageHeader from '../../components/PageHeader';
 import AddCustomCropModal from '../../components/AddCustomCropModal';
 import SubscriptionDebugPanel from '../../components/SubscriptionDebugPanel';
+import OnboardingModal from '../../components/OnboardingModal';
 import { vegetables, fruits, flowers, herbs, searchCrops, Crop } from '../../data/crops';
 import { supabase } from '../../lib/supabase';
 
@@ -22,7 +24,33 @@ export default function CropsScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [customCrops, setCustomCrops] = useState<CustomCrop[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const router = useRouter();
+
+  const ONBOARDING_KEY = 'onboarding_seen_v1';
+
+  // Check if onboarding should be shown
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      try {
+        console.log('Onboarding: checking storage');
+        const value = await AsyncStorage.getItem(ONBOARDING_KEY);
+        console.log('Onboarding: stored value =', value);
+        if (value !== 'true') {
+          console.log('Onboarding: showing popup');
+          setShowOnboarding(true);
+        } else {
+          console.log('Onboarding: already seen, not showing');
+        }
+      } catch (err) {
+        console.error('Onboarding: error reading storage', err);
+        // If storage fails, still show it so user sees something
+        setShowOnboarding(true);
+      }
+    };
+
+    checkOnboarding();
+  }, []);
 
   const loadCustomCrops = useCallback(async () => {
     try {
@@ -250,6 +278,23 @@ export default function CropsScreen() {
         visible={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSuccess={handleAddSuccess}
+      />
+
+      <OnboardingModal
+        visible={showOnboarding}
+        onSkip={() => {
+          console.log('Onboarding: skip pressed');
+          setShowOnboarding(false);
+        }}
+        onDontShowAgain={async () => {
+          console.log('Onboarding: do not show again pressed');
+          try {
+            await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+          } catch (err) {
+            console.error('Onboarding: error saving do-not-show flag', err);
+          }
+          setShowOnboarding(false);
+        }}
       />
     </View>
   );
