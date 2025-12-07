@@ -20,73 +20,56 @@ function AIProblemDiagnosisContent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const router = useRouter();
 
-  const pickImage = async (useCamera: boolean) => {
-    try {
-      let result;
-      
-      if (useCamera) {
-        console.log('Camera: requesting permission');
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+  const pickFromLibrary = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please allow photo library access to upload a photo.');
+      return;
+    }
 
-        if (status !== 'granted') {
-          console.log('Camera: permission denied');
-          Alert.alert(
-            'Camera permission needed',
-            'Please enable camera access in settings to take photos.'
-          );
-          return;
-        }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+    });
 
-        console.log('Camera: permission granted, opening camera');
-
-        result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ['images'],
-          allowsEditing: true,
-          aspect: [4, 3],
-          quality: 0.8,
-        });
-      } else {
-        result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ['images'],
-          allowsEditing: true,
-          aspect: [4, 3],
-          quality: 0.8,
-        });
-      }
-
-      if (!result.canceled && result.assets[0]) {
-        setSelectedImage(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const uri = result.assets[0].uri;
+      console.log('AI Assistant: library image selected', uri);
+      setSelectedImageUri(uri);
     }
   };
 
-  const showImagePickerOptions = () => {
-    Alert.alert(
-      'Select Image',
-      'Choose an option to add an image',
-      [
-        {
-          text: 'Take Photo',
-          onPress: () => pickImage(true),
-        },
-        {
-          text: 'Choose from Gallery',
-          onPress: () => pickImage(false),
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-      ]
-    );
+  const pickFromCamera = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please allow camera access to take a photo.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const uri = result.assets[0].uri;
+      console.log('AI Assistant: camera image captured', uri);
+      setSelectedImageUri(uri);
+    }
+  };
+
+  const handleUploadPhotoPress = () => {
+    console.log('AI Assistant: Upload Photo button pressed');
+    Alert.alert('Upload Photo', 'Choose how to add a photo', [
+      { text: 'Take Photo', onPress: pickFromCamera },
+      { text: 'Choose from Library', onPress: pickFromLibrary },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const uploadImageToSupabase = async (imageUri: string): Promise<string | null> => {
@@ -195,7 +178,7 @@ function AIProblemDiagnosisContent() {
 
     setMessages((prev) => [...prev, userMessage]);
     setInputText('');
-    setSelectedImage(null);
+    setSelectedImageUri(null);
     setLoading(true);
 
     await saveMessage('user', text.trim() || 'Please analyze this image.', imageUrl || undefined);
@@ -203,17 +186,21 @@ function AIProblemDiagnosisContent() {
     try {
       const context = await getUserContext();
 
+      const payload = {
+        message: text.trim() || 'Please analyze this image and help me identify any plant issues, weeds, pests, or diseases.',
+        conversationHistory: messages.slice(-10).map((m) => ({
+          role: m.role,
+          content: m.content,
+          imageUrl: m.imageUrl,
+        })),
+        userContext: context,
+        imageUrl: imageUrl,
+      };
+
+      console.log('AI Assistant: submitting issue payload', payload);
+
       const { data, error } = await supabase.functions.invoke('ai-assistant', {
-        body: {
-          message: text.trim() || 'Please analyze this image and help me identify any plant issues, weeds, pests, or diseases.',
-          conversationHistory: messages.slice(-10).map((m) => ({
-            role: m.role,
-            content: m.content,
-            imageUrl: m.imageUrl,
-          })),
-          userContext: context,
-          imageUrl: imageUrl,
-        },
+        body: payload,
       });
 
       if (error) {
@@ -285,7 +272,7 @@ function AIProblemDiagnosisContent() {
               </Text>
               <TouchableOpacity 
                 style={styles.uploadButton}
-                onPress={showImagePickerOptions}
+                onPress={handleUploadPhotoPress}
               >
                 <Text style={styles.uploadButtonIcon}>📷</Text>
                 <Text style={styles.uploadButtonText}>Upload Photo for Analysis</Text>
@@ -358,16 +345,16 @@ function AIProblemDiagnosisContent() {
         </ScrollView>
 
         <View style={styles.inputContainer}>
-          {selectedImage && (
+          {selectedImageUri && (
             <View style={styles.selectedImageContainer}>
               <Image
-                source={{ uri: selectedImage }}
+                source={{ uri: selectedImageUri }}
                 style={styles.selectedImage}
                 resizeMode="cover"
               />
               <TouchableOpacity
                 style={styles.removeImageButton}
-                onPress={() => setSelectedImage(null)}
+                onPress={() => setSelectedImageUri(null)}
               >
                 <Text style={styles.removeImageText}>✕</Text>
               </TouchableOpacity>
@@ -376,7 +363,7 @@ function AIProblemDiagnosisContent() {
           <View style={styles.inputRow}>
             <TouchableOpacity
               style={styles.imageButton}
-              onPress={showImagePickerOptions}
+              onPress={handleUploadPhotoPress}
               disabled={loading || uploadingImage}
             >
               <Text style={styles.imageButtonText}>📷</Text>
@@ -394,10 +381,10 @@ function AIProblemDiagnosisContent() {
             <TouchableOpacity
               style={[
                 styles.sendButton,
-                ((!inputText.trim() && !selectedImage) || loading || uploadingImage) && styles.sendButtonDisabled
+                ((!inputText.trim() && !selectedImageUri) || loading || uploadingImage) && styles.sendButtonDisabled
               ]}
-              onPress={() => sendMessage(inputText, selectedImage || undefined)}
-              disabled={(!inputText.trim() && !selectedImage) || loading || uploadingImage}
+              onPress={() => sendMessage(inputText, selectedImageUri || undefined)}
+              disabled={(!inputText.trim() && !selectedImageUri) || loading || uploadingImage}
             >
               {uploadingImage ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
