@@ -89,6 +89,7 @@ export const openImagePicker = async (
   onPicked: (uris: string[]) => void,
   allowMultiple: boolean = true
 ): Promise<void> => {
+  console.log('AI Assistant: camera button pressed');
   console.log('Image picker: open');
 
   const handleSelection = async (choice: 'camera' | 'library' | 'cancel') => {

@@ -162,9 +162,10 @@ export default function AIAssistantScreen() {
   };
 
   const handlePickImage = async () => {
-    console.log('AI Assistant: open image picker');
+    console.log('AI Assistant: camera button pressed - opening image picker');
     await openImagePicker((uris) => {
       if (uris.length > 0) {
+        console.log('AI Assistant: image selected', uris[0]);
         setSelectedImage(uris[0]);
       }
     }, false);
