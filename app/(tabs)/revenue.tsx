@@ -2,11 +2,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import PageHeader from '../../components/PageHeader';
 import AddIncomeModal from '../../components/AddIncomeModal';
 import AddExpenseModal from '../../components/AddExpenseModal';
 import ReportsModal from '../../components/ReportsModal';
-import PremiumGuard from '../../components/PremiumGuard';
+import { useProStatus } from '../../hooks/useProStatus';
 import { supabase } from '../../lib/supabase';
 
 interface Income {
@@ -37,6 +38,42 @@ interface ExpenseCategoryData {
   count: number;
 }
 
+// Locked screen for non-Pro users
+function RevenueLockedScreen() {
+  const router = useRouter();
+
+  const handleUpgrade = () => {
+    router.push('/paywall');
+  };
+
+  return (
+    <View style={styles.container}>
+      <PageHeader title="💰 Revenue" />
+      <LinearGradient colors={['#2D5016', '#4A7C2C', '#6BA542']} style={styles.gradient}>
+        <View style={styles.lockedContainer}>
+          <View style={styles.lockedCard}>
+            <View style={styles.lockIconContainer}>
+              <Text style={styles.lockIcon}>🔒</Text>
+            </View>
+            <Text style={styles.lockedTitle}>Revenue Tracking is a Pro Feature</Text>
+            <Text style={styles.lockedDescription}>
+              Track income and expenses, understand profitability, and manage your farm finances with SmallFarm Copilot Pro.
+            </Text>
+            <TouchableOpacity
+              style={styles.upgradeButton}
+              onPress={handleUpgrade}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.upgradeButtonText}>⭐ Upgrade to Pro</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </LinearGradient>
+    </View>
+  );
+}
+
+// Full Revenue content for Pro users
 function RevenueContent() {
   const [showIncomeModal, setShowIncomeModal] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
@@ -388,12 +425,35 @@ function RevenueContent() {
   );
 }
 
+// Main component that checks Pro status
 export default function RevenueScreen() {
-  return (
-    <PremiumGuard>
-      <RevenueContent />
-    </PremiumGuard>
-  );
+  const { isPro, loading } = useProStatus();
+
+  console.log('Revenue: isPro =', isPro, 'loading =', loading);
+
+  // Show loading state while checking Pro status
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <PageHeader title="💰 Revenue" />
+        <LinearGradient colors={['#2D5016', '#4A7C2C', '#6BA542']} style={styles.gradient}>
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Loading...</Text>
+          </View>
+        </LinearGradient>
+      </View>
+    );
+  }
+
+  // Show locked screen for non-Pro users
+  if (!isPro) {
+    console.log('Revenue: User is not Pro, showing locked screen');
+    return <RevenueLockedScreen />;
+  }
+
+  // Show full content for Pro users
+  console.log('Revenue: User is Pro, showing full content');
+  return <RevenueContent />;
 }
 
 const styles = StyleSheet.create({
@@ -410,6 +470,76 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
     paddingBottom: 120,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  lockedContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  lockedCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    maxWidth: 400,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  lockIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FFD700',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  lockIcon: {
+    fontSize: 40,
+  },
+  lockedTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2D5016',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  lockedDescription: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+  },
+  upgradeButton: {
+    backgroundColor: '#4A7C2C',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  upgradeButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
   summaryContainer: {
     flexDirection: 'row',

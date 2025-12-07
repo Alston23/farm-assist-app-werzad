@@ -1,8 +1,36 @@
 
 import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
+import { Platform, View, Text } from 'react-native';
+import { useProStatus } from '../../hooks/useProStatus';
+
+function TabIcon({ name, color, locked }: { name: string; color: string; locked?: boolean }) {
+  return (
+    <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ fontSize: 24, opacity: locked ? 0.4 : (color === '#FFFFFF' ? 1 : 0.5) }}>
+        {name}
+      </Text>
+      {locked && (
+        <View style={{
+          position: 'absolute',
+          top: -4,
+          right: -8,
+          backgroundColor: '#FFD700',
+          borderRadius: 8,
+          width: 16,
+          height: 16,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
+          <Text style={{ fontSize: 10 }}>🔒</Text>
+        </View>
+      )}
+    </View>
+  );
+}
 
 export default function TabsLayout() {
+  const { isPro, loading } = useProStatus();
+
   return (
     <Tabs
       screenOptions={{
@@ -70,7 +98,12 @@ export default function TabsLayout() {
         name="revenue"
         options={{
           title: 'Revenue',
-          tabBarIcon: ({ color }) => <TabIcon name="💰" color={color} />,
+          tabBarIcon: ({ color }) => <TabIcon name="💰" color={color} locked={!loading && !isPro} />,
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '600',
+            opacity: (!loading && !isPro) ? 0.4 : 1,
+          },
         }}
       />
       <Tabs.Screen
@@ -126,13 +159,5 @@ export default function TabsLayout() {
         }}
       />
     </Tabs>
-  );
-}
-
-function TabIcon({ name, color }: { name: string; color: string }) {
-  return (
-    <span style={{ fontSize: 24, opacity: color === '#FFFFFF' ? 1 : 0.5 }}>
-      {name}
-    </span>
   );
 }
