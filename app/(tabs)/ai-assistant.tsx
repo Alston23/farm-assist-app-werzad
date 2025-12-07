@@ -162,16 +162,19 @@ export default function AIAssistantScreen() {
   };
 
   const handlePickImage = async () => {
-    console.log('Image: pick pressed');
+    console.log('Camera: button pressed in AI Assistant');
+    console.log('Camera: requesting permissions');
 
     // Ask permissions
     const { status: camStatus } = await ImagePicker.requestCameraPermissionsAsync();
     const { status: libStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
+    console.log('Camera: permission result - camera:', camStatus, 'library:', libStatus);
+
     if (camStatus !== 'granted' || libStatus !== 'granted') {
       Alert.alert(
         'Permission needed',
-        'Camera and photo library access are required to add photos.'
+        'Camera and photo library access are required to add photos. Please enable it in Settings.'
       );
       return;
     }
@@ -189,15 +192,20 @@ export default function AIAssistantScreen() {
       );
     });
 
-    if (choice === 'cancel') return;
+    if (choice === 'cancel') {
+      console.log('Camera: user cancelled choice');
+      return;
+    }
 
     let result: ImagePicker.ImagePickerResult;
     if (choice === 'camera') {
+      console.log('Camera: launching camera');
       result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         quality: 0.8,
       });
     } else {
+      console.log('Camera: launching library');
       result = await ImagePicker.launchImageLibraryAsync({
         allowsEditing: true,
         quality: 0.8,
@@ -205,12 +213,12 @@ export default function AIAssistantScreen() {
     }
 
     if (result.canceled) {
-      console.log('Image: user cancelled');
+      console.log('Camera: user cancelled');
       return;
     }
 
     const asset = result.assets[0];
-    console.log('Image: got asset', asset.uri);
+    console.log('Camera: image selected', asset.uri);
 
     // Call existing image handling logic
     setSelectedImage(asset.uri);

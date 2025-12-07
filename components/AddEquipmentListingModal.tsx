@@ -40,16 +40,19 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
   const conditions = ['new', 'excellent', 'good', 'fair', 'poor', 'parts_only'];
 
   const handlePickImage = async () => {
-    console.log('Image: pick pressed');
+    console.log('Camera: button pressed in Marketplace Equipment Listing');
+    console.log('Camera: requesting permissions');
 
     // Ask permissions
     const { status: camStatus } = await ImagePicker.requestCameraPermissionsAsync();
     const { status: libStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
+    console.log('Camera: permission result - camera:', camStatus, 'library:', libStatus);
+
     if (camStatus !== 'granted' || libStatus !== 'granted') {
       Alert.alert(
         'Permission needed',
-        'Camera and photo library access are required to add photos.'
+        'Camera and photo library access are required to add photos. Please enable it in Settings.'
       );
       return;
     }
@@ -67,15 +70,20 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
       );
     });
 
-    if (choice === 'cancel') return;
+    if (choice === 'cancel') {
+      console.log('Camera: user cancelled choice');
+      return;
+    }
 
     let result: ImagePicker.ImagePickerResult;
     if (choice === 'camera') {
+      console.log('Camera: launching camera');
       result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         quality: 0.8,
       });
     } else {
+      console.log('Camera: launching library');
       result = await ImagePicker.launchImageLibraryAsync({
         allowsEditing: false,
         allowsMultipleSelection: true,
@@ -84,14 +92,14 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
     }
 
     if (result.canceled) {
-      console.log('Image: user cancelled');
+      console.log('Camera: user cancelled');
       return;
     }
 
     // Handle multiple images from library or single image from camera
     if (result.assets && result.assets.length > 0) {
       const uris = result.assets.map(asset => asset.uri);
-      console.log('Image: got assets', uris);
+      console.log('Camera: image selected', uris);
       
       // Call existing image handling logic
       setImages([...images, ...uris].slice(0, 5));

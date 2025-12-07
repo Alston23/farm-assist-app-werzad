@@ -25,53 +25,67 @@ function AIProblemDiagnosisContent() {
   const [showWelcome, setShowWelcome] = useState(true);
   const router = useRouter();
 
-  // Shared helper for camera permissions
-  const ensureCameraPermission = async () => {
-    const { status } = await ImagePicker.getCameraPermissionsAsync();
-    if (status === 'granted') return true;
+  const handlePickImage = async () => {
+    console.log('Camera: button pressed in AI Problem Diagnosis');
+    console.log('Camera: requesting permissions');
 
-    const { status: newStatus } = await ImagePicker.requestCameraPermissionsAsync();
-    if (newStatus !== 'granted') {
+    // Ask permissions
+    const { status: camStatus } = await ImagePicker.requestCameraPermissionsAsync();
+    const { status: libStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    console.log('Camera: permission result - camera:', camStatus, 'library:', libStatus);
+
+    if (camStatus !== 'granted' || libStatus !== 'granted') {
       Alert.alert(
-        'Camera permission needed',
-        'Please enable camera access in your settings to take photos.'
+        'Permission needed',
+        'Camera and photo library access are required to add photos. Please enable it in Settings.'
       );
-      return false;
-    }
-    return true;
-  };
-
-  // Shared helper for taking photos
-  const handleTakePhoto = async (onImagePicked: (uri: string) => void) => {
-    console.log('Camera: take photo pressed');
-    console.log('AI Assistant: camera button pressed');
-
-    if (Platform.OS === 'web') {
-      Alert.alert('Camera not supported', 'On web, please use the upload button instead.');
       return;
     }
 
-    const ok = await ensureCameraPermission();
-    if (!ok) return;
-
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      quality: 0.8,
+    // Let user choose camera or gallery
+    const choice = await new Promise<'camera' | 'library' | 'cancel'>((resolve) => {
+      Alert.alert(
+        'Add Photo',
+        'Choose how to add a photo',
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => resolve('cancel') },
+          { text: 'Take Photo', onPress: () => resolve('camera') },
+          { text: 'Choose from Library', onPress: () => resolve('library') },
+        ]
+      );
     });
+
+    if (choice === 'cancel') {
+      console.log('Camera: user cancelled choice');
+      return;
+    }
+
+    let result: ImagePicker.ImagePickerResult;
+    if (choice === 'camera') {
+      console.log('Camera: launching camera');
+      result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        quality: 0.8,
+      });
+    } else {
+      console.log('Camera: launching library');
+      result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        quality: 0.8,
+      });
+    }
 
     if (result.canceled) {
       console.log('Camera: user cancelled');
       return;
     }
 
-    const uri = result.assets?.[0]?.uri;
-    console.log('Camera: got image uri', uri);
-    if (uri) onImagePicked(uri);
-  };
+    const asset = result.assets[0];
+    console.log('Camera: image selected', asset.uri);
 
-  // Handler for image selection (used by camera)
-  const handleImageSelected = (uri: string) => {
-    setSelectedImageUri(uri);
+    // Call existing image handling logic
+    setSelectedImageUri(asset.uri);
   };
 
   const uploadImageToSupabase = async (imageUri: string): Promise<string | null> => {
@@ -277,7 +291,7 @@ function AIProblemDiagnosisContent() {
               </Text>
               <TouchableOpacity 
                 style={styles.uploadButton}
-                onPress={() => handleTakePhoto(handleImageSelected)}
+                onPress={handlePickImage}
               >
                 <Text style={styles.uploadButtonIcon}>📷</Text>
                 <Text style={styles.uploadButtonText}>Upload Photo for Analysis</Text>
@@ -368,7 +382,7 @@ function AIProblemDiagnosisContent() {
           <View style={styles.inputRow}>
             <TouchableOpacity
               style={styles.imageButton}
-              onPress={() => handleTakePhoto(handleImageSelected)}
+              onPress={handlePickImage}
               disabled={loading || uploadingImage}
             >
               <Text style={styles.imageButtonText}>📷</Text>
