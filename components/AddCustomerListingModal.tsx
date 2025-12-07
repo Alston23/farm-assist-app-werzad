@@ -11,6 +11,7 @@ import {
   Alert,
   Image,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
@@ -37,6 +38,55 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
   const units = ['lbs', 'kg', 'bushels', 'boxes', 'units', 'bunches', 'each'];
   const categories = ['vegetables', 'fruits', 'flowers', 'herbs', 'spices', 'aromatics', 'other'];
 
+  // Shared helper for camera permissions
+  const ensureCameraPermission = async () => {
+    const { status } = await ImagePicker.getCameraPermissionsAsync();
+    if (status === 'granted') return true;
+
+    const { status: newStatus } = await ImagePicker.requestCameraPermissionsAsync();
+    if (newStatus !== 'granted') {
+      Alert.alert(
+        'Camera permission needed',
+        'Please enable camera access in your settings to take photos.'
+      );
+      return false;
+    }
+    return true;
+  };
+
+  // Shared helper for taking photos
+  const handleTakePhoto = async (onImagePicked: (uri: string) => void) => {
+    console.log('Camera: take photo pressed');
+    console.log('Marketplace: camera button pressed');
+
+    if (Platform.OS === 'web') {
+      Alert.alert('Camera not supported', 'On web, please use the upload button instead.');
+      return;
+    }
+
+    const ok = await ensureCameraPermission();
+    if (!ok) return;
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (result.canceled) {
+      console.log('Camera: user cancelled');
+      return;
+    }
+
+    const uri = result.assets?.[0]?.uri;
+    console.log('Camera: got image uri', uri);
+    if (uri) onImagePicked(uri);
+  };
+
+  // Handler for marketplace image selection
+  const handleMarketplaceImageSelected = (uri: string) => {
+    setImages([...images, uri].slice(0, 5));
+  };
+
   const showImagePickerOptions = () => {
     Alert.alert(
       'Add Images',
@@ -44,26 +94,7 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
       [
         {
           text: 'Take Photo',
-          onPress: async () => {
-            console.log('Camera button pressed');
-
-            const { status } = await ImagePicker.requestCameraPermissionsAsync();
-            if (status !== 'granted') {
-              Alert.alert('Camera permission required');
-              return;
-            }
-
-            const result = await ImagePicker.launchCameraAsync({
-              allowsEditing: true,
-              quality: 0.8,
-            });
-
-            if (!result.canceled && result.assets?.[0]?.uri) {
-              const uri = result.assets[0].uri;
-              console.log('Camera image captured', uri);
-              setImages([...images, uri].slice(0, 5));
-            }
-          },
+          onPress: () => handleTakePhoto(handleMarketplaceImageSelected),
         },
         {
           text: 'Choose from Library',

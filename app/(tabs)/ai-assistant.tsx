@@ -161,6 +161,55 @@ export default function AIAssistantScreen() {
     }
   };
 
+  // Shared helper for camera permissions
+  const ensureCameraPermission = async () => {
+    const { status } = await ImagePicker.getCameraPermissionsAsync();
+    if (status === 'granted') return true;
+
+    const { status: newStatus } = await ImagePicker.requestCameraPermissionsAsync();
+    if (newStatus !== 'granted') {
+      Alert.alert(
+        'Camera permission needed',
+        'Please enable camera access in your settings to take photos.'
+      );
+      return false;
+    }
+    return true;
+  };
+
+  // Shared helper for taking photos
+  const handleTakePhoto = async (onImagePicked: (uri: string) => void) => {
+    console.log('Camera: take photo pressed');
+    console.log('AI Assistant: camera button pressed');
+
+    if (Platform.OS === 'web') {
+      Alert.alert('Camera not supported', 'On web, please use the upload button instead.');
+      return;
+    }
+
+    const ok = await ensureCameraPermission();
+    if (!ok) return;
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (result.canceled) {
+      console.log('Camera: user cancelled');
+      return;
+    }
+
+    const uri = result.assets?.[0]?.uri;
+    console.log('Camera: got image uri', uri);
+    if (uri) onImagePicked(uri);
+  };
+
+  // Handler for image selection (used by both camera and gallery)
+  const handleImageSelected = (uri: string) => {
+    setSelectedImage(uri);
+  };
+
   const showImagePickerOptions = () => {
     Alert.alert(
       'Upload Photo',
@@ -168,26 +217,7 @@ export default function AIAssistantScreen() {
       [
         {
           text: 'Take Photo',
-          onPress: async () => {
-            console.log('Camera button pressed');
-
-            const { status } = await ImagePicker.requestCameraPermissionsAsync();
-            if (status !== 'granted') {
-              Alert.alert('Camera permission required');
-              return;
-            }
-
-            const result = await ImagePicker.launchCameraAsync({
-              allowsEditing: true,
-              quality: 0.8,
-            });
-
-            if (!result.canceled && result.assets?.[0]?.uri) {
-              const uri = result.assets[0].uri;
-              console.log('Camera image captured', uri);
-              setSelectedImage(uri);
-            }
-          },
+          onPress: () => handleTakePhoto(handleImageSelected),
         },
         {
           text: 'Choose from Library',
@@ -208,7 +238,7 @@ export default function AIAssistantScreen() {
             if (!result.canceled && result.assets?.[0]?.uri) {
               const uri = result.assets[0].uri;
               console.log('Library image selected', uri);
-              setSelectedImage(uri);
+              handleImageSelected(uri);
             }
           },
         },
