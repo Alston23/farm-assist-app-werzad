@@ -2,122 +2,84 @@
 import * as ImagePicker from 'expo-image-picker';
 import { Alert } from 'react-native';
 
-// Single image picker for camera
-export async function pickImageFromCamera(onImagePicked?: (uri: string) => void): Promise<string | null> {
-  console.log('Camera: button pressed');
-
-  const { status } = await ImagePicker.requestCameraPermissionsAsync();
-  if (status !== 'granted') {
-    alert('Camera permission is required to take a photo.');
-    return null;
+export const pickImageFromSource = async (
+  source: 'camera' | 'library',
+  onPicked: (uri: string) => void
+) => {
+  try {
+    if (source === 'camera') {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Camera permission required', 'Enable camera access in Settings.');
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        onPicked(result.assets[0].uri);
+      }
+    } else {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Photo access required', 'Enable photo library access in Settings.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        onPicked(result.assets[0].uri);
+      }
+    }
+  } catch (e) {
+    console.error('Image pick error', e);
+    Alert.alert('Error', 'There was a problem accessing the camera or photos.');
   }
+};
 
-  const result = await ImagePicker.launchCameraAsync({
-    allowsEditing: true,
-    quality: 0.8,
-  });
-
-  if (!result.canceled) {
-    const uri = result.assets[0]?.uri;
-    console.log('Camera: got image uri', uri);
-    onImagePicked?.(uri);
-    return uri;
+// Multiple image picker for library (for marketplace listings)
+export const pickMultipleImagesFromSource = async (
+  source: 'camera' | 'library',
+  onPicked: (uris: string[]) => void
+) => {
+  try {
+    if (source === 'camera') {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Camera permission required', 'Enable camera access in Settings.');
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        onPicked([result.assets[0].uri]);
+      }
+    } else {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Photo access required', 'Enable photo library access in Settings.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: false,
+        allowsMultipleSelection: true,
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const uris = result.assets.map(asset => asset.uri);
+        onPicked(uris);
+      }
+    }
+  } catch (e) {
+    console.error('Image pick error', e);
+    Alert.alert('Error', 'There was a problem accessing the camera or photos.');
   }
-  
-  return null;
-}
-
-// Single image picker for library
-export async function pickImageFromLibrary(onImagePicked?: (uri: string) => void): Promise<string | null> {
-  console.log('Library: button pressed');
-
-  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (status !== 'granted') {
-    alert('Photo library permission is required to select an image.');
-    return null;
-  }
-
-  const result = await ImagePicker.launchImageLibraryAsync({
-    allowsEditing: true,
-    quality: 0.8,
-  });
-
-  if (!result.canceled) {
-    const uri = result.assets[0]?.uri;
-    console.log('Library: got image uri', uri);
-    onImagePicked?.(uri);
-    return uri;
-  }
-  
-  return null;
-}
-
-// Legacy function for backward compatibility
-export async function pickImage(source: 'camera' | 'library'): Promise<string | null> {
-  if (source === 'camera') {
-    return pickImageFromCamera();
-  } else {
-    return pickImageFromLibrary();
-  }
-}
-
-// Multiple image picker for camera (takes one photo at a time)
-export async function pickMultipleImagesFromCamera(): Promise<string[]> {
-  console.log('Camera: button pressed (multiple)');
-
-  const { status } = await ImagePicker.requestCameraPermissionsAsync();
-  if (status !== 'granted') {
-    alert('Camera permission is required to take a photo.');
-    return [];
-  }
-
-  const result = await ImagePicker.launchCameraAsync({
-    allowsEditing: true,
-    quality: 0.8,
-  });
-
-  if (!result.canceled && result.assets && result.assets.length > 0) {
-    const uri = result.assets[0].uri;
-    console.log('Camera: got image uri', uri);
-    return [uri];
-  }
-  
-  return [];
-}
-
-// Multiple image picker for library
-export async function pickMultipleImagesFromLibrary(): Promise<string[]> {
-  console.log('Library: button pressed (multiple)');
-
-  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (status !== 'granted') {
-    alert('Photo library permission is required to select an image.');
-    return [];
-  }
-
-  const result = await ImagePicker.launchImageLibraryAsync({
-    allowsEditing: false,
-    allowsMultipleSelection: true,
-    quality: 0.8,
-  });
-
-  if (!result.canceled && result.assets && result.assets.length > 0) {
-    const uris = result.assets.map(asset => asset.uri);
-    console.log('Library: got image uris', uris);
-    return uris;
-  }
-  
-  return [];
-}
-
-// Legacy function for backward compatibility
-export async function pickMultipleImages(source: 'camera' | 'library'): Promise<string[]> {
-  if (source === 'camera') {
-    return pickMultipleImagesFromCamera();
-  } else {
-    return pickMultipleImagesFromLibrary();
-  }
-}
+};
 
 // Helper to upload image to Supabase with logging
 export async function uploadImageToSupabase(

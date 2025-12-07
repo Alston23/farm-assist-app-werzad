@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 import { useProStatus } from '../../hooks/useProStatus';
-import * as ImagePicker from 'expo-image-picker';
+import { pickImageFromSource } from '../../utils/imagePicker';
 
 interface Message {
   id: string;
@@ -161,67 +161,9 @@ export default function AIAssistantScreen() {
     }
   };
 
-  const handlePickImage = async () => {
-    console.log('Camera: button pressed in AI Assistant');
-    console.log('Camera: requesting permissions');
-
-    // Ask permissions
-    const { status: camStatus } = await ImagePicker.requestCameraPermissionsAsync();
-    const { status: libStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    console.log('Camera: permission result - camera:', camStatus, 'library:', libStatus);
-
-    if (camStatus !== 'granted' || libStatus !== 'granted') {
-      Alert.alert(
-        'Permission needed',
-        'Camera and photo library access are required to add photos. Please enable it in Settings.'
-      );
-      return;
-    }
-
-    // Let user choose camera or gallery
-    const choice = await new Promise<'camera' | 'library' | 'cancel'>((resolve) => {
-      Alert.alert(
-        'Add Photo',
-        'Choose how to add a photo',
-        [
-          { text: 'Cancel', style: 'cancel', onPress: () => resolve('cancel') },
-          { text: 'Take Photo', onPress: () => resolve('camera') },
-          { text: 'Choose from Library', onPress: () => resolve('library') },
-        ]
-      );
-    });
-
-    if (choice === 'cancel') {
-      console.log('Camera: user cancelled choice');
-      return;
-    }
-
-    let result: ImagePicker.ImagePickerResult;
-    if (choice === 'camera') {
-      console.log('Camera: launching camera');
-      result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        quality: 0.8,
-      });
-    } else {
-      console.log('Camera: launching library');
-      result = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: true,
-        quality: 0.8,
-      });
-    }
-
-    if (result.canceled) {
-      console.log('Camera: user cancelled');
-      return;
-    }
-
-    const asset = result.assets[0];
-    console.log('Camera: image selected', asset.uri);
-
-    // Call existing image handling logic
-    setSelectedImage(asset.uri);
+  const handleAiAssistantImage = (uri: string) => {
+    console.log('AI Assistant: Image selected', uri);
+    setSelectedImage(uri);
   };
 
   const uploadImageToSupabase = async (imageUri: string): Promise<string | null> => {
@@ -666,11 +608,29 @@ export default function AIAssistantScreen() {
             <View style={styles.inputRow}>
               <TouchableOpacity
                 style={styles.imageButton}
-                onPress={handlePickImage}
+                onPress={() => {
+                  console.log('AI Assistant: Take photo pressed');
+                  pickImageFromSource('camera', (uri) => {
+                    handleAiAssistantImage(uri);
+                  });
+                }}
                 disabled={loading || uploadingImage}
                 activeOpacity={0.7}
               >
                 <Text style={styles.imageButtonText}>📷</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.imageButton}
+                onPress={() => {
+                  console.log('AI Assistant: Upload photo pressed');
+                  pickImageFromSource('library', (uri) => {
+                    handleAiAssistantImage(uri);
+                  });
+                }}
+                disabled={loading || uploadingImage}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.imageButtonText}>🖼️</Text>
               </TouchableOpacity>
               <TextInput
                 ref={inputRef}
@@ -971,19 +931,19 @@ const styles = StyleSheet.create({
   },
   inputRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
     alignItems: 'flex-end',
   },
   imageButton: {
     backgroundColor: '#F5F5F5',
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
   imageButtonText: {
-    fontSize: 24,
+    fontSize: 20,
   },
   input: {
     flex: 1,

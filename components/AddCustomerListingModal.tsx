@@ -13,7 +13,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
-import * as ImagePicker from 'expo-image-picker';
+import { pickMultipleImagesFromSource } from '../utils/imagePicker';
 
 interface AddCustomerListingModalProps {
   visible: boolean;
@@ -37,71 +37,9 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
   const units = ['lbs', 'kg', 'bushels', 'boxes', 'units', 'bunches', 'each'];
   const categories = ['vegetables', 'fruits', 'flowers', 'herbs', 'spices', 'aromatics', 'other'];
 
-  const handlePickImage = async () => {
-    console.log('Camera: button pressed in Marketplace Customer Listing');
-    console.log('Camera: requesting permissions');
-
-    // Ask permissions
-    const { status: camStatus } = await ImagePicker.requestCameraPermissionsAsync();
-    const { status: libStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    console.log('Camera: permission result - camera:', camStatus, 'library:', libStatus);
-
-    if (camStatus !== 'granted' || libStatus !== 'granted') {
-      Alert.alert(
-        'Permission needed',
-        'Camera and photo library access are required to add photos. Please enable it in Settings.'
-      );
-      return;
-    }
-
-    // Let user choose camera or gallery
-    const choice = await new Promise<'camera' | 'library' | 'cancel'>((resolve) => {
-      Alert.alert(
-        'Add Photo',
-        'Choose how to add a photo',
-        [
-          { text: 'Cancel', style: 'cancel', onPress: () => resolve('cancel') },
-          { text: 'Take Photo', onPress: () => resolve('camera') },
-          { text: 'Choose from Library', onPress: () => resolve('library') },
-        ]
-      );
-    });
-
-    if (choice === 'cancel') {
-      console.log('Camera: user cancelled choice');
-      return;
-    }
-
-    let result: ImagePicker.ImagePickerResult;
-    if (choice === 'camera') {
-      console.log('Camera: launching camera');
-      result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        quality: 0.8,
-      });
-    } else {
-      console.log('Camera: launching library');
-      result = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: false,
-        allowsMultipleSelection: true,
-        quality: 0.8,
-      });
-    }
-
-    if (result.canceled) {
-      console.log('Camera: user cancelled');
-      return;
-    }
-
-    // Handle multiple images from library or single image from camera
-    if (result.assets && result.assets.length > 0) {
-      const uris = result.assets.map(asset => asset.uri);
-      console.log('Camera: image selected', uris);
-      
-      // Call existing image handling logic
-      setImages([...images, ...uris].slice(0, 5));
-    }
+  const handleListingImage = (uris: string[]) => {
+    console.log('Marketplace Customer: Images selected', uris);
+    setImages([...images, ...uris].slice(0, 5));
   };
 
   const removeImage = (index: number) => {
@@ -313,9 +251,30 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
             </TouchableOpacity>
 
             <Text style={styles.label}>Images (up to 5)</Text>
-            <TouchableOpacity style={styles.imagePickerButton} onPress={handlePickImage}>
-              <Text style={styles.imagePickerButtonText}>+ Add Images</Text>
-            </TouchableOpacity>
+            <View style={styles.imageButtonRow}>
+              <TouchableOpacity 
+                style={styles.imagePickerButton} 
+                onPress={() => {
+                  console.log('Marketplace: Take photo pressed');
+                  pickMultipleImagesFromSource('camera', (uris) => {
+                    handleListingImage(uris);
+                  });
+                }}
+              >
+                <Text style={styles.imagePickerButtonText}>📷 Take Photo</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.imagePickerButton} 
+                onPress={() => {
+                  console.log('Marketplace: Upload photo pressed');
+                  pickMultipleImagesFromSource('library', (uris) => {
+                    handleListingImage(uris);
+                  });
+                }}
+              >
+                <Text style={styles.imagePickerButtonText}>🖼️ Upload</Text>
+              </TouchableOpacity>
+            </View>
 
             {images.length > 0 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagePreviewScroll}>
@@ -466,7 +425,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
+  imageButtonRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
   imagePickerButton: {
+    flex: 1,
     backgroundColor: '#F5F5F5',
     borderRadius: 8,
     paddingVertical: 16,
