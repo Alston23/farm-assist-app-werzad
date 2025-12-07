@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, Alert, ActivityIndicator, Image, ActionSheetIOS } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, Alert, ActivityIndicator, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import PremiumGuard from '../../components/PremiumGuard';
 import ProUpsellBanner from '../../components/ProUpsellBanner';
-import * as ImagePicker from 'expo-image-picker';
+import { openImagePicker } from '../../utils/imagePicker';
 
 interface Message {
   id: string;
@@ -25,116 +25,13 @@ function AIProblemDiagnosisContent() {
   const [showWelcome, setShowWelcome] = useState(true);
   const router = useRouter();
 
-  const handleSelectPhoto = async () => {
-    console.log('AI Assistant: photo button pressed');
-
-    const showActionSheet = () => {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ['Take Photo', 'Choose from Library', 'Cancel'],
-          cancelButtonIndex: 2,
-        },
-        async (buttonIndex) => {
-          if (buttonIndex === 0) {
-            // Take Photo
-            const { status } = await ImagePicker.requestCameraPermissionsAsync();
-            if (status !== 'granted') {
-              Alert.alert('Camera permission required', 'Enable camera access in Settings.');
-              console.log('AI Assistant: image selection cancelled');
-              return;
-            }
-            const result = await ImagePicker.launchCameraAsync({
-              allowsEditing: true,
-              quality: 0.8,
-            });
-            if (!result.canceled && result.assets?.[0]?.uri) {
-              console.log('AI Assistant: image selected', result);
-              setSelectedImageUri(result.assets[0].uri);
-            } else {
-              console.log('AI Assistant: image selection cancelled');
-            }
-          } else if (buttonIndex === 1) {
-            // Choose from Library
-            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (status !== 'granted') {
-              Alert.alert('Photo access required', 'Enable photo library access in Settings.');
-              console.log('AI Assistant: image selection cancelled');
-              return;
-            }
-            const result = await ImagePicker.launchImageLibraryAsync({
-              allowsEditing: true,
-              quality: 0.8,
-            });
-            if (!result.canceled && result.assets?.[0]?.uri) {
-              console.log('AI Assistant: image selected', result);
-              setSelectedImageUri(result.assets[0].uri);
-            } else {
-              console.log('AI Assistant: image selection cancelled');
-            }
-          } else {
-            console.log('AI Assistant: image selection cancelled');
-          }
-        }
-      );
-    };
-
-    if (Platform.OS === 'ios') {
-      showActionSheet();
-    } else {
-      Alert.alert(
-        'Choose an option',
-        'Select how you want to add a photo',
-        [
-          {
-            text: 'Take Photo',
-            onPress: async () => {
-              const { status } = await ImagePicker.requestCameraPermissionsAsync();
-              if (status !== 'granted') {
-                Alert.alert('Camera permission required', 'Enable camera access in Settings.');
-                console.log('AI Assistant: image selection cancelled');
-                return;
-              }
-              const result = await ImagePicker.launchCameraAsync({
-                allowsEditing: true,
-                quality: 0.8,
-              });
-              if (!result.canceled && result.assets?.[0]?.uri) {
-                console.log('AI Assistant: image selected', result);
-                setSelectedImageUri(result.assets[0].uri);
-              } else {
-                console.log('AI Assistant: image selection cancelled');
-              }
-            },
-          },
-          {
-            text: 'Choose from Library',
-            onPress: async () => {
-              const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-              if (status !== 'granted') {
-                Alert.alert('Photo access required', 'Enable photo library access in Settings.');
-                console.log('AI Assistant: image selection cancelled');
-                return;
-              }
-              const result = await ImagePicker.launchImageLibraryAsync({
-                allowsEditing: true,
-                quality: 0.8,
-              });
-              if (!result.canceled && result.assets?.[0]?.uri) {
-                console.log('AI Assistant: image selected', result);
-                setSelectedImageUri(result.assets[0].uri);
-              } else {
-                console.log('AI Assistant: image selection cancelled');
-              }
-            },
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel',
-            onPress: () => console.log('AI Assistant: image selection cancelled'),
-          },
-        ]
-      );
-    }
+  const handlePickIssueImage = async () => {
+    console.log('AI Assistant: open image picker');
+    await openImagePicker((uris) => {
+      if (uris.length > 0) {
+        setSelectedImageUri(uris[0]);
+      }
+    }, false);
   };
 
   const uploadImageToSupabase = async (imageUri: string): Promise<string | null> => {
@@ -340,7 +237,7 @@ function AIProblemDiagnosisContent() {
               </Text>
               <TouchableOpacity 
                 style={styles.uploadButton}
-                onPress={handleSelectPhoto}
+                onPress={handlePickIssueImage}
               >
                 <Text style={styles.uploadButtonIcon}>📷</Text>
                 <Text style={styles.uploadButtonText}>Upload Photo for Analysis</Text>
@@ -431,7 +328,7 @@ function AIProblemDiagnosisContent() {
           <View style={styles.inputRow}>
             <TouchableOpacity
               style={styles.imageButton}
-              onPress={handleSelectPhoto}
+              onPress={handlePickIssueImage}
               disabled={loading || uploadingImage}
             >
               <Text style={styles.imageButtonText}>📷</Text>

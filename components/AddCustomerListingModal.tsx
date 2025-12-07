@@ -14,7 +14,7 @@ import {
   Platform,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
-import * as ImagePicker from 'expo-image-picker';
+import { openImagePicker } from '../utils/imagePicker';
 
 interface AddCustomerListingModalProps {
   visible: boolean;
@@ -38,72 +38,11 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
   const units = ['lbs', 'kg', 'bushels', 'boxes', 'units', 'bunches', 'each'];
   const categories = ['vegetables', 'fruits', 'flowers', 'herbs', 'spices', 'aromatics', 'other'];
 
-  const handleTakePhoto = async () => {
-    console.log('Camera: take photo pressed');
-
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      console.log('Camera: permission not granted');
-      Alert.alert(
-        'Camera permission needed',
-        'Enable camera in Settings to take a photo.'
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.8,
-    });
-
-    if (result.canceled) {
-      console.log('Camera: user cancelled');
-      return;
-    }
-
-    const asset = result.assets?.[0];
-    if (!asset) {
-      console.log('Camera: no asset returned');
-      return;
-    }
-
-    console.log('Camera: got image', asset.uri);
-    setImages([...images, asset.uri].slice(0, 5));
-  };
-
-  const handlePickFromLibrary = async () => {
-    console.log('Camera: pick from library pressed');
-
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      console.log('Library: permission not granted');
-      Alert.alert(
-        'Photo access needed',
-        'Enable photo library access in Settings to upload a picture.'
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false,
-      allowsMultipleSelection: true,
-      quality: 0.8,
-    });
-
-    if (result.canceled) {
-      console.log('Library: user cancelled');
-      return;
-    }
-
-    if (result.assets && result.assets.length > 0) {
-      const uris = result.assets.map(asset => asset.uri);
-      console.log('Library: got images', uris);
+  const handlePickListingImage = async () => {
+    console.log('Image picker: open from Marketplace');
+    await openImagePicker((uris) => {
       setImages([...images, ...uris].slice(0, 5));
-    } else {
-      console.log('Library: no assets returned');
-    }
+    }, true);
   };
 
   const removeImage = (index: number) => {
@@ -315,20 +254,12 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
             </TouchableOpacity>
 
             <Text style={styles.label}>Images (up to 5)</Text>
-            <View style={styles.imageButtonRow}>
-              <TouchableOpacity 
-                style={styles.imagePickerButton} 
-                onPress={handleTakePhoto}
-              >
-                <Text style={styles.imagePickerButtonText}>📷 Take Photo</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.imagePickerButton} 
-                onPress={handlePickFromLibrary}
-              >
-                <Text style={styles.imagePickerButtonText}>🖼️ Upload</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              style={styles.imagePickerButton} 
+              onPress={handlePickListingImage}
+            >
+              <Text style={styles.imagePickerButtonText}>🖼️ Upload</Text>
+            </TouchableOpacity>
 
             {images.length > 0 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagePreviewScroll}>
@@ -479,12 +410,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
-  imageButtonRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
   imagePickerButton: {
-    flex: 1,
     backgroundColor: '#F5F5F5',
     borderRadius: 8,
     paddingVertical: 16,
