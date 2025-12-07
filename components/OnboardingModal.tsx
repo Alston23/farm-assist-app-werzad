@@ -129,7 +129,14 @@ export default function OnboardingModal({ visible, onSkip, onDontShowAgain }: On
             ))}
           </ScrollView>
 
-          {/* Page Indicators */}
+          {/* Page Counter Text */}
+          <View style={styles.pageCounterContainer}>
+            <Text style={styles.pageCounterText}>
+              Page {currentPage + 1} of {ONBOARDING_PAGES.length}
+            </Text>
+          </View>
+
+          {/* Page Indicators (Dots) */}
           <View style={styles.indicatorContainer}>
             {ONBOARDING_PAGES.map((_, index) => (
               <TouchableOpacity
@@ -229,11 +236,21 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     paddingHorizontal: 10,
   },
+  pageCounterContainer: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  pageCounterText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
   indicatorContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 12,
     gap: 8,
   },
   indicator: {
