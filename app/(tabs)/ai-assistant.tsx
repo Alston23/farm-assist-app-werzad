@@ -103,23 +103,10 @@ export default function AIAssistantScreen() {
   );
 
   useEffect(() => {
-    requestPermissions();
-  }, []);
-
-  useEffect(() => {
     if (messages.length > 0) {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }
   }, [messages]);
-
-  const requestPermissions = async () => {
-    const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
-    const { status: mediaStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (cameraStatus !== 'granted' || mediaStatus !== 'granted') {
-      console.log('Camera or media library permissions not granted');
-    }
-  };
 
   const loadConversationHistory = async () => {
     try {
@@ -179,6 +166,20 @@ export default function AIAssistantScreen() {
       let result;
       
       if (useCamera) {
+        console.log('Camera: requesting permission');
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+
+        if (status !== 'granted') {
+          console.log('Camera: permission denied');
+          Alert.alert(
+            'Camera permission needed',
+            'Please enable camera access in settings to take photos.'
+          );
+          return;
+        }
+
+        console.log('Camera: permission granted, opening camera');
+
         result = await ImagePicker.launchCameraAsync({
           mediaTypes: ['images'],
           allowsEditing: true,
