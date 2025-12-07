@@ -25,51 +25,37 @@ function AIProblemDiagnosisContent() {
   const [showWelcome, setShowWelcome] = useState(true);
   const router = useRouter();
 
-  const pickFromLibrary = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please allow photo library access to upload a photo.');
-      return;
-    }
+  const handleTakeIssuePhoto = async () => {
+    console.log('AI Issues: take/upload photo pressed');
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const uri = result.assets[0].uri;
-      console.log('AI Assistant: library image selected', uri);
-      setSelectedImageUri(uri);
-    }
-  };
-
-  const pickFromCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please allow camera access to take a photo.');
+      console.log('AI Issues: camera permission not granted');
+      Alert.alert(
+        'Camera permission needed',
+        'Please allow camera access to take a photo of your plant issue.'
+      );
       return;
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
+      allowsEditing: true,
       quality: 0.8,
     });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const uri = result.assets[0].uri;
-      console.log('AI Assistant: camera image captured', uri);
-      setSelectedImageUri(uri);
+    if (result.canceled) {
+      console.log('AI Issues: camera cancelled');
+      return;
     }
-  };
 
-  const handleUploadPhotoPress = () => {
-    console.log('AI Assistant: Upload Photo button pressed');
-    Alert.alert('Upload Photo', 'Choose how to add a photo', [
-      { text: 'Take Photo', onPress: pickFromCamera },
-      { text: 'Choose from Library', onPress: pickFromLibrary },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    const asset = result.assets?.[0];
+    if (!asset?.uri) {
+      console.log('AI Issues: no asset URI returned');
+      return;
+    }
+
+    console.log('AI Issues: photo captured', asset.uri);
+    setSelectedImageUri(asset.uri);
   };
 
   const uploadImageToSupabase = async (imageUri: string): Promise<string | null> => {
@@ -272,7 +258,7 @@ function AIProblemDiagnosisContent() {
               </Text>
               <TouchableOpacity 
                 style={styles.uploadButton}
-                onPress={handleUploadPhotoPress}
+                onPress={handleTakeIssuePhoto}
               >
                 <Text style={styles.uploadButtonIcon}>📷</Text>
                 <Text style={styles.uploadButtonText}>Upload Photo for Analysis</Text>
@@ -363,7 +349,7 @@ function AIProblemDiagnosisContent() {
           <View style={styles.inputRow}>
             <TouchableOpacity
               style={styles.imageButton}
-              onPress={handleUploadPhotoPress}
+              onPress={handleTakeIssuePhoto}
               disabled={loading || uploadingImage}
             >
               <Text style={styles.imageButtonText}>📷</Text>
