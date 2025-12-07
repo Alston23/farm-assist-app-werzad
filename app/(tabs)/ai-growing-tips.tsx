@@ -52,11 +52,11 @@ function AIGrowingTipsContent() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Omit conversation_type to avoid schema errors
       const { error } = await supabase.from('ai_conversations').insert({
         user_id: user.id,
         role,
         content,
+        conversation_type: 'growing_tips',
       });
 
       if (error) {

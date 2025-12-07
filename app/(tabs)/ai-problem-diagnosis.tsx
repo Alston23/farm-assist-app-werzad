@@ -6,7 +6,6 @@ import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import PremiumGuard from '../../components/PremiumGuard';
 import ProUpsellBanner from '../../components/ProUpsellBanner';
-import { openImagePicker } from '../../utils/imagePicker';
 
 interface Message {
   id: string;
@@ -93,12 +92,12 @@ function AIProblemDiagnosisContent() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Omit conversation_type to avoid schema errors
       const { error } = await supabase.from('ai_conversations').insert({
         user_id: user.id,
         role,
         content,
         image_url: imageUrl || null,
+        conversation_type: 'problem_diagnosis',
       });
 
       if (error) {
@@ -195,18 +194,6 @@ function AIProblemDiagnosisContent() {
     router.replace('/(tabs)/ai-assistant');
   };
 
-  const handlePickImage = async () => {
-    console.log('AI Assistant: photo button pressed');
-    await openImagePicker((uris) => {
-      if (uris && uris.length > 0) {
-        console.log('AI Assistant: image selected', uris[0]);
-        setSelectedImageUri(uris[0]);
-      } else {
-        console.log('AI Assistant: image selection cancelled');
-      }
-    }, false);
-  };
-
   return (
     <View style={{ flex: 1, backgroundColor: '#0b4f25' }}>
       <View style={{
@@ -240,7 +227,9 @@ function AIProblemDiagnosisContent() {
               </Text>
               <TouchableOpacity 
                 style={styles.uploadButton}
-                onPress={handlePickImage}
+                onPress={() => {
+                  Alert.alert('TEST', 'AI Assistant button pressed');
+                }}
               >
                 <Text style={styles.uploadButtonIcon}>📷</Text>
                 <Text style={styles.uploadButtonText}>Upload Photo for Analysis</Text>
@@ -331,7 +320,9 @@ function AIProblemDiagnosisContent() {
           <View style={styles.inputRow}>
             <TouchableOpacity
               style={styles.imageButton}
-              onPress={handlePickImage}
+              onPress={() => {
+                Alert.alert('TEST', 'AI Assistant button pressed');
+              }}
               disabled={loading || uploadingImage}
             >
               <Text style={styles.imageButtonText}>📷</Text>
