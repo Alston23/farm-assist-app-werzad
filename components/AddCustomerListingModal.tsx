@@ -11,9 +11,10 @@ import {
   Alert,
   Image,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
-import { pickMultipleImagesFromSource } from '../utils/imagePicker';
+import * as ImagePicker from 'expo-image-picker';
 
 interface AddCustomerListingModalProps {
   visible: boolean;
@@ -37,9 +38,72 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
   const units = ['lbs', 'kg', 'bushels', 'boxes', 'units', 'bunches', 'each'];
   const categories = ['vegetables', 'fruits', 'flowers', 'herbs', 'spices', 'aromatics', 'other'];
 
-  const handleListingImage = (uris: string[]) => {
-    console.log('Marketplace Customer: Images selected', uris);
-    setImages([...images, ...uris].slice(0, 5));
+  const handleTakePhoto = async () => {
+    console.log('Camera: take photo pressed');
+
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      console.log('Camera: permission not granted');
+      Alert.alert(
+        'Camera permission needed',
+        'Enable camera in Settings to take a photo.'
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (result.canceled) {
+      console.log('Camera: user cancelled');
+      return;
+    }
+
+    const asset = result.assets?.[0];
+    if (!asset) {
+      console.log('Camera: no asset returned');
+      return;
+    }
+
+    console.log('Camera: got image', asset.uri);
+    setImages([...images, asset.uri].slice(0, 5));
+  };
+
+  const handlePickFromLibrary = async () => {
+    console.log('Camera: pick from library pressed');
+
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      console.log('Library: permission not granted');
+      Alert.alert(
+        'Photo access needed',
+        'Enable photo library access in Settings to upload a picture.'
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      allowsMultipleSelection: true,
+      quality: 0.8,
+    });
+
+    if (result.canceled) {
+      console.log('Library: user cancelled');
+      return;
+    }
+
+    if (result.assets && result.assets.length > 0) {
+      const uris = result.assets.map(asset => asset.uri);
+      console.log('Library: got images', uris);
+      setImages([...images, ...uris].slice(0, 5));
+    } else {
+      console.log('Library: no assets returned');
+    }
   };
 
   const removeImage = (index: number) => {
@@ -254,23 +318,13 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
             <View style={styles.imageButtonRow}>
               <TouchableOpacity 
                 style={styles.imagePickerButton} 
-                onPress={() => {
-                  console.log('Marketplace: Take photo pressed');
-                  pickMultipleImagesFromSource('camera', (uris) => {
-                    handleListingImage(uris);
-                  });
-                }}
+                onPress={handleTakePhoto}
               >
                 <Text style={styles.imagePickerButtonText}>📷 Take Photo</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.imagePickerButton} 
-                onPress={() => {
-                  console.log('Marketplace: Upload photo pressed');
-                  pickMultipleImagesFromSource('library', (uris) => {
-                    handleListingImage(uris);
-                  });
-                }}
+                onPress={handlePickFromLibrary}
               >
                 <Text style={styles.imagePickerButtonText}>🖼️ Upload</Text>
               </TouchableOpacity>

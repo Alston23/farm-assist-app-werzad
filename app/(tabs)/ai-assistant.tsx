@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 import { useProStatus } from '../../hooks/useProStatus';
-import { pickImageFromSource } from '../../utils/imagePicker';
+import * as ImagePicker from 'expo-image-picker';
 
 interface Message {
   id: string;
@@ -161,9 +161,72 @@ export default function AIAssistantScreen() {
     }
   };
 
-  const handleAiAssistantImage = (uri: string) => {
-    console.log('AI Assistant: Image selected', uri);
-    setSelectedImage(uri);
+  const handleTakePhoto = async () => {
+    console.log('Camera: take photo pressed');
+
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      console.log('Camera: permission not granted');
+      Alert.alert(
+        'Camera permission needed',
+        'Enable camera in Settings to take a photo.'
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (result.canceled) {
+      console.log('Camera: user cancelled');
+      return;
+    }
+
+    const asset = result.assets?.[0];
+    if (!asset) {
+      console.log('Camera: no asset returned');
+      return;
+    }
+
+    console.log('Camera: got image', asset.uri);
+    setSelectedImage(asset.uri);
+  };
+
+  const handlePickFromLibrary = async () => {
+    console.log('Camera: pick from library pressed');
+
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      console.log('Library: permission not granted');
+      Alert.alert(
+        'Photo access needed',
+        'Enable photo library access in Settings to upload a picture.'
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (result.canceled) {
+      console.log('Library: user cancelled');
+      return;
+    }
+
+    const asset = result.assets?.[0];
+    if (!asset) {
+      console.log('Library: no asset returned');
+      return;
+    }
+
+    console.log('Library: got image', asset.uri);
+    setSelectedImage(asset.uri);
   };
 
   const uploadImageToSupabase = async (imageUri: string): Promise<string | null> => {
@@ -608,12 +671,7 @@ export default function AIAssistantScreen() {
             <View style={styles.inputRow}>
               <TouchableOpacity
                 style={styles.imageButton}
-                onPress={() => {
-                  console.log('AI Assistant: Take photo pressed');
-                  pickImageFromSource('camera', (uri) => {
-                    handleAiAssistantImage(uri);
-                  });
-                }}
+                onPress={handleTakePhoto}
                 disabled={loading || uploadingImage}
                 activeOpacity={0.7}
               >
@@ -621,12 +679,7 @@ export default function AIAssistantScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.imageButton}
-                onPress={() => {
-                  console.log('AI Assistant: Upload photo pressed');
-                  pickImageFromSource('library', (uri) => {
-                    handleAiAssistantImage(uri);
-                  });
-                }}
+                onPress={handlePickFromLibrary}
                 disabled={loading || uploadingImage}
                 activeOpacity={0.7}
               >
