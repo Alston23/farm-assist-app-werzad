@@ -11,7 +11,6 @@ import {
   Alert,
   Image,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
@@ -40,52 +39,39 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
 
   const conditions = ['new', 'excellent', 'good', 'fair', 'poor', 'parts_only'];
 
-  // Shared helper for camera permissions
-  const ensureCameraPermission = async () => {
-    const { status } = await ImagePicker.getCameraPermissionsAsync();
-    if (status === 'granted') return true;
+  // Shared helper function to open the camera and handle permissions
+  const openCameraForImage = async (onImagePicked?: (asset: any) => void) => {
+    console.log('Camera: button pressed');
 
-    const { status: newStatus } = await ImagePicker.requestCameraPermissionsAsync();
-    if (newStatus !== 'granted') {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    console.log('Camera: permission status =', status);
+
+    if (status !== 'granted') {
       Alert.alert(
         'Camera permission needed',
-        'Please enable camera access in your settings to take photos.'
+        'Please allow camera access in Settings to take a photo.'
       );
-      return false;
-    }
-    return true;
-  };
-
-  // Shared helper for taking photos
-  const handleTakePhoto = async (onImagePicked: (uri: string) => void) => {
-    console.log('Camera: take photo pressed');
-    console.log('Marketplace: camera button pressed');
-
-    if (Platform.OS === 'web') {
-      Alert.alert('Camera not supported', 'On web, please use the upload button instead.');
       return;
     }
 
-    const ok = await ensureCameraPermission();
-    if (!ok) return;
-
     const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.8,
     });
 
-    if (result.canceled) {
-      console.log('Camera: user cancelled');
-      return;
-    }
+    console.log('Camera: result =', result);
 
-    const uri = result.assets?.[0]?.uri;
-    console.log('Camera: got image uri', uri);
-    if (uri) onImagePicked(uri);
+    if (!result.canceled && result.assets && result.assets[0]) {
+      if (onImagePicked) {
+        onImagePicked(result.assets[0]);
+      }
+    }
   };
 
   // Handler for marketplace image selection
-  const handleMarketplaceImageSelected = (uri: string) => {
+  const handleMarketplaceImagePicked = (asset: any) => {
+    const uri = asset.uri || asset;
     setImages([...images, uri].slice(0, 5));
   };
 
@@ -96,7 +82,10 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
       [
         {
           text: 'Take Photo',
-          onPress: () => handleTakePhoto(handleMarketplaceImageSelected),
+          onPress: () => {
+            console.log('Camera: Marketplace camera button pressed');
+            openCameraForImage(handleMarketplaceImagePicked);
+          },
         },
         {
           text: 'Choose from Library',
