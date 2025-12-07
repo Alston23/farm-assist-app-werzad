@@ -1,0 +1,174 @@
+
+import React from 'react';
+import {
+  Modal,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
+  Alert,
+} from 'react-native';
+import { useCamera } from '../contexts/CameraContext';
+
+interface CameraPermissionModalProps {
+  visible: boolean;
+  onClose: () => void;
+  featureName?: string;
+}
+
+export default function CameraPermissionModal({
+  visible,
+  onClose,
+  featureName = 'this feature',
+}: CameraPermissionModalProps) {
+  const { openSettings } = useCamera();
+
+  const handleOpenSettings = () => {
+    console.log('CameraPermissionModal: Opening settings');
+    
+    // Detect if running in a web browser
+    const isWeb = typeof window !== 'undefined' && !navigator?.userAgent?.includes('Native');
+    
+    if (isWeb) {
+      // Web browser: Show alert instead of trying to open settings
+      Alert.alert(
+        'Camera Settings',
+        'Camera settings must be enabled in your device system settings. After enabling, return to the app and refresh.',
+        [{ text: 'OK' }]
+      );
+      console.log('CameraPermissionModal: Web detected, showing alert instead of opening settings');
+    } else {
+      // Native mobile: Use platform API to open app settings
+      console.log('CameraPermissionModal: Native detected, opening app settings');
+      openSettings();
+    }
+    
+    onClose();
+  };
+
+  const handleContinueWithout = () => {
+    console.log('CameraPermissionModal: Continue without camera');
+    onClose();
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.overlay}>
+        <View style={styles.modalContainer}>
+          {/* Icon */}
+          <View style={styles.iconContainer}>
+            <Text style={styles.icon}>📷</Text>
+          </View>
+
+          {/* Title */}
+          <Text style={styles.title}>Camera needed for {featureName}</Text>
+
+          {/* Body */}
+          <Text style={styles.body}>
+            To take photos for plant identification, crop documentation, and marketplace listings,
+            please enable camera access in your device settings. You can continue without it, but
+            you&apos;ll need to use existing photos from your library.
+          </Text>
+
+          {/* Buttons */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={handleOpenSettings}
+            >
+              <Text style={styles.primaryButtonText}>Open Settings</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={handleContinueWithout}
+            >
+              <Text style={styles.secondaryButtonText}>Continue without camera</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  icon: {
+    fontSize: 40,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#2D5016',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 28,
+  },
+  body: {
+    fontSize: 15,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  buttonContainer: {
+    gap: 12,
+  },
+  primaryButton: {
+    backgroundColor: '#2D5016',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  secondaryButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
+    color: '#2D5016',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+});

@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { SubscriptionProvider } from '../contexts/SubscriptionContext';
 import { LocationProvider, useLocation } from '../contexts/LocationContext';
 import { NotificationProvider, useNotification } from '../contexts/NotificationContext';
+import { CameraProvider, useCamera } from '../contexts/CameraContext';
 import * as SplashScreen from 'expo-splash-screen';
 import { initSubscriptions, syncProFromProfile } from '../lib/subscriptions';
 
@@ -15,6 +16,7 @@ function RootLayoutNav() {
   const { user, loading: authLoading } = useAuth();
   const { hasAskedForLocation, loading: locationLoading } = useLocation();
   const { hasAskedForNotifications, loading: notificationLoading } = useNotification();
+  const { hasAskedForCamera, loading: cameraLoading } = useCamera();
   const segments = useSegments();
   const router = useRouter();
 
@@ -34,7 +36,7 @@ function RootLayoutNav() {
   }, [user, authLoading]);
 
   useEffect(() => {
-    if (!authLoading && !locationLoading && !notificationLoading) {
+    if (!authLoading && !locationLoading && !notificationLoading && !cameraLoading) {
       // Hide splash screen once all states are determined
       SplashScreen.hideAsync().catch((error) => {
         console.error('Error hiding splash screen:', error);
@@ -44,6 +46,7 @@ function RootLayoutNav() {
       const inTabsGroup = segments[0] === '(tabs)';
       const inLocationOnboarding = segments[0] === 'location-onboarding';
       const inNotificationOnboarding = segments[0] === 'notification-onboarding';
+      const inCameraOnboarding = segments[0] === 'camera-onboarding';
 
       if (!user && !inAuthGroup) {
         // Redirect to auth if not authenticated
@@ -52,6 +55,8 @@ function RootLayoutNav() {
         // User just logged in, check if we need to show onboarding screens
         if (!hasAskedForLocation) {
           router.replace('/location-onboarding');
+        } else if (!hasAskedForCamera) {
+          router.replace('/camera-onboarding');
         } else if (!hasAskedForNotifications) {
           router.replace('/notification-onboarding');
         } else {
@@ -60,21 +65,25 @@ function RootLayoutNav() {
       } else if (user && !hasAskedForLocation && !inLocationOnboarding) {
         // User is authenticated but hasn't been asked about location yet
         router.replace('/location-onboarding');
-      } else if (user && hasAskedForLocation && !hasAskedForNotifications && !inNotificationOnboarding && !inLocationOnboarding) {
-        // User has completed location onboarding but not notification onboarding
+      } else if (user && hasAskedForLocation && !hasAskedForCamera && !inCameraOnboarding && !inLocationOnboarding) {
+        // User has completed location onboarding but not camera onboarding
+        router.replace('/camera-onboarding');
+      } else if (user && hasAskedForLocation && hasAskedForCamera && !hasAskedForNotifications && !inNotificationOnboarding && !inLocationOnboarding && !inCameraOnboarding) {
+        // User has completed location and camera onboarding but not notification onboarding
         router.replace('/notification-onboarding');
-      } else if (user && !inTabsGroup && segments[0] !== 'crop' && segments[0] !== 'marketplace' && segments[0] !== 'home' && segments[0] !== 'paywall' && segments[0] !== 'fertilizers' && segments[0] !== 'seeds' && segments[0] !== 'storage-locations' && segments[0] !== 'transplants' && segments[0] !== 'location-onboarding' && segments[0] !== 'notification-onboarding') {
+      } else if (user && !inTabsGroup && segments[0] !== 'crop' && segments[0] !== 'marketplace' && segments[0] !== 'home' && segments[0] !== 'paywall' && segments[0] !== 'fertilizers' && segments[0] !== 'seeds' && segments[0] !== 'storage-locations' && segments[0] !== 'transplants' && segments[0] !== 'location-onboarding' && segments[0] !== 'notification-onboarding' && segments[0] !== 'camera-onboarding') {
         // Redirect to tabs if authenticated but not in a valid route
         router.replace('/(tabs)/crops');
       }
     }
-  }, [user, authLoading, hasAskedForLocation, locationLoading, hasAskedForNotifications, notificationLoading, segments, router]);
+  }, [user, authLoading, hasAskedForLocation, locationLoading, hasAskedForNotifications, notificationLoading, hasAskedForCamera, cameraLoading, segments, router]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="auth" />
       <Stack.Screen name="location-onboarding" />
+      <Stack.Screen name="camera-onboarding" />
       <Stack.Screen name="notification-onboarding" />
       <Stack.Screen name="home" />
       <Stack.Screen name="(tabs)" />
@@ -93,11 +102,13 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <LocationProvider>
-        <NotificationProvider>
-          <SubscriptionProvider>
-            <RootLayoutNav />
-          </SubscriptionProvider>
-        </NotificationProvider>
+        <CameraProvider>
+          <NotificationProvider>
+            <SubscriptionProvider>
+              <RootLayoutNav />
+            </SubscriptionProvider>
+          </NotificationProvider>
+        </CameraProvider>
       </LocationProvider>
     </AuthProvider>
   );
