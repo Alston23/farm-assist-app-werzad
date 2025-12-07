@@ -4,9 +4,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platfo
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import * as ImagePicker from 'expo-image-picker';
 import PremiumGuard from '../../components/PremiumGuard';
 import ProUpsellBanner from '../../components/ProUpsellBanner';
+import { pickImage } from '../../utils/imagePicker';
 
 interface Message {
   id: string;
@@ -25,37 +25,35 @@ function AIProblemDiagnosisContent() {
   const [showWelcome, setShowWelcome] = useState(true);
   const router = useRouter();
 
-  const handleTakeIssuePhoto = async () => {
-    console.log('AI Issues: take/upload photo pressed');
-
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      console.log('AI Issues: camera permission not granted');
-      Alert.alert(
-        'Camera permission needed',
-        'Please allow camera access to take a photo of your plant issue.'
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      quality: 0.8,
-    });
-
-    if (result.canceled) {
-      console.log('AI Issues: camera cancelled');
-      return;
-    }
-
-    const asset = result.assets?.[0];
-    if (!asset?.uri) {
-      console.log('AI Issues: no asset URI returned');
-      return;
-    }
-
-    console.log('AI Issues: photo captured', asset.uri);
-    setSelectedImageUri(asset.uri);
+  const showImagePickerOptions = () => {
+    Alert.alert(
+      'Upload Photo',
+      'Choose how to add a photo',
+      [
+        {
+          text: 'Take Photo',
+          onPress: async () => {
+            const uri = await pickImage('camera');
+            if (uri) {
+              setSelectedImageUri(uri);
+            }
+          },
+        },
+        {
+          text: 'Choose from Library',
+          onPress: async () => {
+            const uri = await pickImage('library');
+            if (uri) {
+              setSelectedImageUri(uri);
+            }
+          },
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
   };
 
   const uploadImageToSupabase = async (imageUri: string): Promise<string | null> => {
@@ -258,7 +256,7 @@ function AIProblemDiagnosisContent() {
               </Text>
               <TouchableOpacity 
                 style={styles.uploadButton}
-                onPress={handleTakeIssuePhoto}
+                onPress={showImagePickerOptions}
               >
                 <Text style={styles.uploadButtonIcon}>📷</Text>
                 <Text style={styles.uploadButtonText}>Upload Photo for Analysis</Text>
@@ -349,7 +347,7 @@ function AIProblemDiagnosisContent() {
           <View style={styles.inputRow}>
             <TouchableOpacity
               style={styles.imageButton}
-              onPress={handleTakeIssuePhoto}
+              onPress={showImagePickerOptions}
               disabled={loading || uploadingImage}
             >
               <Text style={styles.imageButtonText}>📷</Text>

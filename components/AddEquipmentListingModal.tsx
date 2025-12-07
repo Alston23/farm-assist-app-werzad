@@ -12,8 +12,8 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
+import { pickMultipleImages } from '../utils/imagePicker';
 
 interface AddEquipmentListingModalProps {
   visible: boolean;
@@ -39,23 +39,35 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
 
   const conditions = ['new', 'excellent', 'good', 'fair', 'poor', 'parts_only'];
 
-  const pickImage = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsMultipleSelection: true,
-        quality: 0.8,
-        base64: true,
-      });
-
-      if (!result.canceled && result.assets) {
-        const newImages = result.assets.map(asset => asset.uri);
-        setImages([...images, ...newImages].slice(0, 5)); // Max 5 images
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image');
-    }
+  const showImagePickerOptions = () => {
+    Alert.alert(
+      'Add Images',
+      'Choose how to add images',
+      [
+        {
+          text: 'Take Photo',
+          onPress: async () => {
+            const uris = await pickMultipleImages('camera');
+            if (uris.length > 0) {
+              setImages([...images, ...uris].slice(0, 5));
+            }
+          },
+        },
+        {
+          text: 'Choose from Library',
+          onPress: async () => {
+            const uris = await pickMultipleImages('library');
+            if (uris.length > 0) {
+              setImages([...images, ...uris].slice(0, 5));
+            }
+          },
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
   };
 
   const removeImage = (index: number) => {
@@ -331,7 +343,7 @@ export default function AddEquipmentListingModal({ visible, onClose, onSuccess }
             />
 
             <Text style={styles.label}>Images (up to 5)</Text>
-            <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
+            <TouchableOpacity style={styles.imagePickerButton} onPress={showImagePickerOptions}>
               <Text style={styles.imagePickerButtonText}>+ Add Images</Text>
             </TouchableOpacity>
 

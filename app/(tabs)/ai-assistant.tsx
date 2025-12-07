@@ -2,12 +2,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 import { useProStatus } from '../../hooks/useProStatus';
+import { pickImage } from '../../utils/imagePicker';
 
 interface Message {
   id: string;
@@ -161,61 +161,28 @@ export default function AIAssistantScreen() {
     }
   };
 
-  const pickImage = async (useCamera: boolean) => {
-    try {
-      let result;
-      
-      if (useCamera) {
-        console.log('Camera: requesting permission');
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
-
-        if (status !== 'granted') {
-          console.log('Camera: permission denied');
-          Alert.alert(
-            'Camera permission needed',
-            'Please enable camera access in settings to take photos.'
-          );
-          return;
-        }
-
-        console.log('Camera: permission granted, opening camera');
-
-        result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ['images'],
-          allowsEditing: true,
-          aspect: [4, 3],
-          quality: 0.8,
-        });
-      } else {
-        result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ['images'],
-          allowsEditing: true,
-          aspect: [4, 3],
-          quality: 0.8,
-        });
-      }
-
-      if (!result.canceled && result.assets[0]) {
-        setSelectedImage(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
-    }
-  };
-
   const showImagePickerOptions = () => {
     Alert.alert(
-      'Select Image',
-      'Choose an option to add an image',
+      'Upload Photo',
+      'Choose how to add a photo',
       [
         {
           text: 'Take Photo',
-          onPress: () => pickImage(true),
+          onPress: async () => {
+            const uri = await pickImage('camera');
+            if (uri) {
+              setSelectedImage(uri);
+            }
+          },
         },
         {
-          text: 'Choose from Gallery',
-          onPress: () => pickImage(false),
+          text: 'Choose from Library',
+          onPress: async () => {
+            const uri = await pickImage('library');
+            if (uri) {
+              setSelectedImage(uri);
+            }
+          },
         },
         {
           text: 'Cancel',
