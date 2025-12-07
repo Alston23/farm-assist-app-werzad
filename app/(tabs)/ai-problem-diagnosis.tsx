@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import PremiumGuard from '../../components/PremiumGuard';
 import ProUpsellBanner from '../../components/ProUpsellBanner';
-import { pickImageFromCamera, pickImageFromLibrary } from '../../utils/imagePicker';
+import * as ImagePicker from 'expo-image-picker';
 
 interface Message {
   id: string;
@@ -24,39 +24,6 @@ function AIProblemDiagnosisContent() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const router = useRouter();
-
-  const handlePickImageFromCamera = async () => {
-    const uri = await pickImageFromCamera((imageUri) => {
-      setSelectedImageUri(imageUri);
-    });
-  };
-
-  const handlePickImageFromLibrary = async () => {
-    const uri = await pickImageFromLibrary((imageUri) => {
-      setSelectedImageUri(imageUri);
-    });
-  };
-
-  const showImagePickerOptions = () => {
-    Alert.alert(
-      'Upload Photo',
-      'Choose how to add a photo',
-      [
-        {
-          text: 'Take Photo',
-          onPress: handlePickImageFromCamera,
-        },
-        {
-          text: 'Choose from Library',
-          onPress: handlePickImageFromLibrary,
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-      ]
-    );
-  };
 
   const uploadImageToSupabase = async (imageUri: string): Promise<string | null> => {
     try {
@@ -261,7 +228,26 @@ function AIProblemDiagnosisContent() {
               </Text>
               <TouchableOpacity 
                 style={styles.uploadButton}
-                onPress={handlePickImageFromLibrary}
+                onPress={async () => {
+                  console.log('Camera button pressed');
+
+                  const { status } = await ImagePicker.requestCameraPermissionsAsync();
+                  if (status !== 'granted') {
+                    Alert.alert('Camera permission required');
+                    return;
+                  }
+
+                  const result = await ImagePicker.launchCameraAsync({
+                    allowsEditing: true,
+                    quality: 0.8,
+                  });
+
+                  if (!result.canceled && result.assets?.[0]?.uri) {
+                    const uri = result.assets[0].uri;
+                    console.log('Camera image captured', uri);
+                    setSelectedImageUri(uri);
+                  }
+                }}
               >
                 <Text style={styles.uploadButtonIcon}>📷</Text>
                 <Text style={styles.uploadButtonText}>Upload Photo for Analysis</Text>
@@ -352,7 +338,26 @@ function AIProblemDiagnosisContent() {
           <View style={styles.inputRow}>
             <TouchableOpacity
               style={styles.imageButton}
-              onPress={handlePickImageFromCamera}
+              onPress={async () => {
+                console.log('Camera button pressed');
+
+                const { status } = await ImagePicker.requestCameraPermissionsAsync();
+                if (status !== 'granted') {
+                  Alert.alert('Camera permission required');
+                  return;
+                }
+
+                const result = await ImagePicker.launchCameraAsync({
+                  allowsEditing: true,
+                  quality: 0.8,
+                });
+
+                if (!result.canceled && result.assets?.[0]?.uri) {
+                  const uri = result.assets[0].uri;
+                  console.log('Camera image captured', uri);
+                  setSelectedImageUri(uri);
+                }
+              }}
               disabled={loading || uploadingImage}
             >
               <Text style={styles.imageButtonText}>📷</Text>

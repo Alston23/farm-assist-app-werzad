@@ -13,7 +13,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
-import { pickMultipleImagesFromCamera, pickMultipleImagesFromLibrary } from '../utils/imagePicker';
+import * as ImagePicker from 'expo-image-picker';
 
 interface AddCustomerListingModalProps {
   visible: boolean;
@@ -37,20 +37,6 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
   const units = ['lbs', 'kg', 'bushels', 'boxes', 'units', 'bunches', 'each'];
   const categories = ['vegetables', 'fruits', 'flowers', 'herbs', 'spices', 'aromatics', 'other'];
 
-  const handlePickImagesFromCamera = async () => {
-    const uris = await pickMultipleImagesFromCamera();
-    if (uris.length > 0) {
-      setImages([...images, ...uris].slice(0, 5));
-    }
-  };
-
-  const handlePickImagesFromLibrary = async () => {
-    const uris = await pickMultipleImagesFromLibrary();
-    if (uris.length > 0) {
-      setImages([...images, ...uris].slice(0, 5));
-    }
-  };
-
   const showImagePickerOptions = () => {
     Alert.alert(
       'Add Images',
@@ -58,11 +44,50 @@ export default function AddCustomerListingModal({ visible, onClose, onSuccess }:
       [
         {
           text: 'Take Photo',
-          onPress: handlePickImagesFromCamera,
+          onPress: async () => {
+            console.log('Camera button pressed');
+
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== 'granted') {
+              Alert.alert('Camera permission required');
+              return;
+            }
+
+            const result = await ImagePicker.launchCameraAsync({
+              allowsEditing: true,
+              quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets?.[0]?.uri) {
+              const uri = result.assets[0].uri;
+              console.log('Camera image captured', uri);
+              setImages([...images, uri].slice(0, 5));
+            }
+          },
         },
         {
           text: 'Choose from Library',
-          onPress: handlePickImagesFromLibrary,
+          onPress: async () => {
+            console.log('Library button pressed');
+
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+              Alert.alert('Photo library permission required');
+              return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+              allowsEditing: false,
+              allowsMultipleSelection: true,
+              quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+              const uris = result.assets.map(asset => asset.uri);
+              console.log('Library images selected', uris);
+              setImages([...images, ...uris].slice(0, 5));
+            }
+          },
         },
         {
           text: 'Cancel',

@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 import { useProStatus } from '../../hooks/useProStatus';
-import { pickImageFromCamera, pickImageFromLibrary } from '../../utils/imagePicker';
+import * as ImagePicker from 'expo-image-picker';
 
 interface Message {
   id: string;
@@ -161,18 +161,6 @@ export default function AIAssistantScreen() {
     }
   };
 
-  const handlePickImageFromCamera = async () => {
-    const uri = await pickImageFromCamera((imageUri) => {
-      setSelectedImage(imageUri);
-    });
-  };
-
-  const handlePickImageFromLibrary = async () => {
-    const uri = await pickImageFromLibrary((imageUri) => {
-      setSelectedImage(imageUri);
-    });
-  };
-
   const showImagePickerOptions = () => {
     Alert.alert(
       'Upload Photo',
@@ -180,11 +168,49 @@ export default function AIAssistantScreen() {
       [
         {
           text: 'Take Photo',
-          onPress: handlePickImageFromCamera,
+          onPress: async () => {
+            console.log('Camera button pressed');
+
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== 'granted') {
+              Alert.alert('Camera permission required');
+              return;
+            }
+
+            const result = await ImagePicker.launchCameraAsync({
+              allowsEditing: true,
+              quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets?.[0]?.uri) {
+              const uri = result.assets[0].uri;
+              console.log('Camera image captured', uri);
+              setSelectedImage(uri);
+            }
+          },
         },
         {
           text: 'Choose from Library',
-          onPress: handlePickImageFromLibrary,
+          onPress: async () => {
+            console.log('Library button pressed');
+
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+              Alert.alert('Photo library permission required');
+              return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+              allowsEditing: true,
+              quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets?.[0]?.uri) {
+              const uri = result.assets[0].uri;
+              console.log('Library image selected', uri);
+              setSelectedImage(uri);
+            }
+          },
         },
         {
           text: 'Cancel',
