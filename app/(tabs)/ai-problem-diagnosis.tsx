@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, Alert, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, Alert, ActivityIndicator, Image, ActionSheetIOS } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
@@ -25,67 +25,116 @@ function AIProblemDiagnosisContent() {
   const [showWelcome, setShowWelcome] = useState(true);
   const router = useRouter();
 
-  const handlePickImage = async () => {
-    console.log('Camera: button pressed in AI Problem Diagnosis');
-    console.log('Camera: requesting permissions');
+  const handleSelectPhoto = async () => {
+    console.log('AI Assistant: photo button pressed');
 
-    // Ask permissions
-    const { status: camStatus } = await ImagePicker.requestCameraPermissionsAsync();
-    const { status: libStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    console.log('Camera: permission result - camera:', camStatus, 'library:', libStatus);
-
-    if (camStatus !== 'granted' || libStatus !== 'granted') {
-      Alert.alert(
-        'Permission needed',
-        'Camera and photo library access are required to add photos. Please enable it in Settings.'
+    const showActionSheet = () => {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Take Photo', 'Choose from Library', 'Cancel'],
+          cancelButtonIndex: 2,
+        },
+        async (buttonIndex) => {
+          if (buttonIndex === 0) {
+            // Take Photo
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== 'granted') {
+              Alert.alert('Camera permission required', 'Enable camera access in Settings.');
+              console.log('AI Assistant: image selection cancelled');
+              return;
+            }
+            const result = await ImagePicker.launchCameraAsync({
+              allowsEditing: true,
+              quality: 0.8,
+            });
+            if (!result.canceled && result.assets?.[0]?.uri) {
+              console.log('AI Assistant: image selected', result);
+              setSelectedImageUri(result.assets[0].uri);
+            } else {
+              console.log('AI Assistant: image selection cancelled');
+            }
+          } else if (buttonIndex === 1) {
+            // Choose from Library
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+              Alert.alert('Photo access required', 'Enable photo library access in Settings.');
+              console.log('AI Assistant: image selection cancelled');
+              return;
+            }
+            const result = await ImagePicker.launchImageLibraryAsync({
+              allowsEditing: true,
+              quality: 0.8,
+            });
+            if (!result.canceled && result.assets?.[0]?.uri) {
+              console.log('AI Assistant: image selected', result);
+              setSelectedImageUri(result.assets[0].uri);
+            } else {
+              console.log('AI Assistant: image selection cancelled');
+            }
+          } else {
+            console.log('AI Assistant: image selection cancelled');
+          }
+        }
       );
-      return;
-    }
+    };
 
-    // Let user choose camera or gallery
-    const choice = await new Promise<'camera' | 'library' | 'cancel'>((resolve) => {
+    if (Platform.OS === 'ios') {
+      showActionSheet();
+    } else {
       Alert.alert(
-        'Add Photo',
-        'Choose how to add a photo',
+        'Choose an option',
+        'Select how you want to add a photo',
         [
-          { text: 'Cancel', style: 'cancel', onPress: () => resolve('cancel') },
-          { text: 'Take Photo', onPress: () => resolve('camera') },
-          { text: 'Choose from Library', onPress: () => resolve('library') },
+          {
+            text: 'Take Photo',
+            onPress: async () => {
+              const { status } = await ImagePicker.requestCameraPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('Camera permission required', 'Enable camera access in Settings.');
+                console.log('AI Assistant: image selection cancelled');
+                return;
+              }
+              const result = await ImagePicker.launchCameraAsync({
+                allowsEditing: true,
+                quality: 0.8,
+              });
+              if (!result.canceled && result.assets?.[0]?.uri) {
+                console.log('AI Assistant: image selected', result);
+                setSelectedImageUri(result.assets[0].uri);
+              } else {
+                console.log('AI Assistant: image selection cancelled');
+              }
+            },
+          },
+          {
+            text: 'Choose from Library',
+            onPress: async () => {
+              const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('Photo access required', 'Enable photo library access in Settings.');
+                console.log('AI Assistant: image selection cancelled');
+                return;
+              }
+              const result = await ImagePicker.launchImageLibraryAsync({
+                allowsEditing: true,
+                quality: 0.8,
+              });
+              if (!result.canceled && result.assets?.[0]?.uri) {
+                console.log('AI Assistant: image selected', result);
+                setSelectedImageUri(result.assets[0].uri);
+              } else {
+                console.log('AI Assistant: image selection cancelled');
+              }
+            },
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => console.log('AI Assistant: image selection cancelled'),
+          },
         ]
       );
-    });
-
-    if (choice === 'cancel') {
-      console.log('Camera: user cancelled choice');
-      return;
     }
-
-    let result: ImagePicker.ImagePickerResult;
-    if (choice === 'camera') {
-      console.log('Camera: launching camera');
-      result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        quality: 0.8,
-      });
-    } else {
-      console.log('Camera: launching library');
-      result = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: true,
-        quality: 0.8,
-      });
-    }
-
-    if (result.canceled) {
-      console.log('Camera: user cancelled');
-      return;
-    }
-
-    const asset = result.assets[0];
-    console.log('Camera: image selected', asset.uri);
-
-    // Call existing image handling logic
-    setSelectedImageUri(asset.uri);
   };
 
   const uploadImageToSupabase = async (imageUri: string): Promise<string | null> => {
@@ -291,7 +340,7 @@ function AIProblemDiagnosisContent() {
               </Text>
               <TouchableOpacity 
                 style={styles.uploadButton}
-                onPress={handlePickImage}
+                onPress={handleSelectPhoto}
               >
                 <Text style={styles.uploadButtonIcon}>📷</Text>
                 <Text style={styles.uploadButtonText}>Upload Photo for Analysis</Text>
@@ -382,7 +431,7 @@ function AIProblemDiagnosisContent() {
           <View style={styles.inputRow}>
             <TouchableOpacity
               style={styles.imageButton}
-              onPress={handlePickImage}
+              onPress={handleSelectPhoto}
               disabled={loading || uploadingImage}
             >
               <Text style={styles.imageButtonText}>📷</Text>
