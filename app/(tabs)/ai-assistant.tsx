@@ -162,20 +162,29 @@ export default function AIAssistantScreen() {
   };
 
   const handlePickImage = async () => {
-    console.log('[AI Assistant] handlePickImage called - opening image picker');
+    console.log('[AI Assistant] ========================================');
+    console.log('[AI Assistant] handlePickImage ENTRY POINT');
+    console.log('[AI Assistant] Function called at:', new Date().toISOString());
+    console.log('[AI Assistant] Stack trace:', new Error().stack);
+    console.log('[AI Assistant] ========================================');
     
     // Open image picker and directly trigger analysis on success
     await openImagePicker((uris) => {
+      console.log('[AI Assistant] Image picker callback invoked');
+      console.log('[AI Assistant] URIs received:', uris);
+      
       if (uris.length > 0) {
-        console.log('[AI Assistant] Image selected:', uris[0]);
+        console.log('[AI Assistant] Image selected successfully:', uris[0]);
         
         // Directly trigger analysis with the selected image
         sendMessage('Please analyze this image and help me identify any weeds, pest damage, or plant diseases.', uris[0]);
       } else {
         // Silent cancellation
-        console.log('[AI Assistant] Image selection cancelled by user');
+        console.log('[AI Assistant] Image selection cancelled by user (no URIs returned)');
       }
     }, false);
+    
+    console.log('[AI Assistant] openImagePicker call completed');
   };
 
   const uploadImageToSupabase = async (imageUri: string): Promise<string | null> => {
@@ -615,7 +624,10 @@ export default function AIAssistantScreen() {
             <View style={styles.inputRow}>
               <TouchableOpacity
                 style={styles.imageButton}
-                onPress={handlePickImage}
+                onPress={() => {
+                  console.log('[AI Assistant] Camera button PRESSED - calling handlePickImage');
+                  handlePickImage();
+                }}
                 disabled={loading || uploadingImage}
                 activeOpacity={0.7}
               >
