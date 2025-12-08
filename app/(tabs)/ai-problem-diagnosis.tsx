@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import PremiumGuard from '../../components/PremiumGuard';
 import ProUpsellBanner from '../../components/ProUpsellBanner';
+import { openImagePicker } from '../../utils/imagePicker';
 
 interface Message {
   id: string;
@@ -106,6 +107,16 @@ function AIProblemDiagnosisContent() {
     } catch (error) {
       console.error('Error saving message:', error);
     }
+  };
+
+  const handlePickProblemImage = async () => {
+    console.log('AI Problem Diagnosis: camera button pressed - opening image picker');
+    await openImagePicker((uris) => {
+      if (uris.length > 0) {
+        console.log('AI Problem Diagnosis: image selected', uris[0]);
+        setSelectedImageUri(uris[0]);
+      }
+    }, false);
   };
 
   const sendMessage = async (text: string, imageUri?: string) => {
@@ -227,9 +238,7 @@ function AIProblemDiagnosisContent() {
               </Text>
               <TouchableOpacity 
                 style={styles.uploadButton}
-                onPress={() => {
-                  Alert.alert('TEST', 'AI Assistant button pressed');
-                }}
+                onPress={handlePickProblemImage}
               >
                 <Text style={styles.uploadButtonIcon}>📷</Text>
                 <Text style={styles.uploadButtonText}>Upload Photo for Analysis</Text>
@@ -320,9 +329,7 @@ function AIProblemDiagnosisContent() {
           <View style={styles.inputRow}>
             <TouchableOpacity
               style={styles.imageButton}
-              onPress={() => {
-                Alert.alert('TEST', 'AI Assistant button pressed');
-              }}
+              onPress={handlePickProblemImage}
               disabled={loading || uploadingImage}
             >
               <Text style={styles.imageButtonText}>📷</Text>
