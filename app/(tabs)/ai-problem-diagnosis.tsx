@@ -110,13 +110,17 @@ function AIProblemDiagnosisContent() {
 
   const handlePickProblemImage = async () => {
     console.log('AI Problem Diagnosis: camera button pressed - opening image picker');
+    
+    // Open image picker and directly trigger analysis on success
     await openImagePicker((uris) => {
       if (uris.length > 0) {
         console.log('AI Problem Diagnosis: imageSelected: true');
         console.log('AI Problem Diagnosis: image selected', uris[0]);
-        // Automatically trigger analysis with the selected image
+        
+        // Directly trigger analysis with the selected image - no alerts
         sendMessage('Please analyze this image and help me identify any plant issues, weeds, pests, or diseases.', uris[0]);
       } else {
+        // Silent cancellation - no alerts
         console.log('AI Problem Diagnosis: image selection cancelled');
       }
     }, false);

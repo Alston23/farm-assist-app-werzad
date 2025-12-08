@@ -163,13 +163,17 @@ export default function AIAssistantScreen() {
 
   const handlePickImage = async () => {
     console.log('AI Assistant: camera button pressed - opening image picker');
+    
+    // Open image picker and directly trigger analysis on success
     await openImagePicker((uris) => {
       if (uris.length > 0) {
         console.log('AI Assistant: imageSelected: true');
         console.log('AI Assistant: image selected', uris[0]);
-        // Automatically trigger analysis with the selected image
+        
+        // Directly trigger analysis with the selected image - no alerts
         sendMessage('Please analyze this image and help me identify any weeds, pest damage, or plant diseases.', uris[0]);
       } else {
+        // Silent cancellation - no alerts
         console.log('AI Assistant: image selection cancelled');
       }
     }, false);

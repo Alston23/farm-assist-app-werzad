@@ -84,13 +84,15 @@ export const pickMultipleImagesFromSource = async (
 /**
  * Opens a system sheet that allows the user to choose between taking a photo or selecting from library.
  * This is the unified image picker used across Marketplace and AI Assistant.
+ * 
+ * @param onPicked - Callback function that receives an array of selected image URIs
+ * @param allowMultiple - Whether to allow multiple image selection (default: true)
  */
 export const openImagePicker = async (
   onPicked: (uris: string[]) => void,
   allowMultiple: boolean = true
 ): Promise<void> => {
-  console.log('AI Assistant: camera button pressed');
-  console.log('Image picker: open');
+  console.log('Image picker: opening');
 
   const handleSelection = async (choice: 'camera' | 'library' | 'cancel') => {
     if (choice === 'cancel') {
