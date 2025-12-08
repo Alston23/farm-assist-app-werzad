@@ -165,8 +165,12 @@ export default function AIAssistantScreen() {
     console.log('AI Assistant: camera button pressed - opening image picker');
     await openImagePicker((uris) => {
       if (uris.length > 0) {
+        console.log('AI Assistant: imageSelected: true');
         console.log('AI Assistant: image selected', uris[0]);
-        setSelectedImage(uris[0]);
+        // Automatically trigger analysis with the selected image
+        sendMessage('Please analyze this image and help me identify any weeds, pest damage, or plant diseases.', uris[0]);
+      } else {
+        console.log('AI Assistant: image selection cancelled');
       }
     }, false);
   };
@@ -282,6 +286,8 @@ export default function AIAssistantScreen() {
       return;
     }
 
+    console.log('AI Assistant: analysisStarted: true');
+
     let imageUrl: string | null = null;
 
     if (imageUri) {
@@ -290,6 +296,7 @@ export default function AIAssistantScreen() {
         Alert.alert('Error', 'Failed to upload image. Please try again.');
         return;
       }
+      console.log('AI Assistant: imageURI passed to analyzer:', imageUrl);
     }
 
     const userMessage: Message = {

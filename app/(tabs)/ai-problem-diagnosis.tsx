@@ -98,7 +98,6 @@ function AIProblemDiagnosisContent() {
         role,
         content,
         image_url: imageUrl || null,
-        conversation_type: 'problem_diagnosis',
       });
 
       if (error) {
@@ -113,8 +112,12 @@ function AIProblemDiagnosisContent() {
     console.log('AI Problem Diagnosis: camera button pressed - opening image picker');
     await openImagePicker((uris) => {
       if (uris.length > 0) {
+        console.log('AI Problem Diagnosis: imageSelected: true');
         console.log('AI Problem Diagnosis: image selected', uris[0]);
-        setSelectedImageUri(uris[0]);
+        // Automatically trigger analysis with the selected image
+        sendMessage('Please analyze this image and help me identify any plant issues, weeds, pests, or diseases.', uris[0]);
+      } else {
+        console.log('AI Problem Diagnosis: image selection cancelled');
       }
     }, false);
   };
@@ -124,6 +127,8 @@ function AIProblemDiagnosisContent() {
 
     setShowWelcome(false);
 
+    console.log('AI Problem Diagnosis: analysisStarted: true');
+
     let imageUrl: string | null = null;
 
     if (imageUri) {
@@ -132,6 +137,7 @@ function AIProblemDiagnosisContent() {
         Alert.alert('Error', 'Failed to upload image. Please try again.');
         return;
       }
+      console.log('AI Problem Diagnosis: imageURI passed to analyzer:', imageUrl);
     }
 
     const userMessage: Message = {
