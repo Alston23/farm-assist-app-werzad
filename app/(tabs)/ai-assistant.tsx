@@ -162,19 +162,18 @@ export default function AIAssistantScreen() {
   };
 
   const handlePickImage = async () => {
-    console.log('AI Assistant: camera button pressed - opening image picker');
+    console.log('[AI Assistant] handlePickImage called - opening image picker');
     
     // Open image picker and directly trigger analysis on success
     await openImagePicker((uris) => {
       if (uris.length > 0) {
-        console.log('AI Assistant: imageSelected: true');
-        console.log('AI Assistant: image selected', uris[0]);
+        console.log('[AI Assistant] Image selected:', uris[0]);
         
-        // Directly trigger analysis with the selected image - no alerts
+        // Directly trigger analysis with the selected image
         sendMessage('Please analyze this image and help me identify any weeds, pest damage, or plant diseases.', uris[0]);
       } else {
-        // Silent cancellation - no alerts
-        console.log('AI Assistant: image selection cancelled');
+        // Silent cancellation
+        console.log('[AI Assistant] Image selection cancelled by user');
       }
     }, false);
   };
@@ -182,7 +181,7 @@ export default function AIAssistantScreen() {
   const uploadImageToSupabase = async (imageUri: string): Promise<string | null> => {
     try {
       setUploadingImage(true);
-      console.log('Image upload: started with uri', imageUri);
+      console.log('[AI Assistant] Image upload started:', imageUri);
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
@@ -202,7 +201,7 @@ export default function AIAssistantScreen() {
         });
 
       if (error) {
-        console.error('Error uploading image:', error);
+        console.error('[AI Assistant] Image upload error:', error);
         return null;
       }
 
@@ -210,10 +209,10 @@ export default function AIAssistantScreen() {
         .from('farm-images')
         .getPublicUrl(filePath);
 
-      console.log('Image upload: finished');
+      console.log('[AI Assistant] Image upload finished:', urlData.publicUrl);
       return urlData.publicUrl;
     } catch (error) {
-      console.error('Error uploading image:', error);
+      console.error('[AI Assistant] Image upload exception:', error);
       return null;
     } finally {
       setUploadingImage(false);
@@ -237,7 +236,7 @@ export default function AIAssistantScreen() {
         plantings: plantingsResult.data || [],
       };
     } catch (error) {
-      console.error('Error getting user context:', error);
+      console.error('[AI Assistant] Error getting user context:', error);
       return null;
     }
   };
@@ -290,7 +289,7 @@ export default function AIAssistantScreen() {
       return;
     }
 
-    console.log('AI Assistant: analysisStarted: true');
+    console.log('[AI Assistant] sendMessage called with text:', text.substring(0, 50), 'imageUri:', !!imageUri);
 
     let imageUrl: string | null = null;
 
@@ -300,7 +299,7 @@ export default function AIAssistantScreen() {
         Alert.alert('Error', 'Failed to upload image. Please try again.');
         return;
       }
-      console.log('AI Assistant: imageURI passed to analyzer:', imageUrl);
+      console.log('[AI Assistant] Image uploaded successfully:', imageUrl);
     }
 
     const userMessage: Message = {
@@ -322,10 +321,7 @@ export default function AIAssistantScreen() {
     try {
       const context = await getUserContext();
 
-      console.log('Sending message to AI assistant...');
-      console.log('Message:', text.trim() || 'Please analyze this image.');
-      console.log('Has image:', !!imageUrl);
-      console.log('Is Pro:', isPro);
+      console.log('[AI Assistant] Invoking AI edge function');
 
       const { data, error } = await supabase.functions.invoke('ai-assistant', {
         body: {
@@ -342,19 +338,16 @@ export default function AIAssistantScreen() {
       });
 
       if (error) {
-        console.error('Error from AI assistant edge function:', error);
-        console.error('Error details:', JSON.stringify(error, null, 2));
+        console.error('[AI Assistant] Edge function error:', error);
         throw error;
       }
 
       if (!data || !data.response) {
-        console.error('No response data from AI assistant');
-        console.error('Full data object:', JSON.stringify(data, null, 2));
+        console.error('[AI Assistant] No response data from edge function');
         throw new Error('No response received from AI assistant');
       }
 
-      console.log('Successfully received AI response');
-      console.log('Response length:', data.response.length);
+      console.log('[AI Assistant] Successfully received AI response');
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -366,10 +359,7 @@ export default function AIAssistantScreen() {
       setMessages((prev) => [...prev, assistantMessage]);
       await saveMessage('assistant', data.response);
     } catch (error: any) {
-      console.error('Error sending message to AI assistant:', error);
-      console.error('Error name:', error?.name);
-      console.error('Error message:', error?.message);
-      console.error('Error stack:', error?.stack);
+      console.error('[AI Assistant] Error in sendMessage:', error);
       
       let errorMessage = 'I apologize, but I encountered an error processing your request. Please try again.';
       let shouldShowAlert = true;
@@ -407,21 +397,22 @@ export default function AIAssistantScreen() {
   };
 
   const handleUpgradePress = () => {
+    console.log('[AI Assistant] Upgrade button pressed');
     router.push('/paywall');
   };
 
   const handleQuickAction = (actionId: string) => {
-    console.log('AI Assistant: Quick action pressed:', actionId);
+    console.log('[AI Assistant] Quick action pressed:', actionId);
     
     // Check if user is Pro
     if (!isPro) {
-      console.log('AI Assistant: User is not Pro, navigating to paywall');
+      console.log('[AI Assistant] User is not Pro, navigating to paywall');
       handleUpgradePress();
       return;
     }
     
     // User is Pro - navigate to the appropriate screen
-    console.log('AI Assistant: User is Pro, navigating to screen');
+    console.log('[AI Assistant] User is Pro, navigating to screen');
     
     switch (actionId) {
       case 'crop-recommendation':
@@ -437,7 +428,7 @@ export default function AIAssistantScreen() {
         router.push('/(tabs)/ai-personalized-advice');
         break;
       default:
-        console.error('AI Assistant: Unknown action:', actionId);
+        console.error('[AI Assistant] Unknown action:', actionId);
     }
   };
 
@@ -459,7 +450,7 @@ export default function AIAssistantScreen() {
               setMessages([]);
               setShowQuickActions(true);
             } catch (error) {
-              console.error('Error clearing conversation:', error);
+              console.error('[AI Assistant] Error clearing conversation:', error);
               Alert.alert('Error', 'Failed to clear conversation');
             }
           },
