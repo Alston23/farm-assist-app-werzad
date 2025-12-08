@@ -111,19 +111,20 @@ function AIProblemDiagnosisContent() {
   const handlePickProblemImage = async () => {
     console.log('AI Problem Diagnosis: camera button pressed - opening image picker');
     
-    // Open image picker and directly trigger analysis on success
+    // Open image picker using the same logic as Marketplace
+    // This will show the iOS action sheet or Android alert with Camera/Library options
     await openImagePicker((uris) => {
       if (uris.length > 0) {
         console.log('AI Problem Diagnosis: imageSelected: true');
         console.log('AI Problem Diagnosis: image selected', uris[0]);
         
-        // Directly trigger analysis with the selected image - no alerts
+        // Directly trigger analysis with the selected image
         sendMessage('Please analyze this image and help me identify any plant issues, weeds, pests, or diseases.', uris[0]);
       } else {
-        // Silent cancellation - no alerts
+        // Silent cancellation
         console.log('AI Problem Diagnosis: image selection cancelled');
       }
-    }, false);
+    }, false); // false = single image selection (no multiple selection for AI analysis)
   };
 
   const sendMessage = async (text: string, imageUri?: string) => {
