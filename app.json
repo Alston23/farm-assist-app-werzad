@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "FarmAssist",
@@ -38,6 +39,7 @@
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "POST_NOTIFICATIONS"
@@ -51,6 +53,12 @@
     "plugins": [
       "expo-font",
       "expo-router",
+      [
+        "expo-dev-client",
+        {
+          "addGeneratedScheme": false
+        }
+      ],
       [
         "expo-image-picker",
         {
@@ -79,10 +87,15 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {},
+      "router": {
+        "origin": false
+      },
       "eas": {
         "projectId": "your-eas-project-id"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   },
   "scheme": "FarmAssist"

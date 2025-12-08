@@ -84,6 +84,7 @@ export const pickMultipleImagesFromSource = async (
 /**
  * Opens a system sheet that allows the user to choose between taking a photo or selecting from library.
  * This is the unified image picker used across Marketplace and AI Assistant.
+ * Works reliably on physical devices without requiring dev server bridge.
  * 
  * @param onPicked - Callback function that receives an array of selected image URIs
  * @param allowMultiple - Whether to allow multiple image selection (default: true)
@@ -92,75 +93,112 @@ export const openImagePicker = async (
   onPicked: (uris: string[]) => void,
   allowMultiple: boolean = true
 ): Promise<void> => {
-  console.log('Image picker: opening');
+  console.log('[ImagePicker] Opening picker, allowMultiple:', allowMultiple);
 
   const handleSelection = async (choice: 'camera' | 'library' | 'cancel') => {
     if (choice === 'cancel') {
-      console.log('Image picker: user cancelled');
+      console.log('[ImagePicker] User cancelled selection');
       return;
     }
 
     try {
       if (choice === 'camera') {
-        console.log('Image picker: camera selected');
+        console.log('[ImagePicker] Requesting camera permissions');
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        
         if (status !== 'granted') {
-          console.log('Image picker: camera permission denied');
-          Alert.alert('Camera permission required', 'Enable camera access in Settings.');
+          console.log('[ImagePicker] Camera permission denied');
+          Alert.alert(
+            'Camera Permission Required',
+            'Please enable camera access in Settings to take photos.',
+            [{ text: 'OK' }]
+          );
           return;
         }
 
+        console.log('[ImagePicker] Launching camera');
         const result = await ImagePicker.launchCameraAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
           allowsEditing: true,
           quality: 0.8,
+          exif: false,
+        });
+
+        console.log('[ImagePicker] Camera result:', { 
+          canceled: result.canceled, 
+          hasAssets: !!result.assets,
+          assetCount: result.assets?.length || 0 
         });
 
         if (result.canceled) {
-          console.log('Image picker: camera cancelled');
+          console.log('[ImagePicker] Camera cancelled by user');
           return;
         }
 
         const asset = result.assets?.[0];
-        if (!asset) {
-          console.log('Image picker: no asset returned from camera');
+        if (!asset?.uri) {
+          console.log('[ImagePicker] No asset URI returned from camera');
           return;
         }
 
-        console.log('Image picker: camera image selected', asset.uri);
-        onPicked([asset.uri]);
+        console.log('[ImagePicker] Camera image captured:', asset.uri);
+        // Use setImmediate to ensure callback executes after native bridge completes
+        setImmediate(() => {
+          onPicked([asset.uri]);
+        });
+        
       } else {
-        console.log('Image picker: library selected');
+        console.log('[ImagePicker] Requesting media library permissions');
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        
         if (status !== 'granted') {
-          console.log('Image picker: library permission denied');
-          Alert.alert('Photo access required', 'Enable photo library access in Settings.');
+          console.log('[ImagePicker] Media library permission denied');
+          Alert.alert(
+            'Photo Access Required',
+            'Please enable photo library access in Settings to select photos.',
+            [{ text: 'OK' }]
+          );
           return;
         }
 
+        console.log('[ImagePicker] Launching image library');
         const result = await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
           allowsEditing: !allowMultiple,
           allowsMultipleSelection: allowMultiple,
           quality: 0.8,
+          exif: false,
+        });
+
+        console.log('[ImagePicker] Library result:', { 
+          canceled: result.canceled, 
+          hasAssets: !!result.assets,
+          assetCount: result.assets?.length || 0 
         });
 
         if (result.canceled) {
-          console.log('Image picker: library cancelled');
+          console.log('[ImagePicker] Library selection cancelled by user');
           return;
         }
 
         if (result.assets && result.assets.length > 0) {
           const uris = result.assets.map(asset => asset.uri);
-          console.log('Image picker: library images selected', uris);
-          onPicked(uris);
+          console.log('[ImagePicker] Library images selected:', uris.length, 'images');
+          // Use setImmediate to ensure callback executes after native bridge completes
+          setImmediate(() => {
+            onPicked(uris);
+          });
         } else {
-          console.log('Image picker: no assets returned from library');
+          console.log('[ImagePicker] No assets returned from library');
         }
       }
     } catch (error) {
-      console.error('Image picker error', error);
-      Alert.alert('Error', 'There was a problem accessing the camera or photos.');
+      console.error('[ImagePicker] Error during image selection:', error);
+      Alert.alert(
+        'Error',
+        'There was a problem accessing the camera or photos. Please try again.',
+        [{ text: 'OK' }]
+      );
     }
   };
 
@@ -172,6 +210,7 @@ export const openImagePicker = async (
         cancelButtonIndex: 2,
       },
       (buttonIndex) => {
+        console.log('[ImagePicker] iOS ActionSheet button pressed:', buttonIndex);
         if (buttonIndex === 0) {
           handleSelection('camera');
         } else if (buttonIndex === 1) {
@@ -212,21 +251,23 @@ export async function uploadImageToSupabase(
   folder: string = 'uploads'
 ): Promise<string | null> {
   try {
-    console.log('Image upload: started with uri', uri);
+    console.log('[ImageUpload] Starting upload for URI:', uri);
     
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      console.log('Image upload: no user found');
+      console.log('[ImageUpload] No authenticated user found');
       return null;
     }
 
+    console.log('[ImageUpload] Fetching image blob');
     const response = await fetch(uri);
     const blob = await response.blob();
     
-    const fileExt = uri.split('.').pop() || 'jpg';
+    const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
     const fileName = `${user.id}/${Date.now()}.${fileExt}`;
     const filePath = `${folder}/${fileName}`;
 
+    console.log('[ImageUpload] Uploading to Supabase:', filePath);
     const { data, error } = await supabase.storage
       .from(bucket)
       .upload(filePath, blob, {
@@ -235,7 +276,7 @@ export async function uploadImageToSupabase(
       });
 
     if (error) {
-      console.error('Image upload: error', error);
+      console.error('[ImageUpload] Upload error:', error);
       return null;
     }
 
@@ -243,10 +284,10 @@ export async function uploadImageToSupabase(
       .from(bucket)
       .getPublicUrl(filePath);
 
-    console.log('Image upload: finished', urlData.publicUrl);
+    console.log('[ImageUpload] Upload successful:', urlData.publicUrl);
     return urlData.publicUrl;
   } catch (error) {
-    console.error('Image upload: exception', error);
+    console.error('[ImageUpload] Exception during upload:', error);
     return null;
   }
 }

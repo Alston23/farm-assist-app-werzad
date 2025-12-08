@@ -1,12 +1,16 @@
+
 {
   "name": "SmallFarm-Copilot",
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "dev": "EXPO_NO_TELEMETRY=1 expo start --tunnel",
-    "android": "EXPO_NO_TELEMETRY=1 expo start --android",
-    "ios": "EXPO_NO_TELEMETRY=1 expo start --ios",
+    "start": "expo start --dev-client",
+    "dev": "EXPO_NO_TELEMETRY=1 expo start --dev-client --tunnel",
+    "android": "EXPO_NO_TELEMETRY=1 expo start --android --dev-client",
+    "ios": "EXPO_NO_TELEMETRY=1 expo start --ios --dev-client",
     "web": "EXPO_NO_TELEMETRY=1 expo start --web",
+    "run:ios": "expo run:ios",
+    "run:android": "expo run:android",
     "build:web": "expo export -p web && npx workbox generateSW workbox-config.js",
     "build:android": "expo prebuild -p android",
     "lint": "eslint ."
