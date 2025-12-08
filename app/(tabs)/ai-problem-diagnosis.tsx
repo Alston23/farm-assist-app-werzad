@@ -108,6 +108,8 @@ function AIProblemDiagnosisContent() {
     }
   };
 
+  // TEMPORARILY DISABLED FOR PRODUCTION BUILD - WILL RE-ENABLE AFTER WRAPPER FIX
+  /*
   const handlePickProblemImage = async () => {
     console.log('AI Problem Diagnosis: camera button pressed - opening image picker');
     
@@ -126,6 +128,7 @@ function AIProblemDiagnosisContent() {
       }
     }, false); // false = single image selection (no multiple selection for AI analysis)
   };
+  */
 
   const sendMessage = async (text: string, imageUri?: string) => {
     if ((!text.trim() && !imageUri) || loading) return;
@@ -245,8 +248,11 @@ function AIProblemDiagnosisContent() {
             <View style={styles.welcomeContainer}>
               <Text style={styles.welcomeTitle}>Identify Plant Problems 🔍</Text>
               <Text style={styles.welcomeText}>
-                I can help you diagnose issues with your crops including diseases, pests, nutrient deficiencies, and more. Upload a photo or describe the problem!
+                I can help you diagnose issues with your crops including diseases, pests, nutrient deficiencies, and more. Describe the problem below!
               </Text>
+              {/* CAMERA BUTTON TEMPORARILY DISABLED FOR PRODUCTION BUILD */}
+              {/* Will re-enable after wrapper-level alert fix is deployed */}
+              {/*
               <TouchableOpacity 
                 style={styles.uploadButton}
                 onPress={handlePickProblemImage}
@@ -254,7 +260,8 @@ function AIProblemDiagnosisContent() {
                 <Text style={styles.uploadButtonIcon}>📷</Text>
                 <Text style={styles.uploadButtonText}>Upload Photo for Analysis</Text>
               </TouchableOpacity>
-              <Text style={styles.orText}>or ask about:</Text>
+              */}
+              <Text style={styles.orText}>Ask about common issues:</Text>
               <View style={styles.quickQuestionsContainer}>
                 <TouchableOpacity 
                   style={styles.quickQuestionButton}
@@ -338,6 +345,9 @@ function AIProblemDiagnosisContent() {
             </View>
           )}
           <View style={styles.inputRow}>
+            {/* CAMERA BUTTON TEMPORARILY DISABLED FOR PRODUCTION BUILD */}
+            {/* Will re-enable after wrapper-level alert fix is deployed */}
+            {/*
             <TouchableOpacity
               style={styles.imageButton}
               onPress={handlePickProblemImage}
@@ -345,9 +355,10 @@ function AIProblemDiagnosisContent() {
             >
               <Text style={styles.imageButtonText}>📷</Text>
             </TouchableOpacity>
+            */}
             <TextInput
               style={styles.input}
-              placeholder="Describe the problem or upload a photo..."
+              placeholder="Describe the problem..."
               placeholderTextColor="#999"
               value={inputText}
               onChangeText={setInputText}

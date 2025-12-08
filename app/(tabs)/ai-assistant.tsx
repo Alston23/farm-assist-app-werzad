@@ -161,6 +161,8 @@ export default function AIAssistantScreen() {
     }
   };
 
+  // TEMPORARILY DISABLED FOR PRODUCTION BUILD - WILL RE-ENABLE AFTER WRAPPER FIX
+  /*
   const handlePickImage = async () => {
     console.log('[AI Assistant] ========================================');
     console.log('[AI Assistant] handlePickImage ENTRY POINT');
@@ -186,6 +188,7 @@ export default function AIAssistantScreen() {
     
     console.log('[AI Assistant] openImagePicker call completed');
   };
+  */
 
   const uploadImageToSupabase = async (imageUri: string): Promise<string | null> => {
     try {
@@ -513,7 +516,7 @@ export default function AIAssistantScreen() {
               <View style={styles.welcomeContainer}>
                 <Text style={styles.welcomeTitle}>Welcome to Your AI Farm Assistant! 👋</Text>
                 <Text style={styles.welcomeText}>
-                  I&apos;m here to help you with crop recommendations, plant issue diagnosis, weather insights, and personalized farming advice. You can also upload images to identify weeds, pests, or diseases!
+                  I&apos;m here to help you with crop recommendations, plant issue diagnosis, weather insights, and personalized farming advice.
                 </Text>
                 {!isPro && (
                   <View style={styles.freeUserNotice}>
@@ -622,6 +625,9 @@ export default function AIAssistantScreen() {
               </View>
             )}
             <View style={styles.inputRow}>
+              {/* CAMERA BUTTON TEMPORARILY DISABLED FOR PRODUCTION BUILD */}
+              {/* Will re-enable after wrapper-level alert fix is deployed */}
+              {/*
               <TouchableOpacity
                 style={styles.imageButton}
                 onPress={() => {
@@ -633,6 +639,7 @@ export default function AIAssistantScreen() {
               >
                 <Text style={styles.imageButtonText}>📷</Text>
               </TouchableOpacity>
+              */}
               <TextInput
                 ref={inputRef}
                 style={styles.input}
