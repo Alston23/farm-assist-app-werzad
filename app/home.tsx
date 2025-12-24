@@ -1,13 +1,14 @@
-
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
 import { supabase } from '../lib/supabase';
 
 export default function HomeScreen() {
   const { user } = useAuth();
+	const router = useRouter();
+
 
   return (
     <LinearGradient colors={['#2D5016', '#4A7C2C', '#6BA542']} style={styles.gradient}>

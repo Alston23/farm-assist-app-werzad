@@ -1,10 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { purchasePro, restoreProStatus } from '../lib/subscriptions';
 import { useAuth } from '../contexts/AuthContext';
+import { initSubscriptions } from '../lib/subscriptions';
+
 
 interface Feature {
   text: string;
@@ -19,10 +21,13 @@ const features: Feature[] = [
 ];
 
 export default function PaywallScreen() {
-  const router = useRouter();
   const { refreshProfile } = useAuth();
+	const router = useRouter();
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
+useEffect(() => {
+  initSubscriptions();
+}, []);
 
   const handlePurchase = async () => {
     setPurchasing(true);
