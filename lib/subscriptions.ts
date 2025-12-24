@@ -1,3 +1,4 @@
+
 export async function initSubscriptions(): Promise<void> {
   return;
 }
@@ -46,7 +47,7 @@ export async function initSubscriptions(): Promise<void> {
       await InAppPurchases.connectAsync();
     } catch (err) {
       if (!isAlreadyConnectedError(err)) {
-
+        console.error('Subscriptions: Error connecting to IAP:', err);
         throw err;
       }
     }
@@ -134,4 +135,31 @@ export async function purchasePro(): Promise<void> {
   }
 
   await InAppPurchases.purchaseItemAsync(PRO_SUBSCRIPTION_ID);
+}
+
+export async function syncProFromProfile(): Promise<void> {
+  try {
+    const { data } = await supabase.auth.getUser();
+    const user = data.user;
+
+    if (!user) {
+      console.log('Subscriptions: No user found, skipping Pro sync');
+      return;
+    }
+
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('is_pro')
+      .eq('id', user.id)
+      .single();
+
+    if (error) {
+      console.error('Subscriptions: Error fetching profile:', error);
+      return;
+    }
+
+    console.log('Subscriptions: Synced Pro status from profile:', profile?.is_pro);
+  } catch (error) {
+    console.error('Subscriptions: Error syncing Pro status:', error);
+  }
 }

@@ -42,11 +42,16 @@ function RootLayoutNav() {
       const inAuthGroup = segments[0] === 'auth';
       const inTabsGroup = segments[0] === '(tabs)';
       
+      console.log('RootLayoutNav: Current segments:', segments);
+      console.log('RootLayoutNav: User authenticated:', !!user);
+      
       if (!user && !inAuthGroup) {
         // Redirect to auth if not authenticated
+        console.log('RootLayoutNav: Redirecting to /auth');
         router.replace('/auth');
       } else if (user && inAuthGroup) {
         // Redirect to main app if authenticated and on auth screen
+        console.log('RootLayoutNav: Redirecting to /(tabs)/crops');
         router.replace('/(tabs)/crops');
       }
     }
