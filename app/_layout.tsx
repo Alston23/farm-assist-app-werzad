@@ -8,6 +8,7 @@ import { NotificationProvider } from '../contexts/NotificationContext';
 import { CameraProvider } from '../contexts/CameraContext';
 import * as SplashScreen from 'expo-splash-screen';
 import { initSubscriptions, syncProFromProfile } from '../lib/subscriptions';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -56,6 +57,16 @@ function RootLayoutNav() {
     // Don't redirect unauthenticated users here - let index.tsx handle it
   }, [user, authLoading, segments, router]);
 
+  // Fallback render to prevent blank screen in preview
+  // This ensures the preview always shows something even if routing is delayed
+  if (authLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6BA542" />
+      </View>
+    );
+  }
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
@@ -88,3 +99,12 @@ export default function RootLayout() {
     </AuthProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#2D5016',
+  },
+});
