@@ -39,7 +39,7 @@ export default function Index() {
     }
 
     return () => clearTimeout(timeoutId);
-  }, [user, loading, hasRedirected]);
+  }, [user, loading, hasRedirected, router]);
 
   // Show loading indicator while determining auth state
   return (

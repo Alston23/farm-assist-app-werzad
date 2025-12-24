@@ -45,7 +45,6 @@ function RootLayoutNav() {
     });
 
     const inAuthGroup = segments[0] === 'auth';
-    const inTabsGroup = segments[0] === '(tabs)';
     
     console.log('RootLayoutNav: segments:', segments, 'user:', !!user);
     
@@ -55,7 +54,7 @@ function RootLayoutNav() {
       router.replace('/(tabs)/crops');
     }
     // Don't redirect unauthenticated users here - let index.tsx handle it
-  }, [user, authLoading, segments]);
+  }, [user, authLoading, segments, router]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

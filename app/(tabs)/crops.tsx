@@ -8,7 +8,7 @@ import PageHeader from '../../components/PageHeader';
 import AddCustomCropModal from '../../components/AddCustomCropModal';
 import SubscriptionDebugPanel from '../../components/SubscriptionDebugPanel';
 import OnboardingModal from '../../components/OnboardingModal';
-import { vegetables, fruits, flowers, herbs, searchCrops, Crop } from '../../data/crops';
+import { vegetables, fruits, flowers, herbs, Crop } from '../../data/crops';
 import { supabase } from '../../lib/supabase';
 
 type CustomCrop = {
@@ -50,6 +50,7 @@ export default function CropsScreen() {
     };
 
     checkOnboarding();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadCustomCrops = useCallback(async () => {

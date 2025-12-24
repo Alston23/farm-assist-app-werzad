@@ -57,14 +57,6 @@ const quickActions: QuickAction[] = [
   },
 ];
 
-// Mapping for quick action prompts as specified in the requirements
-const AI_PROMPT_MAP: Record<string, string> = {
-  'crop-recommendation': "Use my farm's data to recommend what crops I should plant next.",
-  'identify-plant-issues': "Help me diagnose plant problems.",
-  'weather-insights': "Give me weather insights for my farm this week.",
-  'personalized-advice': "Give me personalized farm advice.",
-};
-
 export default function AIAssistantScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -106,7 +98,8 @@ export default function AIAssistantScreen() {
     if (messages.length > 0) {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }
-  }, [messages]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length]);
 
   const loadConversationHistory = async () => {
     try {

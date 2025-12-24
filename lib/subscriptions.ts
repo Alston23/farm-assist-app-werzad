@@ -1,10 +1,4 @@
 
-export async function initSubscriptions(): Promise<void> {
-  return;
-}
-
-// lib/subscriptions.ts
-
 import Constants from 'expo-constants';
 import { Alert, Platform } from 'react-native';
 import { supabase } from './supabase';
