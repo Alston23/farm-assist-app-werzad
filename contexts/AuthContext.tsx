@@ -32,8 +32,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isPro, setIsPro] = useState(false);
 
   useEffect(() => {
+    // Set a timeout to ensure loading doesn't hang forever
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.warn('AuthContext: Auth loading timeout (3s), forcing ready state');
+        setLoading(false);
+      }
+    }, 3000); // 3 second timeout
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('AuthContext: Initial session retrieved:', !!session);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -49,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('AuthContext: Auth state changed:', _event, !!session);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -62,23 +72,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, []);
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      console.log('AuthContext: Fetching profile for user:', userId);
+      
+      // Add timeout for profile fetch
+      const fetchPromise = supabase
         .from('profiles')
         .select('id, is_pro')
         .eq('id', userId)
         .single();
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+      );
+
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
 
       if (error) {
         console.error('AuthContext: Error fetching profile:', error);
         
         // If profile doesn't exist, create it
         if (error.code === 'PGRST116') {
+          console.log('AuthContext: Profile not found, creating new profile');
           const { data: newProfile, error: insertError } = await supabase
             .from('profiles')
             .insert({ id: userId, is_pro: false })
@@ -88,11 +109,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (insertError) {
             console.error('AuthContext: Error creating profile:', insertError);
           } else {
+            console.log('AuthContext: Profile created successfully');
             setProfile(newProfile);
             setIsPro(newProfile?.is_pro ?? false);
           }
         }
       } else {
+        console.log('AuthContext: Profile fetched successfully, is_pro:', data?.is_pro);
         setProfile(data);
         setIsPro(data?.is_pro ?? false);
       }
@@ -105,12 +128,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProfile = async () => {
     if (user) {
+      console.log('AuthContext: Refreshing profile');
       await fetchProfile(user.id);
     }
   };
 
   const signUp = async (email: string, password: string) => {
     try {
+      console.log('AuthContext: Attempting sign up for:', email);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -121,6 +146,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (error) {
         console.error('AuthContext: Sign up error:', error);
+      } else {
+        console.log('AuthContext: Sign up successful');
       }
       
       return { data, error };
@@ -132,6 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('AuthContext: Attempting sign in for:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -139,6 +167,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (error) {
         console.error('AuthContext: Sign in error:', error);
+      } else {
+        console.log('AuthContext: Sign in successful');
       }
       
       return { data, error };
@@ -150,6 +180,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      console.log('AuthContext: Signing out');
+      
       // Clear local state first
       setUser(null);
       setSession(null);
@@ -165,6 +197,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Just log it and continue with navigation
       }
       
+      console.log('AuthContext: Sign out complete, navigating to /auth');
       // Navigate to auth screen
       router.replace('/auth');
     } catch (error) {

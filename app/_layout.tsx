@@ -32,30 +32,30 @@ function RootLayoutNav() {
     }
   }, [user, authLoading]);
 
+  // Handle navigation guard - SIMPLIFIED
   useEffect(() => {
-    if (!authLoading) {
-      // Hide splash screen once auth state is determined
-      SplashScreen.hideAsync().catch((error) => {
-        console.error('Error hiding splash screen:', error);
-      });
-
-      const inAuthGroup = segments[0] === 'auth';
-      const inTabsGroup = segments[0] === '(tabs)';
-      
-      console.log('RootLayoutNav: Current segments:', segments);
-      console.log('RootLayoutNav: User authenticated:', !!user);
-      
-      if (!user && !inAuthGroup) {
-        // Redirect to auth if not authenticated
-        console.log('RootLayoutNav: Redirecting to /auth');
-        router.replace('/auth');
-      } else if (user && inAuthGroup) {
-        // Redirect to main app if authenticated and on auth screen
-        console.log('RootLayoutNav: Redirecting to /(tabs)/crops');
-        router.replace('/(tabs)/crops');
-      }
+    if (authLoading) {
+      // Still loading, don't navigate yet
+      return;
     }
-  }, [user, authLoading, segments, router]);
+
+    // Hide splash screen once auth state is determined
+    SplashScreen.hideAsync().catch((error) => {
+      console.error('RootLayoutNav: Error hiding splash screen:', error);
+    });
+
+    const inAuthGroup = segments[0] === 'auth';
+    const inTabsGroup = segments[0] === '(tabs)';
+    
+    console.log('RootLayoutNav: segments:', segments, 'user:', !!user);
+    
+    // Only redirect if user is authenticated but on auth screen
+    if (user && inAuthGroup) {
+      console.log('RootLayoutNav: User authenticated on auth screen, redirecting to crops');
+      router.replace('/(tabs)/crops');
+    }
+    // Don't redirect unauthenticated users here - let index.tsx handle it
+  }, [user, authLoading, segments]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
