@@ -1,4 +1,3 @@
-
 {
   "expo": {
     "name": "FarmAssist",
@@ -16,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.whitealston.smallfarmcopilot",
-      "buildNumber": "1",
+      "buildNumber": "3",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "Farm Copilot uses the camera to identify plant issues and attach photos to AI questions.",
