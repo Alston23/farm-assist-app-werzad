@@ -6,7 +6,6 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import PageHeader from '../../components/PageHeader';
 import AddCustomCropModal from '../../components/AddCustomCropModal';
-import SubscriptionDebugPanel from '../../components/SubscriptionDebugPanel';
 import OnboardingModal from '../../components/OnboardingModal';
 import { vegetables, fruits, flowers, herbs, Crop } from '../../data/crops';
 import { supabase } from '../../lib/supabase';
@@ -232,9 +231,6 @@ export default function CropsScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" />
           }
         >
-          {/* Debug Panel - Only visible in development builds */}
-          {__DEV__ && <SubscriptionDebugPanel />}
-
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => setShowAddModal(true)}
