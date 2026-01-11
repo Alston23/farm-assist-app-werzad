@@ -198,9 +198,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Just log it and continue with navigation
       }
       
-      console.log('AuthContext: Sign out complete, navigating to /auth');
-      // Navigate to auth screen
-      router.replace('/auth');
+      console.log('AuthContext: Sign out complete, navigating to /login');
+      // Navigate to login screen
+      router.replace('/login');
     } catch (error) {
       console.error('AuthContext: Sign out exception:', error);
       
@@ -213,8 +213,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Show error message
       Alert.alert('Notice', 'You have been signed out. If you experience issues, please restart the app.');
       
-      // Navigate to auth screen anyway
-      router.replace('/auth');
+      // Navigate to login screen anyway
+      router.replace('/login');
     }
   };
 

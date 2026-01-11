@@ -21,10 +21,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-export const unstable_settings = {
-  initialRouteName: "(tabs)",
-};
-
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const networkState = useNetworkState();
@@ -87,32 +83,48 @@ export default function RootLayout() {
       >
         <AuthProvider>
           <WidgetProvider>
-            <GestureHandlerRootView>
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="modal"
-                  options={{
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="index" />
+                <Stack.Screen name="login" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="crop" />
+                <Stack.Screen name="marketplace" />
+                <Stack.Screen 
+                  name="paywall" 
+                  options={{ 
                     presentation: "modal",
-                    title: "Standard Modal",
-                  }}
+                    headerShown: true,
+                    title: "Upgrade to Pro"
+                  }} 
                 />
-                <Stack.Screen
-                  name="formsheet"
-                  options={{
-                    presentation: "formSheet",
-                    title: "Form Sheet Modal",
-                    sheetGrabberVisible: true,
-                    sheetAllowedDetents: [0.5, 0.8, 1.0],
-                    sheetCornerRadius: 20,
-                  }}
+                <Stack.Screen 
+                  name="fertilizers" 
+                  options={{ 
+                    headerShown: true,
+                    title: "Fertilizers"
+                  }} 
                 />
-                <Stack.Screen
-                  name="transparent-modal"
-                  options={{
-                    presentation: "transparentModal",
-                    headerShown: false,
-                  }}
+                <Stack.Screen 
+                  name="seeds" 
+                  options={{ 
+                    headerShown: true,
+                    title: "Seeds"
+                  }} 
+                />
+                <Stack.Screen 
+                  name="transplants" 
+                  options={{ 
+                    headerShown: true,
+                    title: "Transplants"
+                  }} 
+                />
+                <Stack.Screen 
+                  name="storage-locations" 
+                  options={{ 
+                    headerShown: true,
+                    title: "Storage Locations"
+                  }} 
                 />
               </Stack>
               <SystemBars style={"auto"} />
