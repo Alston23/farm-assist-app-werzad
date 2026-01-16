@@ -1,0 +1,32 @@
+
+import { CropDetail } from '../cropDetails';
+
+export const vegetables2: Record<string, CropDetail> = {
+  'v29': { id: 'v29', name: 'Bok Choy', category: 'vegetable', daysToMaturity: 45 },
+  'v30': { id: 'v30', name: 'Collard Greens', category: 'vegetable', daysToMaturity: 60 },
+  'v31': { id: 'v31', name: 'Mustard Greens', category: 'vegetable', daysToMaturity: 40 },
+  'v32': { id: 'v32', name: 'Kohlrabi', category: 'vegetable', daysToMaturity: 55 },
+  'v33': { id: 'v33', name: 'Rutabaga', category: 'vegetable', daysToMaturity: 90 },
+  'v34': { id: 'v34', name: 'Parsnip', category: 'vegetable', daysToMaturity: 120 },
+  'v35': { id: 'v35', name: 'Butternut Squash', category: 'vegetable', daysToMaturity: 100 },
+  'v36': { id: 'v36', name: 'Acorn Squash', category: 'vegetable', daysToMaturity: 85 },
+  'v37': { id: 'v37', name: 'Pumpkin', category: 'vegetable', daysToMaturity: 100 },
+  'v38': { id: 'v38', name: 'Spaghetti Squash', category: 'vegetable', daysToMaturity: 90 },
+  'v39': { id: 'v39', name: 'Summer Squash', category: 'vegetable', daysToMaturity: 50 },
+  'v40': { id: 'v40', name: 'Okra', category: 'vegetable', daysToMaturity: 60 },
+  'v41': { id: 'v41', name: 'Artichoke', category: 'vegetable', daysToMaturity: 150 },
+  'v42': { id: 'v42', name: 'Fennel', category: 'vegetable', daysToMaturity: 65 },
+  'v43': { id: 'v43', name: 'Radicchio', category: 'vegetable', daysToMaturity: 60 },
+  'v44': { id: 'v44', name: 'Endive', category: 'vegetable', daysToMaturity: 85 },
+  'v45': { id: 'v45', name: 'Watercress', category: 'vegetable', daysToMaturity: 50 },
+  'v46': { id: 'v46', name: 'Shallot', category: 'vegetable', daysToMaturity: 100 },
+  'v47': { id: 'v47', name: 'Scallion', category: 'vegetable', daysToMaturity: 60 },
+  'v48': { id: 'v48', name: 'Chives', category: 'vegetable', daysToMaturity: 60 },
+  'v49': { id: 'v49', name: 'Horseradish', category: 'vegetable', daysToMaturity: 150 },
+  'v50': { id: 'v50', name: 'Ginger', category: 'vegetable', daysToMaturity: 240 },
+  'v51': { id: 'v51', name: 'Jalapeño Pepper', category: 'vegetable', daysToMaturity: 75 },
+  'v52': { id: 'v52', name: 'Habanero Pepper', category: 'vegetable', daysToMaturity: 90 },
+  'v53': { id: 'v53', name: 'Serrano Pepper', category: 'vegetable', daysToMaturity: 75 },
+  'v54': { id: 'v54', name: 'Poblano Pepper', category: 'vegetable', daysToMaturity: 65 },
+  'v55': { id: 'v55', name: 'Cherry Tomato', category: 'vegetable', daysToMaturity: 60 },
+};

@@ -1,0 +1,33 @@
+
+import { CropDetail } from '../cropDetails';
+
+export const vegetables: Record<string, CropDetail> = {
+  'v1': { id: 'v1', name: 'Tomato', category: 'vegetable', daysToMaturity: 75 },
+  'v2': { id: 'v2', name: 'Lettuce', category: 'vegetable', daysToMaturity: 45 },
+  'v3': { id: 'v3', name: 'Carrot', category: 'vegetable', daysToMaturity: 70 },
+  'v4': { id: 'v4', name: 'Cucumber', category: 'vegetable', daysToMaturity: 55 },
+  'v5': { id: 'v5', name: 'Bell Pepper', category: 'vegetable', daysToMaturity: 70 },
+  'v6': { id: 'v6', name: 'Broccoli', category: 'vegetable', daysToMaturity: 60 },
+  'v7': { id: 'v7', name: 'Cauliflower', category: 'vegetable', daysToMaturity: 65 },
+  'v8': { id: 'v8', name: 'Cabbage', category: 'vegetable', daysToMaturity: 70 },
+  'v9': { id: 'v9', name: 'Spinach', category: 'vegetable', daysToMaturity: 40 },
+  'v10': { id: 'v10', name: 'Kale', category: 'vegetable', daysToMaturity: 55 },
+  'v11': { id: 'v11', name: 'Zucchini', category: 'vegetable', daysToMaturity: 50 },
+  'v12': { id: 'v12', name: 'Eggplant', category: 'vegetable', daysToMaturity: 80 },
+  'v13': { id: 'v13', name: 'Onion', category: 'vegetable', daysToMaturity: 100 },
+  'v14': { id: 'v14', name: 'Garlic', category: 'vegetable', daysToMaturity: 240 },
+  'v15': { id: 'v15', name: 'Potato', category: 'vegetable', daysToMaturity: 90 },
+  'v16': { id: 'v16', name: 'Sweet Potato', category: 'vegetable', daysToMaturity: 100 },
+  'v17': { id: 'v17', name: 'Radish', category: 'vegetable', daysToMaturity: 25 },
+  'v18': { id: 'v18', name: 'Beet', category: 'vegetable', daysToMaturity: 55 },
+  'v19': { id: 'v19', name: 'Turnip', category: 'vegetable', daysToMaturity: 50 },
+  'v20': { id: 'v20', name: 'Peas', category: 'vegetable', daysToMaturity: 60 },
+  'v21': { id: 'v21', name: 'Green Beans', category: 'vegetable', daysToMaturity: 55 },
+  'v22': { id: 'v22', name: 'Corn', category: 'vegetable', daysToMaturity: 75 },
+  'v23': { id: 'v23', name: 'Asparagus', category: 'vegetable', daysToMaturity: 730 },
+  'v24': { id: 'v24', name: 'Brussels Sprouts', category: 'vegetable', daysToMaturity: 90 },
+  'v25': { id: 'v25', name: 'Celery', category: 'vegetable', daysToMaturity: 85 },
+  'v26': { id: 'v26', name: 'Leek', category: 'vegetable', daysToMaturity: 120 },
+  'v27': { id: 'v27', name: 'Swiss Chard', category: 'vegetable', daysToMaturity: 50 },
+  'v28': { id: 'v28', name: 'Arugula', category: 'vegetable', daysToMaturity: 40 },
+};
