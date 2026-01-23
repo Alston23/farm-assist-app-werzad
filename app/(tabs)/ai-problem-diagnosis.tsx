@@ -109,64 +109,80 @@ function AIProblemDiagnosisContent() {
     }
   };
 
-  const handlePickProblemImage = async () => {
-    console.log('AI Problem Diagnosis: image picker button pressed');
+  const handleTakePhoto = async () => {
+    console.log('AI Problem Diagnosis: take photo button pressed');
     
     // On web, show message that camera is not available
     if (Platform.OS === 'web') {
       Alert.alert(
         'Camera Not Available',
-        'Taking a photo is only available on the mobile version. You can upload a photo from your device instead.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Upload Photo',
-            onPress: async () => {
-              try {
-                const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-                
-                if (status !== 'granted') {
-                  Alert.alert(
-                    'Photo Access Required',
-                    'Please enable photo library access to select photos.',
-                    [{ text: 'OK' }]
-                  );
-                  return;
-                }
-
-                const result = await ImagePicker.launchImageLibraryAsync({
-                  mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                  allowsEditing: true,
-                  quality: 0.8,
-                  exif: false,
-                });
-
-                if (!result.canceled && result.assets?.[0]?.uri) {
-                  console.log('AI Problem Diagnosis: image selected', result.assets[0].uri);
-                  sendMessage('Please analyze this image and help me identify any plant issues, weeds, pests, or diseases.', result.assets[0].uri);
-                }
-              } catch (error) {
-                console.error('Error picking image:', error);
-                Alert.alert('Error', 'There was a problem accessing photos. Please try again.');
-              }
-            },
-          },
-        ]
+        'The camera feature is only available on the mobile app. Please use the "Upload Photo" button to select an image from your computer.',
+        [{ text: 'Got it', style: 'default' }]
       );
-    } else {
-      // On mobile, show camera/library options
-      await openImagePicker((uris) => {
-        if (uris.length > 0) {
-          console.log('AI Problem Diagnosis: imageSelected: true');
-          console.log('AI Problem Diagnosis: image selected', uris[0]);
-          
-          // Directly trigger analysis with the selected image
-          sendMessage('Please analyze this image and help me identify any plant issues, weeds, pests, or diseases.', uris[0]);
-        } else {
-          // Silent cancellation
-          console.log('AI Problem Diagnosis: image selection cancelled');
-        }
-      }, false); // false = single image selection (no multiple selection for AI analysis)
+      return;
+    }
+
+    // On mobile, launch camera directly
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert(
+          'Camera Permission Required',
+          'Please enable camera access in Settings to take photos.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      console.log('AI Problem Diagnosis: launching camera');
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+        exif: false,
+      });
+
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        console.log('AI Problem Diagnosis: photo taken', result.assets[0].uri);
+        sendMessage('Please analyze this image and help me identify any plant issues, weeds, pests, or diseases.', result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'There was a problem accessing the camera. Please try again.');
+    }
+  };
+
+  const handleUploadPhoto = async () => {
+    console.log('AI Problem Diagnosis: upload photo button pressed');
+    
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert(
+          'Photo Access Required',
+          'Please enable photo library access to select photos.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      console.log('AI Problem Diagnosis: launching image library');
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+        exif: false,
+      });
+
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        console.log('AI Problem Diagnosis: image selected', result.assets[0].uri);
+        sendMessage('Please analyze this image and help me identify any plant issues, weeds, pests, or diseases.', result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'There was a problem accessing photos. Please try again.');
     }
   };
 
@@ -290,15 +306,22 @@ function AIProblemDiagnosisContent() {
               <Text style={styles.welcomeText}>
                 I can help you diagnose issues with your crops including diseases, pests, nutrient deficiencies, and more. Describe the problem below!
               </Text>
-              <TouchableOpacity 
-                style={styles.uploadButton}
-                onPress={handlePickProblemImage}
-              >
-                <Text style={styles.uploadButtonIcon}>{Platform.OS === 'web' ? '📁' : '📷'}</Text>
-                <Text style={styles.uploadButtonText}>
-                  {Platform.OS === 'web' ? 'Upload Photo for Analysis' : 'Take/Upload Photo for Analysis'}
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.buttonRow}>
+                <TouchableOpacity 
+                  style={styles.actionButton}
+                  onPress={handleTakePhoto}
+                >
+                  <Text style={styles.actionButtonIcon}>📷</Text>
+                  <Text style={styles.actionButtonText}>Take Photo</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.actionButton}
+                  onPress={handleUploadPhoto}
+                >
+                  <Text style={styles.actionButtonIcon}>📁</Text>
+                  <Text style={styles.actionButtonText}>Upload Photo</Text>
+                </TouchableOpacity>
+              </View>
               <Text style={styles.orText}>Ask about common issues:</Text>
               <View style={styles.quickQuestionsContainer}>
                 <TouchableOpacity 
@@ -385,10 +408,17 @@ function AIProblemDiagnosisContent() {
           <View style={styles.inputRow}>
             <TouchableOpacity
               style={styles.imageButton}
-              onPress={handlePickProblemImage}
+              onPress={handleTakePhoto}
               disabled={loading || uploadingImage}
             >
-              <Text style={styles.imageButtonText}>{Platform.OS === 'web' ? '📁' : '📷'}</Text>
+              <Text style={styles.imageButtonText}>📷</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.imageButton}
+              onPress={handleUploadPhoto}
+              disabled={loading || uploadingImage}
+            >
+              <Text style={styles.imageButtonText}>📁</Text>
             </TouchableOpacity>
             <TextInput
               style={styles.input}
@@ -460,22 +490,26 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
-  uploadButton: {
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  actionButton: {
+    flex: 1,
     backgroundColor: '#4A7C2C',
     borderRadius: 12,
     padding: 16,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
   },
-  uploadButtonIcon: {
+  actionButtonIcon: {
     fontSize: 24,
-    marginRight: 8,
+    marginBottom: 4,
   },
-  uploadButtonText: {
+  actionButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   orText: {
