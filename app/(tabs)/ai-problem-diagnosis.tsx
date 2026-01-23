@@ -112,35 +112,47 @@ function AIProblemDiagnosisContent() {
   const handlePickProblemImage = async () => {
     console.log('AI Problem Diagnosis: image picker button pressed');
     
-    // On web, only allow library selection (no camera)
+    // On web, show message that camera is not available
     if (Platform.OS === 'web') {
-      try {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        
-        if (status !== 'granted') {
-          Alert.alert(
-            'Photo Access Required',
-            'Please enable photo library access to select photos.',
-            [{ text: 'OK' }]
-          );
-          return;
-        }
+      Alert.alert(
+        'Camera Not Available',
+        'Taking a photo is only available on the mobile version. You can upload a photo from your device instead.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Upload Photo',
+            onPress: async () => {
+              try {
+                const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                
+                if (status !== 'granted') {
+                  Alert.alert(
+                    'Photo Access Required',
+                    'Please enable photo library access to select photos.',
+                    [{ text: 'OK' }]
+                  );
+                  return;
+                }
 
-        const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
-          quality: 0.8,
-          exif: false,
-        });
+                const result = await ImagePicker.launchImageLibraryAsync({
+                  mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                  allowsEditing: true,
+                  quality: 0.8,
+                  exif: false,
+                });
 
-        if (!result.canceled && result.assets?.[0]?.uri) {
-          console.log('AI Problem Diagnosis: image selected', result.assets[0].uri);
-          sendMessage('Please analyze this image and help me identify any plant issues, weeds, pests, or diseases.', result.assets[0].uri);
-        }
-      } catch (error) {
-        console.error('Error picking image:', error);
-        Alert.alert('Error', 'There was a problem accessing photos. Please try again.');
-      }
+                if (!result.canceled && result.assets?.[0]?.uri) {
+                  console.log('AI Problem Diagnosis: image selected', result.assets[0].uri);
+                  sendMessage('Please analyze this image and help me identify any plant issues, weeds, pests, or diseases.', result.assets[0].uri);
+                }
+              } catch (error) {
+                console.error('Error picking image:', error);
+                Alert.alert('Error', 'There was a problem accessing photos. Please try again.');
+              }
+            },
+          },
+        ]
+      );
     } else {
       // On mobile, show camera/library options
       await openImagePicker((uris) => {
