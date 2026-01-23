@@ -8,8 +8,11 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Platform,
+  Share,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
+import RNHTMLtoPDF from 'react-native-html-to-pdf';
 
 interface ReportsModalProps {
   visible: boolean;
@@ -87,6 +90,7 @@ const REPORT_TYPES = [
 
 export default function ReportsModal({ visible, onClose }: ReportsModalProps) {
   const [loading, setLoading] = useState(false);
+  const [exportingPDF, setExportingPDF] = useState(false);
 
   const formatCurrency = (amount: number) => {
     return `$${amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
@@ -119,6 +123,141 @@ export default function ReportsModal({ visible, onClose }: ReportsModalProps) {
     return 'Winter';
   };
 
+  const exportReportAsPDF = async (reportTitle: string, reportContent: string) => {
+    if (Platform.OS === 'web') {
+      // For web, create a downloadable HTML file or use browser print
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>${reportTitle}</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 40px;
+              max-width: 800px;
+              margin: 0 auto;
+              line-height: 1.6;
+            }
+            h1 {
+              color: #2D5016;
+              border-bottom: 3px solid #4A7C2C;
+              padding-bottom: 10px;
+            }
+            pre {
+              white-space: pre-wrap;
+              font-family: 'Courier New', monospace;
+              background-color: #f5f5f5;
+              padding: 20px;
+              border-radius: 8px;
+              border-left: 4px solid #4A7C2C;
+            }
+            .footer {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 1px solid #ccc;
+              color: #666;
+              font-size: 12px;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>${reportTitle}</h1>
+          <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+          <pre>${reportContent}</pre>
+          <div class="footer">
+            <p>Farm Copilot - Small Farm Management System</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // Create a blob and download it
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${reportTitle.replace(/\s+/g, '_')}_${Date.now()}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      Alert.alert('Success', 'Report downloaded as HTML file. You can open it in your browser and print to PDF.');
+    } else {
+      // For mobile, use react-native-html-to-pdf
+      try {
+        setExportingPDF(true);
+        
+        const htmlContent = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                padding: 20px;
+                line-height: 1.6;
+              }
+              h1 {
+                color: #2D5016;
+                border-bottom: 2px solid #4A7C2C;
+                padding-bottom: 10px;
+              }
+              pre {
+                white-space: pre-wrap;
+                font-family: 'Courier New', monospace;
+                background-color: #f5f5f5;
+                padding: 15px;
+                border-radius: 5px;
+                border-left: 3px solid #4A7C2C;
+              }
+              .footer {
+                margin-top: 30px;
+                padding-top: 15px;
+                border-top: 1px solid #ccc;
+                color: #666;
+                font-size: 11px;
+              }
+            </style>
+          </head>
+          <body>
+            <h1>${reportTitle}</h1>
+            <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+            <pre>${reportContent}</pre>
+            <div class="footer">
+              <p>Farm Copilot - Small Farm Management System</p>
+            </div>
+          </body>
+          </html>
+        `;
+
+        const options = {
+          html: htmlContent,
+          fileName: `${reportTitle.replace(/\s+/g, '_')}_${Date.now()}`,
+          directory: 'Documents',
+        };
+
+        const file = await RNHTMLtoPDF.convert(options);
+        
+        if (file.filePath) {
+          // Share the PDF file
+          await Share.share({
+            url: `file://${file.filePath}`,
+            title: reportTitle,
+          });
+        }
+      } catch (error) {
+        console.error('Error exporting PDF:', error);
+        Alert.alert('Error', 'Failed to export PDF. Please try again.');
+      } finally {
+        setExportingPDF(false);
+      }
+    }
+  };
+
   const generateReport = async (reportId: string) => {
     setLoading(true);
     try {
@@ -145,39 +284,59 @@ export default function ReportsModal({ visible, onClose }: ReportsModalProps) {
       const expenses: Expense[] = expensesResult.data || [];
 
       let reportContent = '';
+      let reportTitle = '';
 
       switch (reportId) {
         case 'profitability_by_crop':
+          reportTitle = 'Profitability by Crop';
           reportContent = generateProfitabilityByCropReport(income);
           break;
         case 'sales_channel_performance':
+          reportTitle = 'Sales Channel Performance';
           reportContent = generateSalesChannelReport(income);
           break;
         case 'expense_breakdown':
+          reportTitle = 'Expense Breakdown by Category';
           reportContent = generateExpenseBreakdownReport(expenses);
           break;
         case 'monthly_income_forecast':
+          reportTitle = 'Monthly Income Forecast';
           reportContent = generateMonthlyIncomeReport(income);
           break;
         case 'profit_margin_analysis':
+          reportTitle = 'Profit Margin Analysis';
           reportContent = generateProfitMarginReport(income, expenses);
           break;
         case 'seasonal_performance':
+          reportTitle = 'Seasonal Performance';
           reportContent = generateSeasonalReport(income);
           break;
         case 'top_expenses':
+          reportTitle = 'Top Expenses Report';
           reportContent = generateTopExpensesReport(expenses);
           break;
         case 'cash_flow_summary':
+          reportTitle = 'Cash Flow Summary';
           reportContent = generateCashFlowReport(income, expenses);
           break;
         default:
           reportContent = 'Report type not found';
+          reportTitle = 'Unknown Report';
       }
 
-      Alert.alert('Report Generated', reportContent, [{ text: 'OK' }], {
-        cancelable: true,
-      });
+      // Show alert with export option
+      Alert.alert(
+        'Report Generated',
+        reportContent,
+        [
+          {
+            text: 'Export',
+            onPress: () => exportReportAsPDF(reportTitle, reportContent),
+          },
+          { text: 'Close' },
+        ],
+        { cancelable: true }
+      );
     } catch (error: any) {
       console.error('Error generating report:', error);
       Alert.alert('Error', 'Failed to generate report');
@@ -471,6 +630,9 @@ export default function ReportsModal({ visible, onClose }: ReportsModalProps) {
         <View style={styles.modalContent}>
           <View style={styles.header}>
             <Text style={styles.title}>📊 Run Reports</Text>
+            {exportingPDF && (
+              <Text style={styles.exportingText}>Exporting PDF...</Text>
+            )}
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
@@ -505,7 +667,8 @@ export default function ReportsModal({ visible, onClose }: ReportsModalProps) {
                 - Reports are generated based on your current income and expense data{'\n'}
                 - Add more transactions to get more detailed insights{'\n'}
                 - Reports can help identify trends and opportunities{'\n'}
-                - Use reports to make data-driven decisions for your farm
+                - Use reports to make data-driven decisions for your farm{'\n'}
+                - {Platform.OS === 'web' ? 'Export reports as HTML files (can be printed to PDF)' : 'Export reports as PDF files to share with lenders'}
               </Text>
             </View>
           </ScrollView>
@@ -548,6 +711,12 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 24,
     color: '#666',
+  },
+  exportingText: {
+    fontSize: 14,
+    color: '#4A7C2C',
+    fontWeight: '600',
+    marginRight: 8,
   },
   scrollView: {
     paddingHorizontal: 20,

@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase';
 import PremiumGuard from '../../components/PremiumGuard';
 import ProUpsellBanner from '../../components/ProUpsellBanner';
 import { openImagePicker } from '../../utils/imagePicker';
+import * as ImagePicker from 'expo-image-picker';
 
 interface Message {
   id: string;
@@ -108,27 +109,54 @@ function AIProblemDiagnosisContent() {
     }
   };
 
-  // TEMPORARILY DISABLED FOR PRODUCTION BUILD - WILL RE-ENABLE AFTER WRAPPER FIX
-  /*
   const handlePickProblemImage = async () => {
-    console.log('AI Problem Diagnosis: camera button pressed - opening image picker');
+    console.log('AI Problem Diagnosis: image picker button pressed');
     
-    // Open image picker using the same logic as Marketplace
-    // This will show the iOS action sheet or Android alert with Camera/Library options
-    await openImagePicker((uris) => {
-      if (uris.length > 0) {
-        console.log('AI Problem Diagnosis: imageSelected: true');
-        console.log('AI Problem Diagnosis: image selected', uris[0]);
+    // On web, only allow library selection (no camera)
+    if (Platform.OS === 'web') {
+      try {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         
-        // Directly trigger analysis with the selected image
-        sendMessage('Please analyze this image and help me identify any plant issues, weeds, pests, or diseases.', uris[0]);
-      } else {
-        // Silent cancellation
-        console.log('AI Problem Diagnosis: image selection cancelled');
+        if (status !== 'granted') {
+          Alert.alert(
+            'Photo Access Required',
+            'Please enable photo library access to select photos.',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          quality: 0.8,
+          exif: false,
+        });
+
+        if (!result.canceled && result.assets?.[0]?.uri) {
+          console.log('AI Problem Diagnosis: image selected', result.assets[0].uri);
+          sendMessage('Please analyze this image and help me identify any plant issues, weeds, pests, or diseases.', result.assets[0].uri);
+        }
+      } catch (error) {
+        console.error('Error picking image:', error);
+        Alert.alert('Error', 'There was a problem accessing photos. Please try again.');
       }
-    }, false); // false = single image selection (no multiple selection for AI analysis)
+    } else {
+      // On mobile, show camera/library options
+      await openImagePicker((uris) => {
+        if (uris.length > 0) {
+          console.log('AI Problem Diagnosis: imageSelected: true');
+          console.log('AI Problem Diagnosis: image selected', uris[0]);
+          
+          // Directly trigger analysis with the selected image
+          sendMessage('Please analyze this image and help me identify any plant issues, weeds, pests, or diseases.', uris[0]);
+        } else {
+          // Silent cancellation
+          console.log('AI Problem Diagnosis: image selection cancelled');
+        }
+      }, false); // false = single image selection (no multiple selection for AI analysis)
+    }
   };
-  */
 
   const sendMessage = async (text: string, imageUri?: string) => {
     if ((!text.trim() && !imageUri) || loading) return;
@@ -250,17 +278,15 @@ function AIProblemDiagnosisContent() {
               <Text style={styles.welcomeText}>
                 I can help you diagnose issues with your crops including diseases, pests, nutrient deficiencies, and more. Describe the problem below!
               </Text>
-              {/* CAMERA BUTTON TEMPORARILY DISABLED FOR PRODUCTION BUILD */}
-              {/* Will re-enable after wrapper-level alert fix is deployed */}
-              {/*
               <TouchableOpacity 
                 style={styles.uploadButton}
                 onPress={handlePickProblemImage}
               >
-                <Text style={styles.uploadButtonIcon}>📷</Text>
-                <Text style={styles.uploadButtonText}>Upload Photo for Analysis</Text>
+                <Text style={styles.uploadButtonIcon}>{Platform.OS === 'web' ? '📁' : '📷'}</Text>
+                <Text style={styles.uploadButtonText}>
+                  {Platform.OS === 'web' ? 'Upload Photo for Analysis' : 'Take/Upload Photo for Analysis'}
+                </Text>
               </TouchableOpacity>
-              */}
               <Text style={styles.orText}>Ask about common issues:</Text>
               <View style={styles.quickQuestionsContainer}>
                 <TouchableOpacity 
@@ -345,17 +371,13 @@ function AIProblemDiagnosisContent() {
             </View>
           )}
           <View style={styles.inputRow}>
-            {/* CAMERA BUTTON TEMPORARILY DISABLED FOR PRODUCTION BUILD */}
-            {/* Will re-enable after wrapper-level alert fix is deployed */}
-            {/*
             <TouchableOpacity
               style={styles.imageButton}
               onPress={handlePickProblemImage}
               disabled={loading || uploadingImage}
             >
-              <Text style={styles.imageButtonText}>📷</Text>
+              <Text style={styles.imageButtonText}>{Platform.OS === 'web' ? '📁' : '📷'}</Text>
             </TouchableOpacity>
-            */}
             <TextInput
               style={styles.input}
               placeholder="Describe the problem..."
